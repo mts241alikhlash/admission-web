@@ -9,7 +9,7 @@ import { getIndonesianErrorMessage } from '@mts241alikhlash/web-shared/utils/err
 import { Button } from '@mts241alikhlash/ui/button'
 import { Input } from '@mts241alikhlash/ui/input'
 import { FloatingField, FormControl } from '@mts241alikhlash/ui/form'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2 } from '@lucide/vue'
 
 const isSubmitting = ref(false)
 

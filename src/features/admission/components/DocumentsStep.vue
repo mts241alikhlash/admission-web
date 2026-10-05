@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { FileText, UploadCloud, XCircle } from 'lucide-vue-next'
+import { FileText, UploadCloud, XCircle } from '@lucide/vue'
 import { ActionCell, DataTable } from '@mts241alikhlash/ui'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'

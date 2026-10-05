@@ -15,7 +15,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@mts241alikhlash/ui/alert-dialog'
-import { Plus } from 'lucide-vue-next'
+import { Plus } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useAnnouncementList } from '../composables/useAnnouncementList'
 import AnnouncementFormDialog from '../components/AnnouncementFormDialog.vue'

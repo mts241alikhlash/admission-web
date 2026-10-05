@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CalendarDays } from 'lucide-vue-next'
+import { CalendarDays } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import { useSignUpDialog } from '../../composables/useSignUpDialog'
 import type { ActiveWave } from '../../types'

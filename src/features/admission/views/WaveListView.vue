@@ -4,7 +4,7 @@ import { DataTable, ActionCell } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Plus } from 'lucide-vue-next'
+import { Plus } from '@lucide/vue'
 import { Input } from '@mts241alikhlash/ui/input'
 import {
   AlertDialog,

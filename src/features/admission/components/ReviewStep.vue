@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown } from '@lucide/vue'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
 import {

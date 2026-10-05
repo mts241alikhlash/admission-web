@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@mts241alikhlash/ui/alert-dialog'
-import { Plus } from 'lucide-vue-next'
+import { Plus } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import FloatingField from '../components/AdmissionField.vue'
 import { bankAccountSchema } from '../schemas/applicationFormSchemas'
