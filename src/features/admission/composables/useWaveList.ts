@@ -1,20 +1,41 @@
+import type { Ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { refDebounced } from '@vueuse/core'
+import { admissionApi } from '../api/admissionApi'
 import { waveService } from '../services/waveService'
 import { useWaveStore } from '../stores/waveStore'
+import { useInfiniteList } from './useInfiniteList'
 
-export function useWaveList() {
-  const store = useWaveStore()
-  const { waves, academicYears, totalItems, loading, isSaving, listError } =
-    storeToRefs(store)
+export function useWaveList(
+  search: Ref<string>,
+  academicYearId: Ref<string>,
+  isActive: Ref<string>,
+) {
+  const { academicYears, isSaving } = storeToRefs(useWaveStore())
+  const debouncedSearch = refDebounced(search, 300)
+
+  const list = useInfiniteList({
+    scope: ['admission', 'waves'],
+    filters: { search: debouncedSearch, academicYearId, isActive },
+    fetchPage: async (page, limit) =>
+      (
+        await admissionApi.getWaves({
+          page,
+          limit,
+          search: debouncedSearch.value.trim() || undefined,
+          academicYearId:
+            academicYearId.value === 'ALL' ? undefined : academicYearId.value,
+          isActive: isActive.value === 'ALL' ? undefined : isActive.value,
+        })
+      ).data,
+    errorMessage: 'Gagal memuat gelombang.',
+  })
 
   return {
-    waves,
+    ...list,
+    waves: list.items,
     academicYears,
-    totalItems,
-    loading,
     isSaving,
-    listError,
-    fetchWaves: waveService.fetchWaves,
     fetchAcademicYears: waveService.fetchAcademicYears,
     saveWave: waveService.saveWave,
     deleteWave: waveService.deleteWave,

@@ -40,7 +40,7 @@ function mountView() {
 }
 
 it('adds an account with the digits of its number and reloads the list', async () => {
-  service.fetchAll.mockResolvedValue([])
+  service.fetchAll.mockResolvedValue({ accounts: [] })
   service.save.mockResolvedValue({ success: true })
   const wrapper = mountView()
   await flushPromises()
@@ -67,7 +67,7 @@ it('adds an account with the digits of its number and reloads the list', async (
 })
 
 it('refuses an account number that is too short', async () => {
-  service.fetchAll.mockResolvedValue([])
+  service.fetchAll.mockResolvedValue({ accounts: [] })
   service.save.mockClear()
   const wrapper = mountView()
   await flushPromises()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, useId, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { AlertCircle, ArrowRight, RefreshCw } from '@lucide/vue'
+import { ArrowRight } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
@@ -10,11 +10,65 @@ import {
   CardTitle,
 } from '@mts241alikhlash/ui/card'
 import { Skeleton } from '@mts241alikhlash/ui/skeleton'
+import { FloatingLabelField } from '@mts241alikhlash/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@mts241alikhlash/ui/select'
 import { useAdmissionStats } from '../composables/useAdmissionStats'
 import { STATUS_LABELS } from '../types'
 import type { AdmissionStatus } from '../types'
 
-const { stats, loading, error, fetchStats } = useAdmissionStats()
+const {
+  stats,
+  loading,
+  error,
+  waves,
+  academicYears,
+  fetchStats,
+  fetchWaves,
+  fetchAcademicYears,
+} = useAdmissionStats()
+
+const yearFilter = ref('ALL')
+const waveFilter = ref('ALL')
+const yearFilterId = useId()
+const waveFilterId = useId()
+
+const yearOptions = computed(() =>
+  [...academicYears.value].sort((a, b) => b.name.localeCompare(a.name)),
+)
+const waveOptions = computed(() =>
+  yearFilter.value === 'ALL'
+    ? waves.value
+    : waves.value.filter((wave) => wave.academicYearId === yearFilter.value),
+)
+const statsFilter = computed(() => ({
+  academicYearId: yearFilter.value === 'ALL' ? undefined : yearFilter.value,
+  waveId: waveOptions.value.some((wave) => wave.id === waveFilter.value)
+    ? waveFilter.value
+    : undefined,
+}))
+const scopeLabel = computed(() => {
+  const wave = waves.value.find((item) => item.id === statsFilter.value.waveId)
+  if (wave) return wave.name
+  const year = academicYears.value.find((item) => item.id === yearFilter.value)
+  return year ? `Tahun Ajaran ${year.name}` : 'Semua tahun ajaran'
+})
+
+function loadStats() {
+  void fetchStats(statsFilter.value)
+}
+
+watch(yearFilter, () => {
+  if (!waveOptions.value.some((wave) => wave.id === waveFilter.value)) {
+    waveFilter.value = 'ALL'
+  }
+})
+watch(() => JSON.stringify(statsFilter.value), loadStats)
 
 const STATUS_ORDER: AdmissionStatus[] = [
   'DRAFT',
@@ -60,8 +114,12 @@ function wavePercent(fillRate: number) {
   return Math.round(fillRate * 100)
 }
 
-onMounted(() => {
-  void fetchStats()
+onMounted(async () => {
+  void fetchWaves()
+  await fetchAcademicYears()
+  const activeYear = academicYears.value.find((year) => year.isActive)
+  if (activeYear) yearFilter.value = activeYear.id
+  else loadStats()
 })
 </script>
 
@@ -70,13 +128,70 @@ onMounted(() => {
     <Card
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader class="border-b px-6 py-5">
+      <CardHeader
+        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
+      >
         <CardTitle class="text-xl font-bold tracking-tight">
           Penerimaan Santri Baru
         </CardTitle>
       </CardHeader>
 
-      <CardContent class="space-y-4 px-6 pb-6">
+      <CardContent class="space-y-4 p-4 sm:p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <FloatingLabelField
+            label="Tahun Ajaran"
+            :for="yearFilterId"
+            class="w-full sm:w-48"
+            floating
+          >
+            <Select v-model="yearFilter">
+              <SelectTrigger
+                :id="yearFilterId"
+                size="sm"
+                class="w-full"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Semua</SelectItem>
+                <SelectItem
+                  v-for="year in yearOptions"
+                  :key="year.id"
+                  :value="year.id"
+                >
+                  {{ year.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </FloatingLabelField>
+          <FloatingLabelField
+            label="Gelombang"
+            :for="waveFilterId"
+            class="w-full sm:w-48"
+            floating
+          >
+            <Select v-model="waveFilter">
+              <SelectTrigger
+                :id="waveFilterId"
+                size="sm"
+                class="w-full"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Semua</SelectItem>
+                <SelectItem
+                  v-for="wave in waveOptions"
+                  :key="wave.id"
+                  :value="wave.id"
+                >
+                  {{ wave.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </FloatingLabelField>
+        </div>
+
         <template v-if="loading">
           <div class="grid gap-4 lg:grid-cols-3">
             <Skeleton class="h-44 rounded-xl lg:col-span-2" />
@@ -86,25 +201,20 @@ onMounted(() => {
           <Skeleton class="h-44 rounded-xl" />
         </template>
 
-        <Card
+        <div
           v-else-if="error"
-          class="gap-0 border-destructive/40 bg-destructive/5 p-6"
+          class="space-y-3 rounded-md border p-4"
+          role="alert"
         >
-          <div class="flex items-center gap-2 text-destructive">
-            <AlertCircle class="size-4 shrink-0" />
-            <p class="text-sm font-medium">Statistik gagal dimuat</p>
-          </div>
-          <p class="mt-2 text-sm text-muted-foreground">{{ error }}</p>
+          <p class="text-sm">{{ error }}</p>
           <Button
             variant="outline"
-            size="sm"
-            class="mt-3 w-fit"
-            @click="fetchStats()"
+            class="min-h-11"
+            @click="loadStats()"
           >
-            <RefreshCw class="mr-2 size-3.5" />
             Coba lagi
           </Button>
-        </Card>
+        </div>
 
         <template v-else-if="stats">
           <div class="grid gap-4 lg:grid-cols-3">
@@ -120,7 +230,7 @@ onMounted(() => {
                 {{ stats.total }}
               </p>
               <p class="mt-2 text-sm text-primary-foreground">
-                Semua gelombang
+                {{ scopeLabel }}
               </p>
             </Card>
 
@@ -201,9 +311,9 @@ onMounted(() => {
             <CardContent class="pb-6">
               <p
                 v-if="!hasWaves"
-                class="text-sm text-muted-foreground"
+                class="rounded-md border p-4 text-center text-sm text-muted-foreground"
               >
-                Belum ada gelombang yang dibuka.
+                Tidak ada data.
               </p>
               <ul
                 v-else

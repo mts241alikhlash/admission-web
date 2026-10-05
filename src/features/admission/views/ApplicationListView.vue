@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, useId } from 'vue'
+import { computed, h, onMounted, ref, useId, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { watchDebounced } from '@vueuse/core'
-import { DataTable } from '@mts241alikhlash/ui'
+import { useIntersectionObserver } from '@vueuse/core'
+import { DataTable, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
-import { Input } from '@mts241alikhlash/ui/input'
 import {
   Select,
   SelectContent,
@@ -33,15 +32,30 @@ import { formatDateTime } from '../utils'
 const router = useRouter()
 const route = useRoute()
 
+const searchQuery = ref('')
+const statusFilter = ref<'ALL' | AdmissionStatus>('ALL')
+const waveFilter = ref<string>(
+  typeof route.query.wave === 'string' ? route.query.wave : 'ALL',
+)
+const statusFilterId = useId()
+const waveFilterId = useId()
+
 const {
   applications,
   waves,
-  total,
+  totalItems,
   loading,
-  error,
-  fetchApplications,
+  listError,
+  hasNextPage,
+  isFetchingNextPage,
+  loadMore,
+  refresh,
   fetchWaves,
-} = useApplicationList()
+} = useApplicationList(searchQuery, statusFilter, waveFilter)
+const loadMoreButton = useTemplateRef('loadMoreButton')
+useIntersectionObserver(loadMoreButton, ([entry]) => {
+  if (entry?.isIntersecting) loadMore()
+})
 const { fetchActiveWaves } = usePublicAdmission()
 
 const registerOpen = ref(false)
@@ -65,22 +79,11 @@ const {
   submit,
 } = useAdminRegistration()
 
-const searchQuery = ref('')
-const statusFilter = ref<'ALL' | AdmissionStatus>('ALL')
-const waveFilter = ref<string>(
-  typeof route.query.wave === 'string' ? route.query.wave : 'ALL',
-)
-const page = ref(1)
-const limit = ref(10)
-const statusFilterId = useId()
-const waveFilterId = useId()
-const searchId = useId()
-
 const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row }) => (page.value - 1) * limit.value + row.index + 1,
+    cell: ({ row }) => row.index + 1,
     enableSorting: false,
   },
   {
@@ -131,18 +134,7 @@ const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
   },
 ])
 
-function loadApplications() {
-  void fetchApplications({
-    page: page.value,
-    limit: limit.value,
-    search: searchQuery.value.trim() || undefined,
-    status: statusFilter.value === 'ALL' ? undefined : statusFilter.value,
-    waveId: waveFilter.value === 'ALL' ? undefined : waveFilter.value,
-  })
-}
-
 onMounted(() => {
-  loadApplications()
   void fetchWaves()
 })
 
@@ -181,36 +173,7 @@ function closeForm() {
   formOpen.value = false
   clearCredentials()
   reset()
-  loadApplications()
-}
-
-watchDebounced(
-  searchQuery,
-  () => {
-    page.value = 1
-    loadApplications()
-  },
-  { debounce: 400 },
-)
-
-function onFilterChange() {
-  page.value = 1
-  loadApplications()
-}
-
-const totalPages = computed(() =>
-  Math.max(Math.ceil(total.value / limit.value), 1),
-)
-
-function goToPage(target: number) {
-  page.value = Math.min(Math.max(target, 1), totalPages.value)
-  loadApplications()
-}
-
-function setPageSize(size: number) {
-  limit.value = size
-  page.value = 1
-  loadApplications()
+  void refresh()
 }
 </script>
 
@@ -226,172 +189,150 @@ function setPageSize(size: number) {
           Daftar Pendaftar
         </CardTitle>
         <Button
-          class="min-h-11 w-full sm:w-auto"
+          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
           @click="openRegister"
         >
-          <Plus class="size-4 mr-1.5" />
+          <Plus class="mr-1.5 size-4" />
           Daftarkan Pendaftar
         </Button>
       </CardHeader>
 
-      <div class="p-6 pt-1">
-        <div class="mb-4 flex flex-wrap items-start gap-3">
-          <FloatingLabelField
-            label="Status"
-            :for="statusFilterId"
-            class="w-full sm:w-40"
-            floating
-          >
-            <Select
-              v-model="statusFilter"
-              @update:model-value="onFilterChange"
+      <div class="space-y-4 p-4 sm:p-6">
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <FloatingLabelField
+              label="Status"
+              :for="statusFilterId"
+              class="w-full sm:w-48"
+              floating
             >
-              <SelectTrigger
-                :id="statusFilterId"
-                class="w-full"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL"> Semua Status </SelectItem>
-                <SelectItem
-                  v-for="(label, status) in STATUS_LABELS"
-                  :key="status"
-                  :value="status"
+              <Select v-model="statusFilter">
+                <SelectTrigger
+                  :id="statusFilterId"
+                  size="sm"
+                  class="w-full"
                 >
-                  {{ label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FloatingLabelField>
-          <FloatingLabelField
-            label="Gelombang"
-            :for="waveFilterId"
-            class="w-full sm:w-48"
-            floating
-          >
-            <Select
-              v-model="waveFilter"
-              @update:model-value="onFilterChange"
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua</SelectItem>
+                  <SelectItem
+                    v-for="(label, status) in STATUS_LABELS"
+                    :key="status"
+                    :value="status"
+                  >
+                    {{ label }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingLabelField>
+            <FloatingLabelField
+              label="Gelombang"
+              :for="waveFilterId"
+              class="w-full sm:w-48"
+              floating
             >
-              <SelectTrigger
-                :id="waveFilterId"
-                class="w-full"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL"> Semua Gelombang </SelectItem>
-                <SelectItem
-                  v-for="wave in waves"
-                  :key="wave.id"
-                  :value="wave.id"
+              <Select v-model="waveFilter">
+                <SelectTrigger
+                  :id="waveFilterId"
+                  size="sm"
+                  class="w-full"
                 >
-                  {{ wave.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FloatingLabelField>
-          <FloatingLabelField
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua</SelectItem>
+                  <SelectItem
+                    v-for="wave in waves"
+                    :key="wave.id"
+                    :value="wave.id"
+                  >
+                    {{ wave.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingLabelField>
+          </div>
+          <SearchInput
+            v-model="searchQuery"
             label="Cari pendaftar"
-            :for="searchId"
-            class="w-full sm:w-48"
-            :floating="!!searchQuery"
-          >
-            <Input
-              :id="searchId"
-              v-model="searchQuery"
-            />
-          </FloatingLabelField>
+          />
         </div>
 
-        <DataTable
-          v-if="!error"
-          class="hidden md:block"
-          :columns="columns"
-          :data="applications"
-          :is-loading="loading"
-          :total-items="total"
-          :page="page"
-          :page-size="limit"
-          item-label="pendaftar"
-          @update:page="goToPage"
-          @update:page-size="setPageSize"
-        />
-
         <div
-          v-if="error"
+          v-if="listError"
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ error }}</p>
+          <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
             class="min-h-11"
-            @click="loadApplications"
+            @click="refresh()"
           >
             Coba lagi
           </Button>
         </div>
-        <p
-          v-else-if="!loading && applications.length === 0"
-          class="rounded-md border p-4 text-sm text-muted-foreground"
-        >
-          Belum ada pendaftar yang sesuai dengan pencarian atau filter.
-        </p>
-        <ul
-          v-if="!loading && !error && applications.length"
-          data-test="mobile-applications"
-          class="space-y-2 md:hidden"
-        >
-          <li
-            v-for="item in applications"
-            :key="item.id"
-            class="min-w-0 space-y-2 rounded-lg border p-4"
+        <template v-else>
+          <DataTable
+            class="hidden md:block"
+            :columns="columns"
+            :data="applications"
+            :total-items="applications.length"
+            :is-loading="loading"
+            item-label="pendaftar"
+            hide-per-page
+            hide-pagination
+          />
+          <p
+            v-if="!loading && !applications.length"
+            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
           >
-            <p class="break-words font-medium">{{ item.fullName }}</p>
-            <p class="break-all text-sm text-muted-foreground">
-              {{ item.registrationNumber }}
-            </p>
-            <StatusBadge :status="item.status" />
-            <Button
-              variant="outline"
-              class="min-h-11 w-full sm:w-auto"
-              @click="router.push(`/admin/applicants/${item.id}`)"
+            Tidak ada data.
+          </p>
+          <ul
+            data-test="mobile-applications"
+            class="space-y-2 md:hidden"
+          >
+            <li
+              v-for="item in applications"
+              :key="item.id"
+              class="min-w-0 space-y-2 rounded-lg border p-4"
             >
-              Detail
+              <p class="break-words font-medium">{{ item.fullName }}</p>
+              <p class="break-all text-sm text-muted-foreground">
+                {{ item.registrationNumber }}
+              </p>
+              <StatusBadge :status="item.status" />
+              <Button
+                variant="outline"
+                class="min-h-11 w-full sm:w-auto"
+                @click="router.push(`/admin/applicants/${item.id}`)"
+              >
+                Detail
+              </Button>
+            </li>
+          </ul>
+          <div
+            v-if="hasNextPage"
+            class="flex flex-col items-center gap-2"
+          >
+            <p class="text-sm text-muted-foreground">
+              Menampilkan {{ applications.length }} dari
+              {{ totalItems }} pendaftar
+            </p>
+            <Button
+              ref="loadMoreButton"
+              variant="outline"
+              :disabled="isFetchingNextPage"
+              @click="loadMore"
+            >
+              {{ isFetchingNextPage ? 'Memuat…' : 'Muat lebih banyak' }}
             </Button>
-          </li>
-        </ul>
-        <p
-          v-else-if="loading"
-          class="py-4 text-sm"
-          role="status"
-        >
-          Memuat daftar pendaftar…
-        </p>
-        <nav
-          aria-label="Halaman pendaftar"
-          class="mt-4 flex flex-wrap items-center justify-between gap-3 md:hidden"
-        >
-          <Button
-            variant="outline"
-            class="min-h-11"
-            :disabled="page <= 1 || loading"
-            @click="goToPage(page - 1)"
-          >
-            Sebelumnya
-          </Button>
-          <span class="text-sm">Halaman {{ page }} dari {{ totalPages }}</span>
-          <Button
-            variant="outline"
-            class="min-h-11"
-            :disabled="page >= totalPages || loading"
-            @click="goToPage(page + 1)"
-          >
-            Berikutnya
-          </Button>
-        </nav>
+          </div>
+        </template>
       </div>
     </Card>
 
@@ -415,7 +356,7 @@ function setPageSize(size: number) {
       :upload-payment-proof="uploadPaymentProof"
       :submit="submit"
       @update:open="(open) => (open ? (formOpen = true) : closeForm())"
-      @completed="loadApplications"
+      @completed="refresh"
     />
   </div>
 </template>

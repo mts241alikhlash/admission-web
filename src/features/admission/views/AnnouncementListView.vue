@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, watch } from 'vue'
-import { DataTable, ActionCell } from '@mts241alikhlash/ui'
+import { computed, h, onMounted, ref, useId, useTemplateRef } from 'vue'
+import { useIntersectionObserver } from '@vueuse/core'
+import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Input } from '@mts241alikhlash/ui/input'
+import { FloatingLabelField } from '@mts241alikhlash/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@mts241alikhlash/ui/select'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -22,44 +30,37 @@ import AnnouncementFormDialog from '../components/AnnouncementFormDialog.vue'
 import type { AdmissionAnnouncement, AnnouncementSavePayload } from '../types'
 import { formatDateTime } from '../utils'
 
+const search = ref('')
+const statusFilter = ref('ALL')
+const waveFilter = ref('ALL')
+const statusFilterId = useId()
+const waveFilterId = useId()
+
 const {
   announcements,
   waves,
   totalItems,
   listError,
   loading,
+  hasNextPage,
+  isFetchingNextPage,
+  loadMore,
+  refresh,
   isSaving,
-  fetchData,
+  fetchWaves,
   saveAnnouncement,
   publishAnnouncement,
   deleteAnnouncement,
-} = useAnnouncementList()
+} = useAnnouncementList(search, statusFilter, waveFilter)
 
 const isFormOpen = ref(false)
 const selected = ref<AdmissionAnnouncement | null>(null)
 const pendingAction = ref<{ kind: 'publish' | 'delete'; id: string } | null>(
   null,
 )
-const search = ref('')
-const mobilePage = ref(1)
-const filteredAnnouncements = computed(() =>
-  announcements.value.filter((item) =>
-    item.title
-      .toLocaleLowerCase('id')
-      .includes(search.value.trim().toLocaleLowerCase('id')),
-  ),
-)
-const mobilePages = computed(() =>
-  Math.max(1, Math.ceil(filteredAnnouncements.value.length / 10)),
-)
-const mobileAnnouncements = computed(() =>
-  filteredAnnouncements.value.slice(
-    (mobilePage.value - 1) * 10,
-    mobilePage.value * 10,
-  ),
-)
-watch(search, () => {
-  mobilePage.value = 1
+const loadMoreButton = useTemplateRef('loadMoreButton')
+useIntersectionObserver(loadMoreButton, ([entry]) => {
+  if (entry?.isIntersecting) loadMore()
 })
 
 const columns = computed<ColumnDef<AdmissionAnnouncement>[]>(() => [
@@ -123,7 +124,7 @@ const columns = computed<ColumnDef<AdmissionAnnouncement>[]>(() => [
   },
 ])
 
-onMounted(fetchData)
+onMounted(fetchWaves)
 
 function openCreateForm() {
   selected.value = null
@@ -139,7 +140,7 @@ async function handleSave(payload: AnnouncementSavePayload) {
   const result = await saveAnnouncement(selected.value?.id ?? null, payload)
   if (result.success) {
     isFormOpen.value = false
-    await fetchData()
+    await refresh()
   }
 }
 
@@ -151,7 +152,7 @@ async function confirmPendingAction() {
     action.kind === 'publish'
       ? await publishAnnouncement(action.id)
       : await deleteAnnouncement(action.id)
-  if (result.success) await fetchData()
+  if (result.success) await refresh()
 }
 </script>
 
@@ -161,70 +162,115 @@ async function confirmPendingAction() {
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
       <CardHeader
-        class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b px-6 py-5 gap-4"
+        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
       >
         <CardTitle class="text-xl font-bold tracking-tight">
           Pengumuman PSB
         </CardTitle>
-        <Button @click="openCreateForm">
-          <Plus class="mr-2 h-4 w-4" />
+        <Button
+          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          @click="openCreateForm"
+        >
+          <Plus class="mr-1.5 size-4" />
           Buat Pengumuman
         </Button>
       </CardHeader>
 
       <div class="space-y-4 p-4 sm:p-6">
-        <label
-          for="announcement-search"
-          class="block text-sm font-medium"
-          >Cari pengumuman</label
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >
-        <Input
-          id="announcement-search"
-          v-model="search"
-          class="max-w-sm"
-        />
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <FloatingLabelField
+              label="Status"
+              :for="statusFilterId"
+              class="w-full sm:w-48"
+              floating
+            >
+              <Select v-model="statusFilter">
+                <SelectTrigger
+                  :id="statusFilterId"
+                  size="sm"
+                  class="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua</SelectItem>
+                  <SelectItem value="true">Terbit</SelectItem>
+                  <SelectItem value="false">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingLabelField>
+            <FloatingLabelField
+              label="Gelombang"
+              :for="waveFilterId"
+              class="w-full sm:w-48"
+              floating
+            >
+              <Select v-model="waveFilter">
+                <SelectTrigger
+                  :id="waveFilterId"
+                  size="sm"
+                  class="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua</SelectItem>
+                  <SelectItem
+                    v-for="wave in waves"
+                    :key="wave.id"
+                    :value="wave.id"
+                  >
+                    {{ wave.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingLabelField>
+          </div>
+          <SearchInput
+            v-model="search"
+            label="Cari pengumuman"
+          />
+        </div>
         <div
           v-if="listError"
+          class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p>{{ listError }}</p>
+          <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            @click="fetchData()"
-            >Coba lagi</Button
+            class="min-h-11"
+            @click="refresh()"
           >
+            Coba lagi
+          </Button>
         </div>
-        <p
-          v-else-if="loading"
-          role="status"
-          class="text-sm text-muted-foreground"
-        >
-          Memuat pengumuman…
-        </p>
-        <p
-          v-else-if="!filteredAnnouncements.length"
-          class="text-sm text-muted-foreground"
-        >
-          Belum ada pengumuman{{
-            search
-              ? ' yang cocok dengan pencarian.'
-              : '. Gunakan Buat Pengumuman untuk membuatnya.'
-          }}
-        </p>
         <template v-else>
           <DataTable
             class="hidden md:block"
             :columns="columns"
-            :data="filteredAnnouncements"
+            :data="announcements"
+            :total-items="announcements.length"
             :is-loading="loading"
             item-label="pengumuman"
+            hide-per-page
+            hide-pagination
           />
+          <p
+            v-if="!loading && !announcements.length"
+            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
+          >
+            Tidak ada data.
+          </p>
           <ul
             data-test="mobile-announcements"
             class="space-y-2 md:hidden"
           >
             <li
-              v-for="item in mobileAnnouncements"
+              v-for="item in announcements"
               :key="item.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
@@ -267,33 +313,23 @@ async function confirmPendingAction() {
               </div>
             </li>
           </ul>
-          <nav
-            v-if="mobilePages > 1"
-            aria-label="Halaman pengumuman"
-            class="flex flex-wrap items-center gap-2 md:hidden"
+          <div
+            v-if="hasNextPage"
+            class="flex flex-col items-center gap-2"
           >
+            <p class="text-sm text-muted-foreground">
+              Menampilkan {{ announcements.length }} dari
+              {{ totalItems }} pengumuman
+            </p>
             <Button
+              ref="loadMoreButton"
               variant="outline"
-              :disabled="mobilePage === 1"
-              @click="mobilePage--"
-              >Sebelumnya</Button
+              :disabled="isFetchingNextPage"
+              @click="loadMore"
             >
-            <span>Halaman {{ mobilePage }} dari {{ mobilePages }}</span>
-            <Button
-              variant="outline"
-              :disabled="mobilePage === mobilePages"
-              @click="mobilePage++"
-              >Berikutnya</Button
-            >
-          </nav>
-          <p
-            v-if="totalItems > announcements.length"
-            class="text-sm text-muted-foreground"
-          >
-            Menampilkan {{ announcements.length }} dari
-            {{ totalItems }} pengumuman. Pencarian hanya berlaku pada data yang
-            ditampilkan.
-          </p>
+              {{ isFetchingNextPage ? 'Memuat…' : 'Muat lebih banyak' }}
+            </Button>
+          </div>
         </template>
       </div>
     </Card>

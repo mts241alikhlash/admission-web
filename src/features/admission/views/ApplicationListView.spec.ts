@@ -1,17 +1,17 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
+import { defineComponent, type Ref } from 'vue'
 import type {
   AdmissionApplicationListItem,
   AdmissionWaveSummary,
 } from '../types'
 import ApplicationListView from './ApplicationListView.vue'
 
-const { rows, waves, fetchApplications, fetchWaves, push } = vi.hoisted(() => ({
+const { rows, waves, filters, fetchWaves, push } = vi.hoisted(() => ({
   rows: [] as AdmissionApplicationListItem[],
   waves: [] as AdmissionWaveSummary[],
-  fetchApplications: vi.fn(),
+  filters: {} as Record<'search' | 'status' | 'waveId', Ref<string>>,
   fetchWaves: vi.fn(),
   push: vi.fn(),
 }))
@@ -24,15 +24,25 @@ vi.mock('vue-router', () => ({
 vi.mock('../composables/useApplicationList', async () => {
   const { ref } = await import('vue')
   return {
-    useApplicationList: () => ({
-      applications: ref(rows),
-      waves: ref(waves),
-      total: ref(rows.length),
-      loading: ref(false),
-      error: ref(null),
-      fetchApplications,
-      fetchWaves,
-    }),
+    useApplicationList: (
+      search: Ref<string>,
+      status: Ref<string>,
+      waveId: Ref<string>,
+    ) => {
+      Object.assign(filters, { search, status, waveId })
+      return {
+        applications: ref(rows),
+        waves: ref(waves),
+        totalItems: ref(rows.length),
+        loading: ref(false),
+        listError: ref(null),
+        hasNextPage: ref(false),
+        isFetchingNextPage: ref(false),
+        loadMore: vi.fn(),
+        refresh: vi.fn(),
+        fetchWaves,
+      }
+    },
   }
 })
 
@@ -61,11 +71,11 @@ const floatingField = defineComponent({
   props: { label: String, for: String, floating: Boolean },
   template: '<div><label :for="$props.for">{{ label }}</label><slot /></div>',
 })
-const input = defineComponent({
-  props: { modelValue: String, id: String },
+const searchInput = defineComponent({
+  props: { modelValue: String, label: String },
   emits: ['update:modelValue'],
   template:
-    '<input :id="id" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    '<input :aria-label="label" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
 })
 const button = defineComponent({
   props: { variant: String, disabled: Boolean },
@@ -91,8 +101,6 @@ const dataTable = defineComponent({
     data: Array,
     isLoading: Boolean,
     totalItems: Number,
-    page: Number,
-    pageSize: Number,
   },
   template:
     '<div data-test="desktop-table" :class="$attrs.class"><slot name="header-right" /></div>',
@@ -106,7 +114,7 @@ const stubs = {
   CardTitle: passthrough,
   DataTable: dataTable,
   FloatingLabelField: floatingField,
-  Input: input,
+  SearchInput: searchInput,
   Plus: true,
   RegisterApplicantDialog: passthrough,
   Select: select,
@@ -135,7 +143,7 @@ describe('ApplicationListView', () => {
 
   afterEach(() => vi.useRealTimers())
 
-  it('shows mobile applicant summary, labels, server filters, and pagination', async () => {
+  it('shows mobile applicant summary, labels, and server filters', async () => {
     const wrapper = mount(ApplicationListView, { global: { stubs } })
     await flushPromises()
 
@@ -144,21 +152,11 @@ describe('ApplicationListView', () => {
     expect(mobile.text()).toContain('REG-001')
     expect(mobile.text()).toContain('DRAFT')
     expect(mobile.find('button').text()).toBe('Detail')
-    expect(wrapper.get('[aria-label="Halaman pendaftar"]').text()).toContain(
-      'Halaman 1 dari 1',
-    )
     expect(wrapper.get('[data-test="desktop-table"]').classes()).toContain(
       'hidden',
     )
 
-    const search = wrapper.get('input')
-    expect(search.attributes('id')).toBeTruthy()
-    expect(wrapper.find(`label[for="${search.attributes('id')}"]`).text()).toBe(
-      'Cari pendaftar',
-    )
-    expect(wrapper.find('[data-test="desktop-table"] input').exists()).toBe(
-      false,
-    )
+    const search = wrapper.get('input[aria-label="Cari pendaftar"]')
 
     for (const labelText of ['Status', 'Gelombang']) {
       const label = wrapper
@@ -173,16 +171,10 @@ describe('ApplicationListView', () => {
     ;(
       selectors[0].vm as { $emit: (event: string, value: unknown) => void }
     ).$emit('update:modelValue', 'DRAFT')
-    expect(fetchApplications).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'DRAFT' }),
-    )
+    expect(filters.status.value).toBe('DRAFT')
 
     await search.setValue('baru')
-    await vi.advanceTimersByTimeAsync(500)
-    await flushPromises()
-    expect(fetchApplications).toHaveBeenLastCalledWith(
-      expect.objectContaining({ search: 'baru', status: 'DRAFT' }),
-    )
+    expect(filters.search.value).toBe('baru')
 
     await mobile.find('button').trigger('click')
     expect(push).toHaveBeenCalledWith('/admin/applicants/app-1')

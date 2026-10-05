@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
   waves: [] as unknown[],
   error: null as string | null,
   deleteWave: vi.fn(),
-  fetchWaves: vi.fn(),
+  refresh: vi.fn(),
 }))
 vi.mock('../composables/useWaveList', async () => {
   const { computed, ref } = await import('vue')
@@ -18,8 +18,11 @@ vi.mock('../composables/useWaveList', async () => {
       totalItems: ref(1),
       academicYears: ref([]),
       loading: ref(false),
+      hasNextPage: ref(false),
+      isFetchingNextPage: ref(false),
+      loadMore: vi.fn(),
+      refresh: state.refresh,
       isSaving: ref(false),
-      fetchWaves: state.fetchWaves,
       fetchAcademicYears: vi.fn(),
       saveWave: vi.fn(),
       deleteWave: state.deleteWave,
@@ -98,13 +101,13 @@ it('shows essential mobile wave information and confirms deletion', async () => 
 it('distinguishes empty waves from failed load', async () => {
   state.waves = []
   state.error = null
-  expect(mountView().text()).toContain('Belum ada gelombang')
+  expect(mountView().text()).toContain('Tidak ada data.')
   state.error = 'offline'
   const wrapper = mountView()
-  expect(wrapper.text()).not.toContain('Belum ada gelombang')
+  expect(wrapper.text()).not.toContain('Tidak ada data.')
   await wrapper
     .findAll('button')
     .find((button) => button.text() === 'Coba lagi')!
     .trigger('click')
-  expect(state.fetchWaves).toHaveBeenCalled()
+  expect(state.refresh).toHaveBeenCalled()
 })

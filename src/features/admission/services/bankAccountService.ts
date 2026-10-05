@@ -5,12 +5,15 @@ import { useReferenceList } from '@/features/platform/reference-data'
 import { admissionErrorMessage } from '../utils'
 
 export const bankAccountService = {
-  fetchAll: async (): Promise<AdmissionBankAccount[]> => {
+  fetchAll: async (): Promise<
+    { accounts: AdmissionBankAccount[] } | { error: string }
+  > => {
     try {
-      return (await admissionApi.getBankAccounts()).data.data ?? []
+      return {
+        accounts: (await admissionApi.getBankAccounts()).data.data ?? [],
+      }
     } catch (error: unknown) {
-      toast.error(admissionErrorMessage(error, 'Gagal memuat rekening.'))
-      return []
+      return { error: admissionErrorMessage(error, 'Gagal memuat rekening.') }
     }
   },
 

@@ -22,7 +22,9 @@ const debugToken = ref<string | null>(null)
 
 const formSchema = toTypedSchema(
   z.object({
-    identifier: z.string().min(1, 'ID Pengguna wajib diisi.'),
+    identifier: z
+      .string()
+      .min(1, `${authConfig.value.identifierLabel} wajib diisi.`),
   }),
 )
 
@@ -132,20 +134,24 @@ const onSubmit = handleSubmit(async (values) => {
             <div class="flex flex-col items-center gap-1 text-center">
               <h1 class="text-2xl font-bold">Lupa Password?</h1>
               <p class="text-muted-foreground text-sm text-balance">
-                Masukkan ID Pengguna Anda untuk menerima tautan reset password
+                Masukkan {{ authConfig.identifierLabel }} Anda untuk menerima
+                tautan reset password
               </p>
             </div>
 
             <FloatingField
               v-slot="{ componentField }"
               name="identifier"
-              label="ID Pengguna"
+              :label="authConfig.identifierLabel"
               required
             >
               <FormControl>
                 <Input
                   v-bind="componentField"
                   type="text"
+                  autocapitalize="none"
+                  autocomplete="username"
+                  spellcheck="false"
                 />
               </FormControl>
             </FloatingField>
