@@ -203,9 +203,9 @@ export const admissionApi = {
       '/admissions/announcements',
     ),
 
-  getStats: (waveId?: string) =>
+  getStats: (params: { waveId?: string; academicYearId?: string }) =>
     api.get<ApiSingleResponse<AdmissionStats>>('/admissions/stats', {
-      params: waveId ? { waveId } : undefined,
+      params,
     }),
 
   getApplications: (params?: {
@@ -286,7 +286,13 @@ export const admissionApi = {
       params: { limit: 100 },
     }),
 
-  getWaves: (params?: { page?: number; limit?: number; search?: string }) =>
+  getWaves: (params?: {
+    page?: number
+    limit?: number
+    search?: string
+    academicYearId?: string
+    isActive?: string
+  }) =>
     api.get<ApiPaginatedResponse<AdmissionWaveSummary>>('/admissions/waves', {
       params,
     }),
@@ -324,6 +330,8 @@ export const admissionApi = {
     page?: number
     limit?: number
     search?: string
+    waveId?: string
+    isPublished?: string
   }) =>
     api.get<ApiPaginatedResponse<AdmissionAnnouncement>>(
       '/admissions/manage-announcements',

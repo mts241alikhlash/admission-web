@@ -6,6 +6,7 @@ interface AuthConfig {
   appSubtitle: string
   logoAlt: string
   loginTitle: string
+  identifierLabel: string
   homeRoute: string
   ssoApp: string
   signUpUrl: string | null
@@ -19,6 +20,7 @@ export const authConfig = ref<AuthConfig>({
   appSubtitle: 'Sistem Informasi Akademik',
   logoAlt: '241 Apps Logo',
   loginTitle: 'Masuk ke 241 Apps',
+  identifierLabel: 'ID Pengguna',
   homeRoute: '/',
   ssoApp: '',
   signUpUrl: null,

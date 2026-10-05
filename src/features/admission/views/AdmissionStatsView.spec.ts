@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import AdmissionStatsView from './AdmissionStatsView.vue'
 
 const state = vi.hoisted(() => {
   const initial: {
     stats: unknown
     error: string | null
+    academicYears: unknown[]
     fetchStats: ReturnType<typeof vi.fn>
-  } = { stats: null, error: null, fetchStats: vi.fn() }
+  } = { stats: null, error: null, academicYears: [], fetchStats: vi.fn() }
   return initial
 })
 vi.mock('../composables/useAdmissionStats', async () => {
@@ -18,7 +19,11 @@ vi.mock('../composables/useAdmissionStats', async () => {
       stats: computed(() => state.stats),
       error: computed(() => state.error),
       loading: ref(false),
+      waves: ref([]),
+      academicYears: computed(() => state.academicYears),
       fetchStats: state.fetchStats,
+      fetchWaves: vi.fn(),
+      fetchAcademicYears: vi.fn().mockResolvedValue(undefined),
     }),
   }
 })
@@ -33,6 +38,7 @@ const stubs = Object.fromEntries(
 beforeEach(() => {
   state.error = null
   state.stats = null
+  state.academicYears = []
   state.fetchStats.mockClear()
 })
 
@@ -58,12 +64,30 @@ it('counts admin-actionable statuses and includes enrolling', () => {
       .find((p) => p.text() === 'Perlu tindakan')
       ?.element.nextElementSibling?.textContent?.trim(),
   ).toBe('9')
-  expect(wrapper.text()).toContain('Belum ada gelombang')
+  expect(wrapper.text()).toContain('Tidak ada data.')
 })
 
 it('offers retry on failed statistics', async () => {
   state.error = 'offline'
   const wrapper = mount(AdmissionStatsView, { global: { stubs } })
-  await wrapper.get('button').trigger('click')
+  await flushPromises()
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text() === 'Coba lagi')!
+    .trigger('click')
   expect(state.fetchStats).toHaveBeenCalledTimes(2)
+})
+
+it('opens on the active academic year', async () => {
+  state.academicYears = [
+    { id: 'year-old', name: '2025/2026', isActive: false },
+    { id: 'year-now', name: '2026/2027', isActive: true },
+  ]
+  mount(AdmissionStatsView, { global: { stubs } })
+  await flushPromises()
+  expect(state.fetchStats).toHaveBeenCalledOnce()
+  expect(state.fetchStats).toHaveBeenCalledWith({
+    academicYearId: 'year-now',
+    waveId: undefined,
+  })
 })

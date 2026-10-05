@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, watch } from 'vue'
-import { DataTable, ActionCell } from '@mts241alikhlash/ui'
+import { computed, h, onMounted, ref, useId, useTemplateRef } from 'vue'
+import { useIntersectionObserver } from '@vueuse/core'
+import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Plus } from '@lucide/vue'
-import { Input } from '@mts241alikhlash/ui/input'
+import { FloatingLabelField } from '@mts241alikhlash/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@mts241alikhlash/ui/select'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -22,39 +30,37 @@ import WaveFormDialog from '../components/WaveFormDialog.vue'
 import type { AdmissionWaveSummary, WaveSavePayload } from '../types'
 import { formatDate, formatIDR } from '../utils'
 
+const search = ref('')
+const yearFilter = ref('ALL')
+const statusFilter = ref('ALL')
+const statusFilterId = useId()
+const yearFilterId = useId()
+
 const {
   waves,
   totalItems,
   listError,
   academicYears,
   loading,
+  hasNextPage,
+  isFetchingNextPage,
+  loadMore,
+  refresh,
   isSaving,
-  fetchWaves,
   fetchAcademicYears,
   saveWave,
   deleteWave,
-} = useWaveList()
+} = useWaveList(search, yearFilter, statusFilter)
 
 const isFormOpen = ref(false)
 const selectedWave = ref<AdmissionWaveSummary | null>(null)
 const pendingDeleteId = ref<string | null>(null)
-const search = ref('')
-const mobilePage = ref(1)
-const filteredWaves = computed(() =>
-  waves.value.filter((wave) =>
-    wave.name
-      .toLocaleLowerCase('id')
-      .includes(search.value.trim().toLocaleLowerCase('id')),
-  ),
+const yearOptions = computed(() =>
+  [...academicYears.value].sort((a, b) => b.name.localeCompare(a.name)),
 )
-const mobilePages = computed(() =>
-  Math.max(1, Math.ceil(filteredWaves.value.length / 10)),
-)
-const mobileWaves = computed(() =>
-  filteredWaves.value.slice((mobilePage.value - 1) * 10, mobilePage.value * 10),
-)
-watch(search, () => {
-  mobilePage.value = 1
+const loadMoreButton = useTemplateRef('loadMoreButton')
+useIntersectionObserver(loadMoreButton, ([entry]) => {
+  if (entry?.isIntersecting) loadMore()
 })
 
 const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
@@ -73,6 +79,12 @@ const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
     accessorKey: 'name',
     header: 'Nama',
     meta: { align: 'left' },
+  },
+  {
+    id: 'academicYear',
+    header: 'Tahun Ajaran',
+    meta: { align: 'center' },
+    cell: ({ row }) => row.original.academicYear?.name ?? '-',
   },
   {
     id: 'period',
@@ -120,7 +132,6 @@ const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
 ])
 
 onMounted(() => {
-  void fetchWaves()
   void fetchAcademicYears()
 })
 
@@ -138,7 +149,7 @@ async function handleSave(payload: WaveSavePayload) {
   const result = await saveWave(selectedWave.value?.id ?? null, payload)
   if (result.success) {
     isFormOpen.value = false
-    await fetchWaves()
+    await refresh()
   }
 }
 
@@ -148,7 +159,7 @@ async function confirmDelete() {
   const result = await deleteWave(id)
   pendingDeleteId.value = null
   if (result.success) {
-    await fetchWaves()
+    await refresh()
   }
 }
 </script>
@@ -159,67 +170,122 @@ async function confirmDelete() {
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
       <CardHeader
-        class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b px-6 py-5 gap-4"
+        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
       >
         <CardTitle class="text-xl font-bold tracking-tight">
           Gelombang Pendaftaran
         </CardTitle>
-        <Button @click="openCreateForm">
-          <Plus class="mr-2 h-4 w-4" />
+        <Button
+          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          @click="openCreateForm"
+        >
+          <Plus class="mr-1.5 size-4" />
           Tambah Gelombang
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 p-6">
-        <label
-          for="wave-search"
-          class="block text-sm font-medium"
-          >Cari gelombang</label
+      <div class="space-y-4 p-4 sm:p-6">
+        <div
+          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >
-        <Input
-          id="wave-search"
-          v-model="search"
-          class="max-w-sm"
-        />
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <FloatingLabelField
+              label="Status"
+              :for="statusFilterId"
+              class="w-full sm:w-48"
+              floating
+            >
+              <Select v-model="statusFilter">
+                <SelectTrigger
+                  :id="statusFilterId"
+                  size="sm"
+                  class="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua</SelectItem>
+                  <SelectItem value="true">Aktif</SelectItem>
+                  <SelectItem value="false">Nonaktif</SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingLabelField>
+            <FloatingLabelField
+              label="Tahun Ajaran"
+              :for="yearFilterId"
+              class="w-full sm:w-48"
+              floating
+            >
+              <Select v-model="yearFilter">
+                <SelectTrigger
+                  :id="yearFilterId"
+                  size="sm"
+                  class="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua</SelectItem>
+                  <SelectItem
+                    v-for="year in yearOptions"
+                    :key="year.id"
+                    :value="year.id"
+                  >
+                    {{ year.name }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingLabelField>
+          </div>
+          <SearchInput
+            v-model="search"
+            label="Cari gelombang"
+          />
+        </div>
         <div
           v-if="listError"
+          class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p>{{ listError }}</p>
+          <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            @click="fetchWaves()"
-            >Coba lagi</Button
+            class="min-h-11"
+            @click="refresh()"
           >
+            Coba lagi
+          </Button>
         </div>
-        <p
-          v-else-if="!loading && !filteredWaves.length"
-          class="text-sm text-muted-foreground"
-        >
-          Belum ada gelombang{{
-            search
-              ? ' yang cocok dengan pencarian.'
-              : '. Gunakan Tambah Gelombang untuk membuatnya.'
-          }}
-        </p>
         <template v-else>
           <DataTable
             class="hidden md:block"
             :columns="columns"
-            :data="filteredWaves"
+            :data="waves"
+            :total-items="waves.length"
             :is-loading="loading"
             item-label="gelombang"
+            hide-per-page
+            hide-pagination
           />
+          <p
+            v-if="!loading && !waves.length"
+            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
+          >
+            Tidak ada data.
+          </p>
           <ul
             data-test="mobile-waves"
             class="space-y-2 md:hidden"
           >
             <li
-              v-for="wave in mobileWaves"
+              v-for="wave in waves"
               :key="wave.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
               <p class="break-words font-semibold">{{ wave.name }}</p>
+              <p class="text-sm text-muted-foreground">
+                Tahun Ajaran {{ wave.academicYear?.name ?? '-' }}
+              </p>
               <p class="text-sm">
                 {{ formatDate(wave.startDate) }} –
                 {{ formatDate(wave.endDate) }}
@@ -251,32 +317,22 @@ async function confirmDelete() {
               </div>
             </li>
           </ul>
-          <nav
-            v-if="mobilePages > 1"
-            aria-label="Halaman gelombang"
-            class="flex flex-wrap items-center gap-2 md:hidden"
+          <div
+            v-if="hasNextPage"
+            class="flex flex-col items-center gap-2"
           >
+            <p class="text-sm text-muted-foreground">
+              Menampilkan {{ waves.length }} dari {{ totalItems }} gelombang
+            </p>
             <Button
+              ref="loadMoreButton"
               variant="outline"
-              :disabled="mobilePage === 1"
-              @click="mobilePage--"
-              >Sebelumnya</Button
+              :disabled="isFetchingNextPage"
+              @click="loadMore"
             >
-            <span>Halaman {{ mobilePage }} dari {{ mobilePages }}</span>
-            <Button
-              variant="outline"
-              :disabled="mobilePage === mobilePages"
-              @click="mobilePage++"
-              >Berikutnya</Button
-            >
-          </nav>
-          <p
-            v-if="totalItems > waves.length"
-            class="text-sm text-muted-foreground"
-          >
-            Menampilkan {{ waves.length }} dari {{ totalItems }} gelombang.
-            Pencarian hanya berlaku pada data yang ditampilkan.
-          </p>
+              {{ isFetchingNextPage ? 'Memuat…' : 'Muat lebih banyak' }}
+            </Button>
+          </div>
         </template>
       </div>
     </Card>

@@ -177,6 +177,12 @@ does not exist. Those copies keep the default and render nothing.
 `LoginForm.vue` and `authConfig` are the first files in this repo that
 deliberately differ from their siblings. Set a field, do not add a link.
 
+`useLoginForm.ts` and `ForgotPasswordView.vue` differ for the same reason.
+Applicants sign in with the email they registered with, so `authConfig` carries
+`identifierLabel` ("Email atau Username" here, "ID Pengguna" by default) and both
+identifier inputs turn off autocapitalise, autocomplete as `username` and skip
+spellcheck. The other apps sign in with NIS or NIK and keep the default.
+
 A Google email with no role lands in a state that says the account is not
 registered, because identity-service creates the user but grants no role, and
 this app treats "no role" as "not an applicant or an admin yet". Google

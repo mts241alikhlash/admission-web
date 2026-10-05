@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@mts241alikhlash/ui/select'
 import { FormControl } from '@mts241alikhlash/ui/form'
+import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import FloatingField from './AdmissionField.vue'
 import { Loader2 } from '@lucide/vue'
 import type { ActiveWave } from '../types'
@@ -125,9 +126,9 @@ function handleOpenChange(open: boolean) {
     @update:open="handleOpenChange"
   >
     <DialogContent
-      class="sm:max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto"
+      class="sm:max-w-lg flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
     >
-      <DialogHeader>
+      <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
         <DialogTitle>Daftarkan Pendaftar</DialogTitle>
         <DialogDescription>
           Buat akun untuk calon santri. Setelah akun dibuat, Anda akan
@@ -135,143 +136,147 @@ function handleOpenChange(open: boolean) {
         </DialogDescription>
       </DialogHeader>
 
-      <form
-        id="register-applicant-form"
-        class="grid grid-cols-1 items-start gap-x-4 gap-y-2 sm:grid-cols-2"
-        @submit.prevent="onSubmit"
-      >
-        <FloatingField
-          v-slot="{ componentField }"
-          name="fullName"
-          label="Nama Lengkap Calon Santri"
-          required
-          class="sm:col-span-2"
+      <ScrollArea class="flex-1 min-h-0">
+        <form
+          id="register-applicant-form"
+          class="grid grid-cols-1 items-start gap-x-4 gap-y-2 px-6 py-4 sm:grid-cols-2"
+          @submit.prevent="onSubmit"
         >
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              :disabled="isSubmitting"
-            />
-          </FormControl>
-        </FloatingField>
-
-        <FloatingField
-          v-slot="{ componentField }"
-          name="email"
-          label="Email"
-          required
-        >
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="email"
-              :disabled="isSubmitting"
-            />
-          </FormControl>
-        </FloatingField>
-
-        <FloatingField
-          v-slot="{ componentField }"
-          name="phone"
-          label="No. HP"
-        >
-          <FormControl>
-            <Input
-              v-digits.phone
-              v-bind="componentField"
-              inputmode="tel"
-              maxlength="20"
-              :disabled="isSubmitting"
-            />
-          </FormControl>
-        </FloatingField>
-
-        <FloatingField
-          v-slot="{ componentField }"
-          name="password"
-          label="Kata Sandi"
-          required
-        >
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="password"
-              autocomplete="new-password"
-              :disabled="isSubmitting"
-            />
-          </FormControl>
-        </FloatingField>
-
-        <FloatingField
-          v-slot="{ componentField }"
-          name="passwordConfirm"
-          label="Konfirmasi Kata Sandi"
-          required
-        >
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="password"
-              autocomplete="new-password"
-              :disabled="isSubmitting"
-            />
-          </FormControl>
-        </FloatingField>
-
-        <FloatingField
-          v-slot="{ value, handleChange }"
-          name="waveId"
-          label="Gelombang Pendaftaran"
-          required
-          class="sm:col-span-2"
-        >
-          <Select
-            :model-value="value"
-            :disabled="isSubmitting || waves.length === 0"
-            @update:model-value="handleChange"
+          <FloatingField
+            v-slot="{ componentField }"
+            name="fullName"
+            label="Nama Lengkap Calon Santri"
+            required
+            class="sm:col-span-2"
           >
             <FormControl>
-              <SelectTrigger class="w-full">
-                <SelectValue />
-              </SelectTrigger>
+              <Input
+                v-bind="componentField"
+                :disabled="isSubmitting"
+              />
             </FormControl>
-            <SelectContent>
-              <SelectItem
-                v-for="wave in waves"
-                :key="wave.id"
-                :value="wave.id"
-              >
-                {{ wave.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </FloatingField>
+          </FloatingField>
 
-        <p
-          v-if="selectedWave"
-          class="text-xs text-muted-foreground sm:col-span-2"
-        >
-          Biaya pendaftaran:
-          {{ formatIDR(selectedWave.registrationFee) }} · Sisa kuota:
-          {{ selectedWave.remainingQuota }}
-        </p>
+          <FloatingField
+            v-slot="{ componentField }"
+            name="email"
+            label="Email"
+            required
+          >
+            <FormControl>
+              <Input
+                v-bind="componentField"
+                type="email"
+                :disabled="isSubmitting"
+              />
+            </FormControl>
+          </FloatingField>
 
-        <div
-          v-if="waves.length === 0"
-          class="rounded-md border border-dashed p-3 text-sm text-muted-foreground sm:col-span-2"
-        >
-          Tidak ada gelombang yang dibuka saat ini.
-        </div>
+          <FloatingField
+            v-slot="{ componentField }"
+            name="phone"
+            label="No. HP"
+          >
+            <FormControl>
+              <Input
+                v-digits.phone
+                v-bind="componentField"
+                inputmode="tel"
+                maxlength="20"
+                :disabled="isSubmitting"
+              />
+            </FormControl>
+          </FloatingField>
 
-        <p
-          v-if="errorMessage"
-          class="text-sm text-destructive sm:col-span-2"
-        >
-          {{ errorMessage }}
-        </p>
-      </form>
+          <FloatingField
+            v-slot="{ componentField }"
+            name="password"
+            label="Kata Sandi"
+            required
+          >
+            <FormControl>
+              <Input
+                v-bind="componentField"
+                type="password"
+                autocomplete="new-password"
+                :disabled="isSubmitting"
+              />
+            </FormControl>
+          </FloatingField>
 
-      <DialogFooter>
+          <FloatingField
+            v-slot="{ componentField }"
+            name="passwordConfirm"
+            label="Konfirmasi Kata Sandi"
+            required
+          >
+            <FormControl>
+              <Input
+                v-bind="componentField"
+                type="password"
+                autocomplete="new-password"
+                :disabled="isSubmitting"
+              />
+            </FormControl>
+          </FloatingField>
+
+          <FloatingField
+            v-slot="{ value, handleChange }"
+            name="waveId"
+            label="Gelombang Pendaftaran"
+            required
+            class="sm:col-span-2"
+          >
+            <Select
+              :model-value="value"
+              :disabled="isSubmitting || waves.length === 0"
+              @update:model-value="handleChange"
+            >
+              <FormControl>
+                <SelectTrigger class="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem
+                  v-for="wave in waves"
+                  :key="wave.id"
+                  :value="wave.id"
+                >
+                  {{ wave.name }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </FloatingField>
+
+          <p
+            v-if="selectedWave"
+            class="text-xs text-muted-foreground sm:col-span-2"
+          >
+            Biaya pendaftaran:
+            {{ formatIDR(selectedWave.registrationFee) }} · Sisa kuota:
+            {{ selectedWave.remainingQuota }}
+          </p>
+
+          <div
+            v-if="waves.length === 0"
+            class="rounded-md border border-dashed p-3 text-sm text-muted-foreground sm:col-span-2"
+          >
+            Tidak ada gelombang yang dibuka saat ini.
+          </div>
+
+          <p
+            v-if="errorMessage"
+            class="text-sm text-destructive sm:col-span-2"
+          >
+            {{ errorMessage }}
+          </p>
+        </form>
+      </ScrollArea>
+
+      <DialogFooter
+        class="px-6 py-4 border-t shrink-0 flex sm:justify-between w-full bg-background"
+      >
         <Button
           type="button"
           variant="outline"

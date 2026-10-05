@@ -4,33 +4,22 @@ import { admissionApi } from '../api/admissionApi'
 import { useAnnouncementStore } from '../stores/announcementStore'
 import type { AnnouncementSavePayload } from '../types'
 import { useReferenceList } from '@/features/platform/reference-data'
+import { notifyIfOutage } from '@mts241alikhlash/web-shared/utils/notify-outage'
 
 export const announcementService = {
-  fetchData: async () => {
+  fetchWaves: async () => {
     const store = useAnnouncementStore()
-    store.loading = true
-    store.listError = null
     try {
-      const [annRes, waves] = await Promise.all([
-        admissionApi.getManageAnnouncements({ limit: 100 }),
-        useReferenceList().read('admissionWaves', async () => {
+      store.waves = await useReferenceList().read(
+        'admissionWaves',
+        async () => {
           const res = await admissionApi.getWaves({ limit: 100 })
           return res.data.data ?? []
-        }),
-      ])
-      store.announcements = annRes.data.data ?? []
-      store.totalItems = annRes.data.meta?.total ?? store.announcements.length
-      store.waves = waves
-    } catch (error: unknown) {
-      store.announcements = []
-      store.totalItems = 0
-      store.listError = getIndonesianErrorMessage(
-        error,
-        'Gagal memuat pengumuman.',
+        },
       )
-      toast.error(store.listError)
-    } finally {
-      store.loading = false
+    } catch (err) {
+      notifyIfOutage(err)
+      store.waves = []
     }
   },
 

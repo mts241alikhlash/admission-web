@@ -45,12 +45,15 @@ function startGoogleSignIn() {
         <FloatingField
           v-slot="{ componentField }"
           name="identifier"
-          label="ID Pengguna"
+          :label="authConfig.identifierLabel"
         >
           <FormControl>
             <Input
               v-bind="componentField"
               type="text"
+              autocapitalize="none"
+              autocomplete="username"
+              spellcheck="false"
             />
           </FormControl>
         </FloatingField>

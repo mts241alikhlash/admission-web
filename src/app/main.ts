@@ -16,6 +16,7 @@ configureAuth({
   appSubtitle: 'Sistem Penerimaan Santri Baru',
   logoAlt: 'Logo 241 Admission',
   loginTitle: 'Masuk ke 241 Admission',
+  identifierLabel: 'Email atau Username',
   homeRoute: '/dashboard',
   ssoApp: 'admission',
   signUpUrl: '/register',

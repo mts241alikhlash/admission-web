@@ -9,23 +9,31 @@ const state = vi.hoisted(() => ({
   loading: false,
   publish: vi.fn(),
   remove: vi.fn(),
-  fetch: vi.fn(),
+  refresh: vi.fn(),
+  search: null as { value: string } | null,
 }))
 vi.mock('../composables/useAnnouncementList', async () => {
   const { computed, ref } = await import('vue')
   return {
-    useAnnouncementList: () => ({
-      announcements: computed(() => state.announcements),
-      waves: ref([]),
-      totalItems: ref(1),
-      listError: computed(() => state.error),
-      loading: computed(() => state.loading),
-      isSaving: ref(false),
-      fetchData: state.fetch,
-      saveAnnouncement: vi.fn(),
-      publishAnnouncement: state.publish,
-      deleteAnnouncement: state.remove,
-    }),
+    useAnnouncementList: (search: { value: string }) => {
+      state.search = search
+      return {
+        announcements: computed(() => state.announcements),
+        waves: ref([]),
+        totalItems: ref(1),
+        listError: computed(() => state.error),
+        loading: computed(() => state.loading),
+        hasNextPage: ref(false),
+        isFetchingNextPage: ref(false),
+        loadMore: vi.fn(),
+        refresh: state.refresh,
+        isSaving: ref(false),
+        fetchWaves: vi.fn(),
+        saveAnnouncement: vi.fn(),
+        publishAnnouncement: state.publish,
+        deleteAnnouncement: state.remove,
+      }
+    },
   }
 })
 const stubs = Object.fromEntries(
@@ -69,7 +77,7 @@ it('shows mobile draft and waits for confirmation before publishing or deleting'
     },
   ]
   state.error = null
-  state.fetch.mockReset()
+  state.refresh.mockReset()
   state.publish.mockReset().mockResolvedValue({ success: true })
   state.remove.mockReset().mockResolvedValue({ success: true })
   const wrapper = mountView()
@@ -91,7 +99,7 @@ it('shows mobile draft and waits for confirmation before publishing or deleting'
     .trigger('click')
   await flushPromises()
   expect(state.publish).toHaveBeenCalledExactlyOnceWith('a-1')
-  expect(state.fetch).toHaveBeenCalledTimes(2)
+  expect(state.refresh).toHaveBeenCalledOnce()
   await mobile.get('button[aria-label="Hapus pengumuman"]').trigger('click')
   expect(wrapper.text()).toContain('Pengumuman ini akan dihapus')
   expect(state.remove).not.toHaveBeenCalled()
@@ -102,38 +110,25 @@ it('shows mobile draft and waits for confirmation before publishing or deleting'
   expect(state.remove).toHaveBeenCalledExactlyOnceWith('a-1')
 })
 
-it('distinguishes empty results from failed loads and shares search with mobile', async () => {
+it('distinguishes empty results from failed loads and sends search to the list', async () => {
   state.announcements = []
   state.error = null
-  expect(mountView().text()).toContain('Belum ada pengumuman')
+  expect(mountView().text()).toContain('Tidak ada data.')
   state.error = 'offline'
   const failed = mountView()
-  expect(failed.text()).not.toContain('Belum ada pengumuman')
+  expect(failed.text()).not.toContain('Tidak ada data.')
   await failed
     .findAll('button')
     .find((button) => button.text() === 'Coba lagi')!
     .trigger('click')
-  expect(state.fetch).toHaveBeenCalled()
+  expect(state.refresh).toHaveBeenCalled()
   state.error = null
   state.announcements = [
     { id: 'a-1', title: 'Informasi', isPublished: true, wave: null },
   ]
   const wrapper = mountView()
-  expect(wrapper.get('label[for="announcement-search"]').text()).toContain(
-    'Cari',
-  )
-  await wrapper.get('#announcement-search').setValue('tidak cocok')
-  expect(wrapper.text()).toContain('Belum ada pengumuman')
-})
-
-it('announces loading instead of showing stale mobile rows', () => {
-  state.error = null
-  state.loading = true
-  state.announcements = [{ id: 'old', title: 'Lama', isPublished: false }]
-  const wrapper = mountView()
-  expect(wrapper.get('[role="status"]').text()).toContain('Memuat pengumuman')
-  expect(wrapper.find('[data-test="mobile-announcements"]').exists()).toBe(
-    false,
-  )
-  state.loading = false
+  await wrapper
+    .get('input[aria-label="Cari pengumuman"]')
+    .setValue('tidak cocok')
+  expect(state.search?.value).toBe('tidak cocok')
 })

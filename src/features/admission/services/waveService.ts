@@ -7,27 +7,6 @@ import { useReferenceList } from '@/features/platform/reference-data'
 import { notifyIfOutage } from '@mts241alikhlash/web-shared/utils/notify-outage'
 
 export const waveService = {
-  fetchWaves: async () => {
-    const store = useWaveStore()
-    store.loading = true
-    store.listError = null
-    try {
-      const res = await admissionApi.getWaves({ limit: 100 })
-      store.waves = res.data.data ?? []
-      store.totalItems = res.data.meta?.total ?? store.waves.length
-    } catch (error: unknown) {
-      store.waves = []
-      store.totalItems = 0
-      store.listError = getIndonesianErrorMessage(
-        error,
-        'Gagal memuat gelombang.',
-      )
-      toast.error(store.listError)
-    } finally {
-      store.loading = false
-    }
-  },
-
   fetchAcademicYears: async () => {
     const store = useWaveStore()
     try {
