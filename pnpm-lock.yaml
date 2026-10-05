@@ -16,8 +16,8 @@ importers:
         specifier: ^3.12.3
         version: 3.12.4
       '@mts241alikhlash/ui':
-        specifier: ^1.0.0
-        version: 1.0.0(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
+        specifier: ^1.0.1
+        version: 1.0.1(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
       '@mts241alikhlash/web-shared':
         specifier: ^1.0.0
         version: 1.0.0(debug@4.4.3)(lucide-vue-next@0.577.0(vue@3.5.42(typescript@5.9.3)))(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
@@ -35,7 +35,7 @@ importers:
         version: 1.7.0
       '@unovis/vue':
         specifier: ^1.7.0
-        version: 1.7.0(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))
+        version: 1.7.1(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))
       '@vee-validate/zod':
         specifier: ^4.15.1
         version: 4.15.1(vue@3.5.42(typescript@5.9.3))(zod@3.25.76)
@@ -62,7 +62,7 @@ importers:
         version: 3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3))
       reka-ui:
         specifier: ^2.10.3
-        version: 2.10.4(vue@3.5.42(typescript@5.9.3))
+        version: 2.10.5(vue@3.5.42(typescript@5.9.3))
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -481,8 +481,8 @@ packages:
   '@mts241alikhlash/admission-api@1.0.0':
     resolution: {integrity: sha512-r+cvjdqn6aSFGnS+BgI+mvFZXxPOY4H4MrjSCz+Y97epN8WYTdev4907k+UNBfBg3+WR20Ba6nVKJa7Ku6Bw2w==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/1.0.0/9d3f59ba9caec171c86e118634693ae694b890c3}
 
-  '@mts241alikhlash/ui@1.0.0':
-    resolution: {integrity: sha512-rXr+rhIvv+44HqsUEndRqZlzAhv5hXOjMooTxnqQYsRIuoHi0k18VO3BNBNXOonmj3wjOZnN/R/1yZK+UVoKJg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.0.0/80e93113f3166ec20a7309e10fc88b5356a600a0}
+  '@mts241alikhlash/ui@1.0.1':
+    resolution: {integrity: sha512-NHMRKSpFBCbcKmaoLUhgnpN9VaPALauKn5DcGSNUzkUvz7eNaWl9Df+SKUjYfO8Y6BWePiFET1QkbkRXYAPs9Q==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.0.1/22e3b3e2c88a2fef5b6121e7e37e03e057126f88}
     peerDependencies:
       vue: ^3.5.41
 
@@ -984,10 +984,10 @@ packages:
   '@unovis/ts@1.7.0':
     resolution: {integrity: sha512-aEilfV47FNsU8VarSUjUUekhlt/a1dP4XjTLEEPSMgIVHUsyX+xMGFfgXr1r9eAv6NOJIIeTlJiEYz2LOOiUWw==}
 
-  '@unovis/vue@1.7.0':
-    resolution: {integrity: sha512-kLFvoaf63bnYEGDTfRfHvaJJjpUo2NrqsGJllK1/2S5S3mqBvz9KsYd1j/272Y56YCXhgiNH6dcIS/RzzqwXsA==}
+  '@unovis/vue@1.7.1':
+    resolution: {integrity: sha512-lkA+97pTGLmcya57EOw1r0Czb4EfymB/UXJWKVOpJVh8lleGiogKcBWBdtpk9QkvXOMapS0GYzjE+m5/BDeEeA==}
     peerDependencies:
-      '@unovis/ts': 1.7.0
+      '@unovis/ts': 1.7.1
       vue: ^3
 
   '@vee-validate/zod@4.15.1':
@@ -2279,8 +2279,8 @@ packages:
     resolution: {integrity: sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA==}
     engines: {node: '>= 20.19.0'}
 
-  reka-ui@2.10.4:
-    resolution: {integrity: sha512-kbS5GAbkHkYj0EVKAg5ZPEPndhBjeUFSa1Aq5m5ftQwyHnB1v5tw8X6fcwfKH/ry3StPXblMWM1DW82MVS71cw==}
+  reka-ui@2.10.5:
+    resolution: {integrity: sha512-/8o0y9BThE0hcHKFg+3770tWcJh3qKdOEFxLOPb9HIajXeFoH/J530cZH62jUJunbqwBgpSBL9v7nB8LJ5pDXA==}
     peerDependencies:
       vue: '>= 3.4.0'
 
@@ -3169,18 +3169,18 @@ snapshots:
     dependencies:
       openapi-fetch: 0.17.0
 
-  '@mts241alikhlash/ui@1.0.0(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))':
+  '@mts241alikhlash/ui@1.0.1(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@internationalized/date': 3.12.4
       '@mts241alikhlash/web-shared': 1.0.0(debug@4.4.3)(lucide-vue-next@0.577.0(vue@3.5.42(typescript@5.9.3)))(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
       '@tanstack/vue-table': 8.21.3(vue@3.5.42(typescript@5.9.3))
-      '@unovis/vue': 1.7.0(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))
+      '@unovis/vue': 1.7.1(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))
       '@vueuse/core': 14.4.0(vue@3.5.42(typescript@5.9.3))
       class-variance-authority: 0.7.1
       clsx: 2.1.1
       dompurify: 3.4.16
       lucide-vue-next: 0.577.0(vue@3.5.42(typescript@5.9.3))
-      reka-ui: 2.10.4(vue@3.5.42(typescript@5.9.3))
+      reka-ui: 2.10.5(vue@3.5.42(typescript@5.9.3))
       tailwind-merge: 3.6.0
       vee-validate: 4.15.1(vue@3.5.42(typescript@5.9.3))
       vue: 3.5.42(typescript@5.9.3)
@@ -3761,7 +3761,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@unovis/vue@1.7.0(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))':
+  '@unovis/vue@1.7.1(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@unovis/ts': 1.7.0
       vue: 3.5.42(typescript@5.9.3)
@@ -5060,7 +5060,7 @@ snapshots:
 
   readdirp@5.1.1: {}
 
-  reka-ui@2.10.4(vue@3.5.42(typescript@5.9.3)):
+  reka-ui@2.10.5(vue@3.5.42(typescript@5.9.3)):
     dependencies:
       '@floating-ui/dom': 1.8.0
       '@floating-ui/vue': 1.1.11(vue@3.5.42(typescript@5.9.3))
@@ -5319,7 +5319,7 @@ snapshots:
     dependencies:
       '@turf/boolean-point-in-polygon': 7.4.0
       '@unovis/ts': 1.7.0
-      '@unovis/vue': 1.7.0(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))
+      '@unovis/vue': 1.7.1(@unovis/ts@1.7.0)(vue@3.5.42(typescript@5.9.3))
       d3-geo: 3.1.1
       proj4: 2.22.0
       vue: 3.5.42(typescript@5.9.3)

@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@internationalized/date": "^3.12.3",
-    "@mts241alikhlash/ui": "^1.0.0",
+    "@mts241alikhlash/ui": "^1.0.1",
     "@mts241alikhlash/web-shared": "^1.0.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/vue-query": "^5.101.4",
