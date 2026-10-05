@@ -5,7 +5,7 @@ import { cn } from '@mts241alikhlash/web-shared/utils/utils'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Input } from '@mts241alikhlash/ui/input'
 import { FloatingField, FormControl } from '@mts241alikhlash/ui/form'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import { Eye, EyeOff } from '@lucide/vue'
 
 import { authConfig } from '../config'
 import { authApi } from '../api/authApi'

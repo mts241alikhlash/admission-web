@@ -6,7 +6,7 @@ import {
   Users,
   Waves,
   Settings,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 export type {
   SubMenuItem,

@@ -36,7 +36,7 @@ import {
 } from '@mts241alikhlash/ui/select'
 import { FormControl } from '@mts241alikhlash/ui/form'
 import FloatingField from './AdmissionField.vue'
-import { CalendarIcon, Loader2 } from 'lucide-vue-next'
+import { CalendarIcon, Loader2 } from '@lucide/vue'
 import CurrencyInput from './CurrencyInput.vue'
 import type {
   AdmissionAcademicYear,

@@ -12,7 +12,7 @@ import {
 } from '@mts241alikhlash/ui/dialog'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
-import { Check, Copy, Loader2 } from 'lucide-vue-next'
+import { Check, Copy, Loader2 } from '@lucide/vue'
 import { useApplicationFormState } from '../composables/useApplicationFormState'
 import { useApplicationUploads } from '../composables/useApplicationUploads'
 import { useFormOptions } from '../composables/useFormOptions'

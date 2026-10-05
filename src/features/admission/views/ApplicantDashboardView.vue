@@ -34,7 +34,7 @@ import {
   PartyPopper,
   Wallet,
   XCircle,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useMyApplication } from '../composables/useMyApplication'
 import { useRoleGuard } from '@/features/platform/auth'
 import StatusBadge from '../components/StatusBadge.vue'

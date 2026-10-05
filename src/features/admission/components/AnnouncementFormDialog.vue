@@ -24,7 +24,7 @@ import {
 } from '@mts241alikhlash/ui/select'
 import { FormControl } from '@mts241alikhlash/ui/form'
 import FloatingField from './AdmissionField.vue'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2 } from '@lucide/vue'
 import type {
   AdmissionAnnouncement,
   AdmissionWaveSummary,

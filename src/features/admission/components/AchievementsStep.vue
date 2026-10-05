@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import { toast } from 'vue-sonner'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import { FileText, UploadCloud, XCircle } from 'lucide-vue-next'
+import { FileText, UploadCloud, XCircle } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,

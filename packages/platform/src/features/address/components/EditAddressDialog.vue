@@ -12,7 +12,7 @@ import {
 import { FloatingField, FormControl } from '@mts241alikhlash/ui/form'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2 } from '@lucide/vue'
 import { useAddress } from '../composables/useAddress'
 import type { EditAddressProps } from '../types'
 

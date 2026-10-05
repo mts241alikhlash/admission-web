@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@mts241alikhlash/ui/select'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { Plus } from 'lucide-vue-next'
+import { Plus } from '@lucide/vue'
 import { useApplicationList } from '../composables/useApplicationList'
 import { useAdminRegistration } from '../composables/useAdminRegistration'
 import { usePublicAdmission } from '../composables/usePublicAdmission'

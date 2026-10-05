@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Menu, X } from 'lucide-vue-next'
+import { Menu, X } from '@lucide/vue'
 
 const isMenuOpen = ref(false)
 const menuButton = ref<HTMLButtonElement | null>(null)

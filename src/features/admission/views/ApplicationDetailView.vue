@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { ExternalLink } from 'lucide-vue-next'
+import { ExternalLink } from '@lucide/vue'
 import { useApplicationDetail } from '../composables/useApplicationDetail'
 import { useFormOptions } from '../composables/useFormOptions'
 import StatusBadge from '../components/StatusBadge.vue'

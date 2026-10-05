@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ClipboardCheck, FileCheck2, ShieldCheck } from 'lucide-vue-next'
+import { ClipboardCheck, FileCheck2, ShieldCheck } from '@lucide/vue'
 
 const features = [
   {

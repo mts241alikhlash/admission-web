@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { FileText } from 'lucide-vue-next'
+import { FileText } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,

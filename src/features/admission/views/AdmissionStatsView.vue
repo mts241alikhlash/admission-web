@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { AlertCircle, ArrowRight, RefreshCw } from 'lucide-vue-next'
+import { AlertCircle, ArrowRight, RefreshCw } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
