@@ -1,5 +1,13 @@
 # admission-web
 
+## 1.4.0
+
+### Minor Changes
+
+- 9f84f2d: The landing page gains school-life and stories sections with photos, and its registration buttons lead to the login page, where `/register` and `?signup=1` open the sign-up dialog. The login form puts "Masuk dengan Google" above the password form.
+- 9f84f2d: Admin lists work better on phones: applicants, announcements and statistics put their filters behind one mobile control, mobile announcements paginate, and opening an applicant's detail and coming back keeps the search, filters, page and scroll position (cleared when the session changes). Stale results never show while filters are pending.
+- 9f84f2d: Wave quotas count applicants with a verified payment. The wave list and dashboard show filled seats and mark full waves, the add-applicant dialog and the landing page do not offer a full wave, and an applicant in a full wave sees why the proof upload is closed and is told they will be moved to the next wave. Accepting no longer shows a quota warning.
+
 ## 1.3.0
 
 ### Minor Changes
