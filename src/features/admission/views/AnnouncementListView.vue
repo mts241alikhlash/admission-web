@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, useId, useTemplateRef } from 'vue'
+import { computed, h, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
@@ -23,7 +23,15 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@mts241alikhlash/ui/alert-dialog'
-import { Plus } from '@lucide/vue'
+import { Filter, Plus } from '@lucide/vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@mts241alikhlash/ui/dialog'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useAnnouncementList } from '../composables/useAnnouncementList'
 import AnnouncementFormDialog from '../components/AnnouncementFormDialog.vue'
@@ -35,6 +43,12 @@ const statusFilter = ref('ALL')
 const waveFilter = ref('ALL')
 const statusFilterId = useId()
 const waveFilterId = useId()
+const mobileStatusFilterId = useId()
+const mobileWaveFilterId = useId()
+const filterOpen = ref(false)
+const mobilePage = ref(1)
+const changingPage = ref(false)
+let filterRevision = 0
 
 const {
   announcements,
@@ -44,6 +58,8 @@ const {
   loading,
   hasNextPage,
   isFetchingNextPage,
+  isFetching,
+  filtersPending,
   loadMore,
   refresh,
   isSaving,
@@ -52,6 +68,45 @@ const {
   publishAnnouncement,
   deleteAnnouncement,
 } = useAnnouncementList(search, statusFilter, waveFilter)
+const mobileAnnouncements = computed(() =>
+  announcements.value.slice((mobilePage.value - 1) * 10, mobilePage.value * 10),
+)
+watch(
+  [search, statusFilter, waveFilter],
+  () => {
+    filterRevision++
+    mobilePage.value = 1
+  },
+  { flush: 'sync' },
+)
+watch(totalItems, (total) => {
+  mobilePage.value = Math.min(
+    mobilePage.value,
+    Math.max(1, Math.ceil(total / 10)),
+  )
+})
+async function nextMobilePage() {
+  if (changingPage.value || isFetching.value || filtersPending.value) return
+  const revision = filterRevision
+  const page = mobilePage.value
+  changingPage.value = true
+  try {
+    if (page * 10 >= announcements.value.length) await loadMore()
+    if (
+      revision === filterRevision &&
+      page === mobilePage.value &&
+      announcements.value.length > page * 10
+    )
+      mobilePage.value = page + 1
+  } finally {
+    changingPage.value = false
+  }
+}
+
+function resetFilters() {
+  statusFilter.value = 'ALL'
+  waveFilter.value = 'ALL'
+}
 
 const isFormOpen = ref(false)
 const selected = ref<AdmissionAnnouncement | null>(null)
@@ -60,7 +115,7 @@ const pendingAction = ref<{ kind: 'publish' | 'delete'; id: string } | null>(
 )
 const loadMoreButton = useTemplateRef('loadMoreButton')
 useIntersectionObserver(loadMoreButton, ([entry]) => {
-  if (entry?.isIntersecting) loadMore()
+  if (entry?.isIntersecting) void loadMore()
 })
 
 const columns = computed<ColumnDef<AdmissionAnnouncement>[]>(() => [
@@ -178,7 +233,7 @@ async function confirmPendingAction() {
 
       <div class="space-y-4 p-4 sm:p-6">
         <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+          class="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
             <FloatingLabelField
@@ -234,6 +289,38 @@ async function confirmPendingAction() {
             label="Cari pengumuman"
           />
         </div>
+        <div class="flex items-center gap-2 md:hidden">
+          <SearchInput
+            v-model="search"
+            label="Cari pengumuman"
+            class="min-w-0 flex-1 [&_input]:h-11"
+          />
+          <Button
+            variant="outline"
+            class="min-h-11 shrink-0"
+            @click="filterOpen = true"
+            ><Filter class="mr-1.5 size-4" />Filter</Button
+          >
+        </div>
+        <div
+          v-if="statusFilter !== 'ALL' || waveFilter !== 'ALL'"
+          class="flex flex-wrap gap-2 md:hidden"
+        >
+          <Button
+            v-if="statusFilter !== 'ALL'"
+            variant="outline"
+            class="min-h-11"
+            @click="statusFilter = 'ALL'"
+            >Hapus filter status</Button
+          >
+          <Button
+            v-if="waveFilter !== 'ALL'"
+            variant="outline"
+            class="min-h-11"
+            @click="waveFilter = 'ALL'"
+            >Hapus filter gelombang</Button
+          >
+        </div>
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
@@ -260,17 +347,24 @@ async function confirmPendingAction() {
             hide-pagination
           />
           <p
-            v-if="!loading && !announcements.length"
+            v-if="!loading && !filtersPending && !announcements.length"
             class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
           >
             Tidak ada data.
           </p>
+          <p
+            v-if="loading || filtersPending"
+            class="text-center text-sm text-muted-foreground md:hidden"
+          >
+            Memuat pengumuman…
+          </p>
           <ul
+            v-if="!loading && !filtersPending"
             data-test="mobile-announcements"
             class="space-y-2 md:hidden"
           >
             <li
-              v-for="item in announcements"
+              v-for="item in mobileAnnouncements"
               :key="item.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
@@ -314,8 +408,39 @@ async function confirmPendingAction() {
             </li>
           </ul>
           <div
+            v-if="!loading && !filtersPending && totalItems > 10"
+            class="flex flex-wrap items-center justify-between gap-2 text-sm md:hidden"
+          >
+            <span
+              >Halaman {{ mobilePage }} dari
+              {{ Math.ceil(totalItems / 10) }}</span
+            >
+            <div class="flex gap-2">
+              <Button
+                variant="outline"
+                class="min-h-11"
+                :disabled="mobilePage === 1"
+                @click="mobilePage--"
+                >Sebelumnya</Button
+              >
+              <Button
+                variant="outline"
+                class="min-h-11"
+                :disabled="
+                  mobilePage * 10 >= totalItems ||
+                  changingPage ||
+                  isFetchingNextPage ||
+                  isFetching ||
+                  filtersPending
+                "
+                @click="nextMobilePage"
+                >Selanjutnya</Button
+              >
+            </div>
+          </div>
+          <div
             v-if="hasNextPage"
-            class="flex flex-col items-center gap-2"
+            class="hidden flex-col items-center gap-2 md:flex"
           >
             <p class="text-sm text-muted-foreground">
               Menampilkan {{ announcements.length }} dari
@@ -333,6 +458,72 @@ async function confirmPendingAction() {
         </template>
       </div>
     </Card>
+
+    <Dialog v-model:open="filterOpen">
+      <DialogContent
+        class="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <DialogHeader class="shrink-0 border-b px-4 py-4 sm:px-6"
+          ><DialogTitle>Filter Pengumuman</DialogTitle
+          ><DialogDescription class="sr-only"
+            >Pilih status dan gelombang.</DialogDescription
+          ></DialogHeader
+        >
+        <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+          <FloatingLabelField
+            label="Status"
+            :for="mobileStatusFilterId"
+            floating
+          >
+            <Select v-model="statusFilter"
+              ><SelectTrigger
+                :id="mobileStatusFilterId"
+                class="min-h-11 w-full"
+                ><SelectValue /></SelectTrigger
+              ><SelectContent
+                ><SelectItem value="ALL">Semua</SelectItem
+                ><SelectItem value="true">Terbit</SelectItem
+                ><SelectItem value="false">Draft</SelectItem></SelectContent
+              ></Select
+            >
+          </FloatingLabelField>
+          <FloatingLabelField
+            label="Gelombang"
+            :for="mobileWaveFilterId"
+            floating
+          >
+            <Select v-model="waveFilter"
+              ><SelectTrigger
+                :id="mobileWaveFilterId"
+                class="min-h-11 w-full"
+                ><SelectValue /></SelectTrigger
+              ><SelectContent
+                ><SelectItem value="ALL">Semua</SelectItem
+                ><SelectItem
+                  v-for="wave in waves"
+                  :key="wave.id"
+                  :value="wave.id"
+                  >{{ wave.name }}</SelectItem
+                ></SelectContent
+              ></Select
+            >
+          </FloatingLabelField>
+        </div>
+        <DialogFooter class="flex-row gap-2 border-t px-4 py-4 sm:px-6">
+          <Button
+            variant="outline"
+            class="min-h-11 flex-1"
+            @click="resetFilters"
+            >Atur Ulang</Button
+          >
+          <Button
+            class="min-h-11 flex-1"
+            @click="filterOpen = false"
+            >Tutup</Button
+          >
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <AnnouncementFormDialog
       v-model:open="isFormOpen"

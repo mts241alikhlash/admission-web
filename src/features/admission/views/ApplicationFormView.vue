@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useBreadcrumbs } from '@mts241alikhlash/web-shared/composables/useBreadcrumbs'
 import { BackButton } from '@mts241alikhlash/ui'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { FileText } from '@lucide/vue'
@@ -76,8 +76,12 @@ const {
 const application = ref<AdmissionApplication | null>(null)
 const loading = ref(true)
 const isSaving = ref(false)
+const savePending = ref(false)
+const saveFailed = ref(false)
 const isSubmitting = ref(false)
 const currentStep = ref(0)
+const stepContent = ref<HTMLElement | null>(null)
+const savedPayloads = reactive(new Map<number, string>())
 
 interface StepValidator {
   validate: () => Promise<{ valid: boolean }>
@@ -147,6 +151,22 @@ const {
   buildStepPayload,
 } = useApplicationFormState()
 
+function snapshotPayloads() {
+  for (let index = 0; index <= 4; index++) {
+    savedPayloads.set(index, JSON.stringify(buildStepPayload(index)))
+  }
+}
+
+const saveMessage = computed(() => {
+  if (!editable.value || !buildStepPayload(currentStep.value)) return null
+  if (savePending.value) return 'Menyimpan…'
+  if (saveFailed.value) return 'Gagal menyimpan. Coba lagi.'
+  return savedPayloads.get(currentStep.value) ===
+    JSON.stringify(buildStepPayload(currentStep.value))
+    ? 'Data tersimpan'
+    : 'Perubahan belum disimpan'
+})
+
 const { load: loadFormOptions, listOf } = useFormOptions()
 const completeness = computed(() =>
   application.value
@@ -176,6 +196,7 @@ async function refresh() {
   if (data) {
     application.value = data
     hydrate(data)
+    snapshotPayloads()
   }
 }
 
@@ -210,6 +231,13 @@ async function loadApplication() {
   if (data) {
     application.value = data
     hydrate(data)
+    snapshotPayloads()
+    currentStep.value =
+      route.query.step === 'documents'
+        ? 5
+        : route.query.step === 'payment'
+          ? 6
+          : 0
     introRequiresAgreement.value =
       !isAdminForm && data.status === 'DRAFT' && !data.birthDate
     showIntro.value = !isAdminForm
@@ -236,12 +264,29 @@ async function saveStep(): Promise<boolean> {
   const payload = buildStepPayload(currentStep.value)
   if (!payload) return true
 
-  const result = await updateStep(payload)
-  if (result.success && result.data && application.value) {
-    application.value = { ...application.value, ...result.data }
-    hydrate(application.value)
+  savePending.value = true
+  saveFailed.value = false
+  try {
+    const result = await updateStep(payload)
+    if (result.success) {
+      if (result.data && application.value) {
+        application.value = { ...application.value, ...result.data }
+        hydrate(application.value)
+      }
+      savedPayloads.set(
+        currentStep.value,
+        JSON.stringify(buildStepPayload(currentStep.value)),
+      )
+    } else {
+      saveFailed.value = true
+    }
+    return result.success
+  } catch {
+    saveFailed.value = true
+    return false
+  } finally {
+    savePending.value = false
   }
-  return result.success
 }
 
 async function goToStep(index: number) {
@@ -261,10 +306,23 @@ async function goToStep(index: number) {
       const validator = stepValidators[currentStep.value]?.()
       if (validator) {
         const { valid } = await validator.validate()
-        if (!valid) return
+        if (!valid) {
+          await nextTick()
+          const target = stepContent.value?.querySelector<HTMLElement>(
+            '[aria-invalid="true"], .ff-error input, .ff-error button, .ff-error textarea',
+          )
+          target?.focus({ preventScroll: true })
+          target?.scrollIntoView({ block: 'center', behavior: 'auto' })
+          return
+        }
       }
     }
-    if (await saveStep()) currentStep.value = index
+    if (await saveStep()) {
+      saveFailed.value = false
+      currentStep.value = index
+      await nextTick()
+      stepContent.value?.scrollIntoView({ block: 'start', behavior: 'auto' })
+    }
   } finally {
     isSaving.value = false
   }
@@ -390,80 +448,93 @@ useBreadcrumbs(() => {
           }}
         </div>
 
-        <PersonalDataStep
-          v-if="currentStep === 0"
-          ref="personalStepRef"
-          v-model="personal"
-          :editable="editable && !isSaving && !isSubmitting"
-        />
+        <div
+          ref="stepContent"
+          class="scroll-mt-4"
+        >
+          <PersonalDataStep
+            v-if="currentStep === 0"
+            ref="personalStepRef"
+            v-model="personal"
+            :editable="editable && !isSaving && !isSubmitting"
+          />
 
-        <ParentsStep
-          v-else-if="currentStep === 1"
-          ref="parentsStepRef"
-          v-model="parents"
-          :editable="editable && !isSaving && !isSubmitting"
-          :guardian-relation="guardianRelation"
-          :on-choose-guardian="setGuardian"
-        />
+          <ParentsStep
+            v-else-if="currentStep === 1"
+            ref="parentsStepRef"
+            v-model="parents"
+            :editable="editable && !isSaving && !isSubmitting"
+            :guardian-relation="guardianRelation"
+            :on-choose-guardian="setGuardian"
+          />
 
-        <AddressStep
-          v-else-if="currentStep === 2"
-          ref="addressStepRef"
-          v-model="address"
-          v-model:parents="parents"
-          :editable="editable && !isSaving && !isSubmitting"
-        />
+          <AddressStep
+            v-else-if="currentStep === 2"
+            ref="addressStepRef"
+            v-model="address"
+            v-model:parents="parents"
+            :editable="editable && !isSaving && !isSubmitting"
+          />
 
-        <SchoolStep
-          v-else-if="currentStep === 3"
-          ref="schoolStepRef"
-          v-model="school"
-          :editable="editable && !isSaving && !isSubmitting"
-        />
+          <SchoolStep
+            v-else-if="currentStep === 3"
+            ref="schoolStepRef"
+            v-model="school"
+            :editable="editable && !isSaving && !isSubmitting"
+          />
 
-        <AchievementsStep
-          v-else-if="currentStep === 4"
-          ref="achievementsStepRef"
-          v-model:achievements="achievements"
-          v-model:scholarships="scholarships"
-          :editable="editable && !isSaving && !isSubmitting"
-          :upload-attachment="uploadAttachment"
-        />
+          <AchievementsStep
+            v-else-if="currentStep === 4"
+            ref="achievementsStepRef"
+            v-model:achievements="achievements"
+            v-model:scholarships="scholarships"
+            :editable="editable && !isSaving && !isSubmitting"
+            :upload-attachment="uploadAttachment"
+          />
 
-        <DocumentsStep
-          v-else-if="currentStep === 5"
-          :document-types="application.documentTypes ?? []"
-          :documents="application.documents ?? []"
-          :document-files="documentFiles"
-          :uploading-doc="uploadingDoc"
-          :editable="editable"
-          :on-file-change="onDocumentFileChange"
-          :on-clear-file="clearDocumentFile"
-          :on-upload="uploadDocument"
-        />
+          <DocumentsStep
+            v-else-if="currentStep === 5"
+            :document-types="application.documentTypes ?? []"
+            :documents="application.documents ?? []"
+            :document-files="documentFiles"
+            :uploading-doc="uploadingDoc"
+            :editable="editable"
+            :on-file-change="onDocumentFileChange"
+            :on-clear-file="clearDocumentFile"
+            :on-upload="uploadDocument"
+          />
 
-        <PaymentStep
-          v-else-if="currentStep === 6"
-          v-model="payment"
-          :application-payment="application.payment ?? null"
-          :editable="paymentEditable"
-          :payment-file="paymentFile"
-          :uploading-payment="uploadingPayment"
-          :on-file-change="onPaymentFileChange"
-          :on-upload="uploadPayment"
-        />
+          <PaymentStep
+            v-else-if="currentStep === 6"
+            v-model="payment"
+            :application-payment="application.payment ?? null"
+            :editable="paymentEditable"
+            :wave-full="application.waveIsFull"
+            :payment-file="paymentFile"
+            :uploading-payment="uploadingPayment"
+            :on-file-change="onPaymentFileChange"
+            :on-upload="uploadPayment"
+          />
 
-        <ReviewStep
-          v-else
-          :personal="personal"
-          :parents="parents"
-          :address="address"
-          :school="school"
-          :application="application"
-          :editable="editable"
-          :completeness="completeness"
-          :on-go-to-step="goToStep"
-        />
+          <ReviewStep
+            v-else
+            :personal="personal"
+            :parents="parents"
+            :address="address"
+            :school="school"
+            :application="application"
+            :editable="editable"
+            :completeness="completeness"
+            :on-go-to-step="goToStep"
+          />
+        </div>
+        <p
+          v-if="saveMessage"
+          :role="saveFailed ? 'alert' : 'status'"
+          class="text-sm text-muted-foreground"
+        >
+          {{ saveMessage }}
+        </p>
       </CardContent>
       <div
         class="flex items-center border-t bg-background px-4 py-4 sm:px-6"

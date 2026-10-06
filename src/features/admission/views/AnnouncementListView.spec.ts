@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import AnnouncementListView from './AnnouncementListView.vue'
+const filtersPending = ref(false)
+beforeEach(() => {
+  filtersPending.value = false
+})
 
 const state = vi.hoisted(() => ({
   announcements: [] as unknown[],
@@ -20,11 +25,13 @@ vi.mock('../composables/useAnnouncementList', async () => {
       return {
         announcements: computed(() => state.announcements),
         waves: ref([]),
-        totalItems: ref(1),
+        totalItems: computed(() => state.announcements.length),
         listError: computed(() => state.error),
         loading: computed(() => state.loading),
         hasNextPage: ref(false),
         isFetchingNextPage: ref(false),
+        isFetching: ref(false),
+        filtersPending,
         loadMore: vi.fn(),
         refresh: state.refresh,
         isSaving: ref(false),
@@ -35,6 +42,49 @@ vi.mock('../composables/useAnnouncementList', async () => {
       }
     },
   }
+})
+
+it('paginates mobile announcements and exposes filters behind one button', async () => {
+  state.error = null
+  filtersPending.value = false
+  state.announcements = Array.from({ length: 11 }, (_, index) => ({
+    id: `a-${index}`,
+    title: `Pengumuman ${index}`,
+    isPublished: false,
+    wave: null,
+    publishedAt: null,
+  }))
+  const wrapper = mountView()
+  expect(wrapper.findAll('[data-test="mobile-announcements"] li')).toHaveLength(
+    10,
+  )
+  expect(
+    wrapper.findAll('button').some((button) => button.text() === 'Filter'),
+  ).toBe(true)
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text() === 'Selanjutnya')!
+    .trigger('click')
+  expect(wrapper.get('[data-test="mobile-announcements"]').text()).toContain(
+    'Pengumuman 10',
+  )
+  wrapper.unmount()
+})
+
+it('hides old mobile announcements while filtering', async () => {
+  state.error = null
+  filtersPending.value = false
+  state.announcements = [
+    { id: 'old', title: 'Old Announcement', isPublished: false, wave: null },
+  ]
+  const wrapper = mountView()
+  filtersPending.value = true
+  await flushPromises()
+  expect(wrapper.find('[data-test="mobile-announcements"]').exists()).toBe(
+    false,
+  )
+  expect(wrapper.text()).toContain('Memuat pengumuman')
+  wrapper.unmount()
 })
 const stubs = Object.fromEntries(
   [

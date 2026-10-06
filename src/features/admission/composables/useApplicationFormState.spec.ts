@@ -11,6 +11,7 @@ function makeApplication(
   overrides: Partial<AdmissionApplication> = {},
 ): AdmissionApplication {
   return {
+    waveIsFull: false,
     id: 'app-1',
     userId: 'user-1',
     waveId: 'wave-1',

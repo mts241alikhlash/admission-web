@@ -1,4 +1,4 @@
-import type { Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { refDebounced } from '@vueuse/core'
 import { admissionApi } from '../api/admissionApi'
@@ -32,6 +32,10 @@ export function useApplicationList(
 
   return {
     ...list,
+    filtersPending: computed(
+      () =>
+        search.value !== debouncedSearch.value || list.isPlaceholderData.value,
+    ),
     applications: list.items,
     waves,
     fetchWaves: applicationService.fetchWaves,

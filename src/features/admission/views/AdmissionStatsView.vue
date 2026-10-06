@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useId, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ArrowRight } from '@lucide/vue'
+import { ArrowRight, Filter } from '@lucide/vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@mts241alikhlash/ui/dialog'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
@@ -37,6 +45,9 @@ const yearFilter = ref('ALL')
 const waveFilter = ref('ALL')
 const yearFilterId = useId()
 const waveFilterId = useId()
+const mobileYearFilterId = useId()
+const mobileWaveFilterId = useId()
+const filterOpen = ref(false)
 
 const yearOptions = computed(() =>
   [...academicYears.value].sort((a, b) => b.name.localeCompare(a.name)),
@@ -137,7 +148,7 @@ onMounted(async () => {
       </CardHeader>
 
       <CardContent class="space-y-4 p-4 sm:p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div class="hidden flex-col gap-3 md:flex md:flex-row md:items-end">
           <FloatingLabelField
             label="Tahun Ajaran"
             :for="yearFilterId"
@@ -190,6 +201,17 @@ onMounted(async () => {
               </SelectContent>
             </Select>
           </FloatingLabelField>
+        </div>
+        <div class="flex items-center justify-between gap-3 md:hidden">
+          <p class="min-w-0 truncate text-sm text-muted-foreground">
+            {{ scopeLabel }}
+          </p>
+          <Button
+            variant="outline"
+            class="min-h-11 shrink-0"
+            @click="filterOpen = true"
+            ><Filter class="mr-1.5 size-4" />Filter</Button
+          >
         </div>
 
         <template v-if="loading">
@@ -341,10 +363,10 @@ onMounted(async () => {
                         <p
                           class="text-2xl font-semibold tabular-nums leading-none"
                         >
-                          {{ wave.accepted }}
+                          {{ wave.filled }}
                           <span
                             class="text-sm font-normal text-muted-foreground"
-                            >/ {{ wave.quota }} diterima</span
+                            >/ {{ wave.quota }} terisi</span
                           >
                         </p>
                         <p
@@ -387,5 +409,72 @@ onMounted(async () => {
         </template>
       </CardContent>
     </Card>
+
+    <Dialog v-model:open="filterOpen">
+      <DialogContent
+        class="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <DialogHeader class="shrink-0 border-b px-4 py-4 sm:px-6"
+          ><DialogTitle>Filter Statistik</DialogTitle
+          ><DialogDescription class="sr-only"
+            >Pilih tahun ajaran dan gelombang.</DialogDescription
+          ></DialogHeader
+        >
+        <div
+          data-test="mobile-stats-filter"
+          class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6"
+        >
+          <FloatingLabelField
+            label="Tahun Ajaran"
+            :for="mobileYearFilterId"
+            floating
+          >
+            <Select v-model="yearFilter"
+              ><SelectTrigger
+                :id="mobileYearFilterId"
+                class="min-h-11 w-full"
+                ><SelectValue /></SelectTrigger
+              ><SelectContent
+                ><SelectItem value="ALL">Semua</SelectItem
+                ><SelectItem
+                  v-for="year in yearOptions"
+                  :key="year.id"
+                  :value="year.id"
+                  >{{ year.name }}</SelectItem
+                ></SelectContent
+              ></Select
+            >
+          </FloatingLabelField>
+          <FloatingLabelField
+            label="Gelombang"
+            :for="mobileWaveFilterId"
+            floating
+          >
+            <Select v-model="waveFilter"
+              ><SelectTrigger
+                :id="mobileWaveFilterId"
+                class="min-h-11 w-full"
+                ><SelectValue /></SelectTrigger
+              ><SelectContent
+                ><SelectItem value="ALL">Semua</SelectItem
+                ><SelectItem
+                  v-for="wave in waveOptions"
+                  :key="wave.id"
+                  :value="wave.id"
+                  >{{ wave.name }}</SelectItem
+                ></SelectContent
+              ></Select
+            >
+          </FloatingLabelField>
+        </div>
+        <DialogFooter class="flex-row gap-2 border-t px-4 py-4 sm:px-6">
+          <Button
+            class="min-h-11 w-full"
+            @click="filterOpen = false"
+            >Tutup</Button
+          >
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

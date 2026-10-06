@@ -52,6 +52,12 @@ function mountLayout() {
 }
 
 describe('header controls', () => {
+  it('exposes the inner scroll container for restoring list position', () => {
+    const wrapper = mountLayout()
+    expect(wrapper.find('[data-app-scroll]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('names search and account icon buttons', () => {
     const wrapper = mountLayout()
     expect(wrapper.find('button[aria-label="Cari halaman"]').exists()).toBe(

@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
-import { expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { ref } from 'vue'
 import WaveListView from './WaveListView.vue'
+const filtersPending = ref(false)
+beforeEach(() => {
+  filtersPending.value = false
+})
 
 const state = vi.hoisted(() => ({
   waves: [] as unknown[],
@@ -15,11 +20,13 @@ vi.mock('../composables/useWaveList', async () => {
     useWaveList: () => ({
       waves: computed(() => state.waves),
       listError: computed(() => state.error),
-      totalItems: ref(1),
+      totalItems: computed(() => state.waves.length),
       academicYears: ref([]),
       loading: ref(false),
       hasNextPage: ref(false),
       isFetchingNextPage: ref(false),
+      isFetching: ref(false),
+      filtersPending,
       loadMore: vi.fn(),
       refresh: state.refresh,
       isSaving: ref(false),
@@ -72,12 +79,14 @@ it('shows essential mobile wave information and confirms deletion', async () => 
       registrationFee: 50000,
       isActive: true,
       _count: { applications: 2 },
+      filledCount: 30,
     },
   ]
   state.error = null
   state.deleteWave.mockReset().mockResolvedValue({ success: true })
   const wrapper = mountView()
   const mobile = wrapper.get('[data-test="mobile-waves"]')
+  expect(mobile.text()).toContain('Kuota 30 / 30 · Penuh')
   expect(mobile.text()).toContain('Gelombang Satu')
   expect(mobile.text()).toContain('Aktif')
   expect(mobile.text()).toContain('30')
@@ -110,4 +119,54 @@ it('distinguishes empty waves from failed load', async () => {
     .find((button) => button.text() === 'Coba lagi')!
     .trigger('click')
   expect(state.refresh).toHaveBeenCalled()
+})
+
+it('shows ten waves per mobile page with filters reachable from a dialog', async () => {
+  state.error = null
+  filtersPending.value = false
+  state.waves = Array.from({ length: 11 }, (_, index) => ({
+    id: `w-${index}`,
+    name: `Gelombang ${index}`,
+    code: `G${index}`,
+    startDate: '2026-01-01',
+    endDate: '2026-02-01',
+    quota: 30,
+    registrationFee: 0,
+    isActive: true,
+  }))
+  const wrapper = mountView()
+  expect(wrapper.findAll('[data-test="mobile-waves"] li')).toHaveLength(10)
+  expect(
+    wrapper.findAll('button').some((button) => button.text() === 'Filter'),
+  ).toBe(true)
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text() === 'Selanjutnya')!
+    .trigger('click')
+  expect(wrapper.get('[data-test="mobile-waves"]').text()).toContain(
+    'Gelombang 10',
+  )
+  wrapper.unmount()
+})
+
+it('hides old mobile wave rows while a filter request is pending', async () => {
+  state.error = null
+  filtersPending.value = false
+  state.waves = [
+    {
+      id: 'old',
+      name: 'Old Wave',
+      startDate: '2026-01-01',
+      endDate: '2026-02-01',
+      quota: 1,
+      registrationFee: 0,
+      isActive: true,
+    },
+  ]
+  const wrapper = mountView()
+  filtersPending.value = true
+  await flushPromises()
+  expect(wrapper.find('[data-test="mobile-waves"]').exists()).toBe(false)
+  expect(wrapper.text()).toContain('Memuat gelombang')
+  wrapper.unmount()
 })

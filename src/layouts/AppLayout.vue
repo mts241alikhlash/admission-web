@@ -142,19 +142,19 @@ const searchGroups = computed(() => {
         class="relative flex w-full flex-1 flex-col bg-background overflow-hidden h-svh content-container"
       >
         <header
-          class="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear border-b bg-card"
+          class="flex h-14 min-w-0 shrink-0 items-center gap-1 border-b bg-card transition-[width,height] ease-linear sm:gap-2"
         >
-          <div class="flex items-center gap-2 px-4">
+          <div class="flex min-w-0 flex-1 items-center gap-2 px-3 sm:px-4">
             <SidebarTrigger
-              class="-ml-1 size-11 md:size-7 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              class="-ml-1 size-11 shrink-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:size-7"
             />
             <Separator
               orientation="vertical"
               class="mr-2 data-[orientation=vertical]:h-4"
             />
             <slot name="breadcrumb">
-              <Breadcrumb>
-                <BreadcrumbList>
+              <Breadcrumb class="min-w-0">
+                <BreadcrumbList class="min-w-0 flex-nowrap">
                   <template v-if="resolvedBreadcrumbs.length > 0">
                     <template
                       v-for="(item, index) in resolvedBreadcrumbs"
@@ -168,7 +168,7 @@ const searchGroups = computed(() => {
                       >
                         <BreadcrumbPage
                           v-if="index === resolvedBreadcrumbs.length - 1"
-                          class="block max-w-48 truncate font-medium text-primary sm:max-w-xs"
+                          class="block max-w-28 truncate font-medium text-primary sm:max-w-xs"
                         >
                           {{ item.title }}
                         </BreadcrumbPage>
@@ -194,7 +194,9 @@ const searchGroups = computed(() => {
               </Breadcrumb>
             </slot>
           </div>
-          <div class="ml-auto flex items-center gap-4 px-6 lg:px-8">
+          <div
+            class="ml-auto flex shrink-0 items-center gap-1 px-2 sm:gap-4 sm:px-6 lg:px-8"
+          >
             <Button
               variant="ghost"
               size="icon"
@@ -287,7 +289,10 @@ const searchGroups = computed(() => {
             </DropdownMenu>
           </div>
         </header>
-        <div class="flex-1 overflow-auto min-w-0">
+        <div
+          data-app-scroll
+          class="min-h-0 min-w-0 flex-1 overflow-auto"
+        >
           <slot><RouterView /></slot>
         </div>
       </main>

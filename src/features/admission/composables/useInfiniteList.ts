@@ -49,7 +49,7 @@ export function useInfiniteList<T>(options: {
 
   function loadMore() {
     if (query.hasNextPage.value && !query.isFetching.value) {
-      void query.fetchNextPage()
+      return query.fetchNextPage()
     }
   }
 
@@ -64,6 +64,8 @@ export function useInfiniteList<T>(options: {
     loading: query.isPending,
     hasNextPage: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
+    isFetching: query.isFetching,
+    isPlaceholderData: query.isPlaceholderData,
     loadMore,
     refresh,
   }

@@ -15,22 +15,22 @@ const sortedDocumentTypes = computed(() =>
 </script>
 
 <template>
-  <section class="scroll-mt-24 py-16 sm:py-24">
+  <section class="scroll-mt-24 bg-white py-14 sm:py-20">
     <div
       class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-16 lg:px-8"
     >
       <div>
         <h2
-          class="text-3xl font-bold tracking-tight text-[#203f73] sm:text-4xl"
+          class="font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight text-[#203f73] sm:text-5xl"
         >
           Berkas yang perlu disiapkan
         </h2>
-        <p class="mt-4 max-w-xl leading-7 text-slate-700">
+        <p class="mt-5 max-w-xl text-sm leading-7 text-slate-700">
           Persyaratan mengikuti gelombang yang sedang tersedia. Periksa kembali
           daftar ini sebelum mengunggah dokumen.
         </p>
         <div
-          class="mt-8 border-t border-[#203f73]/25 pt-5 text-sm leading-6 text-slate-700"
+          class="mt-8 max-w-md bg-[#f5f2e9] p-5 text-sm leading-6 text-slate-700"
         >
           <p class="font-semibold text-[#203f73]">Sebelum mengunggah</p>
           <p class="mt-1">

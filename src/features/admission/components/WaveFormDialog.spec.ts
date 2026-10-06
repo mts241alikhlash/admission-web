@@ -11,6 +11,7 @@ function mountWave(startDate = '2026-10-20', endDate = '2026-10-10') {
       isSaving: false,
       academicYears: [],
       wave: {
+        filledCount: 0,
         id: 'wave-1',
         name: 'Gelombang 1',
         code: 'G1',

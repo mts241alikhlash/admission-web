@@ -1,4 +1,4 @@
-import type { Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { refDebounced } from '@vueuse/core'
 import { admissionApi } from '../api/admissionApi'
@@ -33,6 +33,10 @@ export function useAnnouncementList(
 
   return {
     ...list,
+    filtersPending: computed(
+      () =>
+        search.value !== debouncedSearch.value || list.isPlaceholderData.value,
+    ),
     announcements: list.items,
     waves,
     isSaving,
