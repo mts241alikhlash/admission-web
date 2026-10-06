@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import { DOCUMENT_STATUS_LABELS } from '../types'
+import { DOCUMENT_STATUS_BADGE_VARIANTS } from '../utils'
 import type { AdmissionDocument, AdmissionDocumentType } from '../types'
 
 const props = defineProps<{
@@ -48,10 +49,14 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
     accessorKey: 'name',
     header: 'Jenis Dokumen',
     cell: ({ row }) =>
-      h('span', { class: 'inline-flex flex-wrap items-center gap-2' }, [
+      h('span', [
         row.original.name,
         row.original.isRequired
-          ? h(Badge, { variant: 'outline' }, () => 'Wajib')
+          ? h(
+              'span',
+              { class: 'text-destructive', 'aria-label': 'wajib' },
+              ' *',
+            )
           : null,
       ]),
   },
@@ -80,13 +85,9 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
     meta: { align: 'center' },
     cell: ({ row }) => {
       const document = documentFor(row.original.id)
-      const variant = !document?.file
-        ? 'outline'
-        : document.status === 'REJECTED'
-          ? 'destructive'
-          : document.status === 'APPROVED'
-            ? 'default'
-            : 'secondary'
+      const variant = document?.file
+        ? DOCUMENT_STATUS_BADGE_VARIANTS[document.status]
+        : 'outline'
       return h(Badge, { variant }, () =>
         document?.file
           ? DOCUMENT_STATUS_LABELS[document.status]
@@ -98,7 +99,7 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
     ? [
         {
           id: 'actions',
-          header: 'Opsi',
+          header: 'Aksi',
           enableSorting: false,
           cell: ({ row }: { row: { original: AdmissionDocumentType } }) =>
             h(ActionCell, {
@@ -154,15 +155,82 @@ async function upload() {
         >
           Belum ada jenis berkas yang tersedia.
         </p>
-        <DataTable
-          v-else
-          :columns="columns"
-          :data="documentTypes"
-          item-label="dokumen"
-          hide-per-page
-          hide-pagination
-          :page-size="Math.max(1, documentTypes.length)"
-        />
+        <template v-else>
+          <DataTable
+            class="hidden md:block"
+            :columns="columns"
+            :data="documentTypes"
+            item-label="dokumen"
+            hide-per-page
+            hide-pagination
+            :page-size="Math.max(1, documentTypes.length)"
+          />
+          <ul
+            data-test="mobile-documents"
+            class="divide-y rounded-lg border md:hidden"
+          >
+            <li
+              v-for="docType in documentTypes"
+              :key="docType.id"
+              class="min-w-0 space-y-3 p-4 text-sm"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="break-words font-medium">
+                    {{ docType.name
+                    }}<span
+                      v-if="docType.isRequired"
+                      class="text-destructive"
+                      aria-label="wajib"
+                    >
+                      *</span
+                    >
+                  </p>
+                </div>
+                <Badge
+                  class="shrink-0"
+                  :variant="
+                    documentFor(docType.id)?.file
+                      ? DOCUMENT_STATUS_BADGE_VARIANTS[
+                          documentFor(docType.id)!.status
+                        ]
+                      : 'outline'
+                  "
+                >
+                  {{
+                    documentFor(docType.id)?.file
+                      ? DOCUMENT_STATUS_LABELS[documentFor(docType.id)!.status]
+                      : 'Belum diunggah'
+                  }}
+                </Badge>
+              </div>
+              <p
+                v-if="documentFor(docType.id)?.file"
+                class="break-all"
+              >
+                {{ documentFor(docType.id)?.file?.originalName }}
+              </p>
+              <p
+                v-if="documentFor(docType.id)?.note"
+                class="text-destructive"
+              >
+                Catatan: {{ documentFor(docType.id)?.note }}
+              </p>
+              <Button
+                v-if="editable"
+                variant="outline"
+                class="min-h-11 w-full"
+                @click="activeDocType = docType"
+              >
+                {{
+                  documentFor(docType.id)?.file
+                    ? 'Ganti Berkas'
+                    : 'Unggah Berkas'
+                }}
+              </Button>
+            </li>
+          </ul>
+        </template>
       </CardContent>
     </Card>
 

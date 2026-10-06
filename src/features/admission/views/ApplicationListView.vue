@@ -2,8 +2,9 @@
 import { computed, h, onMounted, ref, useId, useTemplateRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useIntersectionObserver } from '@vueuse/core'
-import { DataTable, SearchInput } from '@mts241alikhlash/ui'
+import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
+import { Badge } from '@mts241alikhlash/ui/badge'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
 import {
@@ -20,14 +21,14 @@ import { useAdminRegistration } from '../composables/useAdminRegistration'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
 import StatusBadge from '../components/StatusBadge.vue'
 import RegisterApplicantDialog from '../components/RegisterApplicantDialog.vue'
-import AdminApplicationFormDialog from '../components/AdminApplicationFormDialog.vue'
+import ApplicantCredentialsDialog from '../components/ApplicantCredentialsDialog.vue'
 import type {
   ActiveWave,
   AdmissionApplicationListItem,
   AdmissionStatus,
 } from '../types'
 import { PAYMENT_STATUS_LABELS, STATUS_LABELS } from '../types'
-import { formatDateTime } from '../utils'
+import { formatDateTime, PAYMENT_STATUS_BADGE_VARIANTS } from '../utils'
 
 const router = useRouter()
 const route = useRoute()
@@ -59,7 +60,7 @@ useIntersectionObserver(loadMoreButton, ([entry]) => {
 const { fetchActiveWaves } = usePublicAdmission()
 
 const registerOpen = ref(false)
-const formOpen = ref(false)
+const credentialsOpen = ref(false)
 const isRegistering = ref(false)
 const registerError = ref<string | null>(null)
 const activeWaves = ref<ActiveWave[]>([])
@@ -67,16 +68,9 @@ const activeWaves = ref<ActiveWave[]>([])
 const {
   applicationId,
   credentials,
-  fetchError,
   registerApplicant,
   clearCredentials,
   reset,
-  fetchApplication,
-  updateStep,
-  uploadDocument,
-  uploadAttachment,
-  uploadPaymentProof,
-  submit,
 } = useAdminRegistration()
 
 const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
@@ -89,28 +83,39 @@ const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
   {
     accessorKey: 'registrationNumber',
     header: 'No. Pendaftaran',
+    meta: { align: 'center' },
   },
   {
     accessorKey: 'fullName',
     header: 'Nama',
+    meta: { align: 'left' },
   },
   {
     id: 'wave',
     header: 'Gelombang',
+    meta: { align: 'center' },
     cell: ({ row }) => row.original.wave?.code ?? '-',
   },
   {
     id: 'status',
     header: 'Status',
+    meta: { align: 'center' },
     cell: ({ row }) => h(StatusBadge, { status: row.original.status }),
   },
   {
     id: 'payment',
     header: 'Pembayaran',
-    cell: ({ row }) =>
-      row.original.payment
-        ? PAYMENT_STATUS_LABELS[row.original.payment.status]
-        : '-',
+    meta: { align: 'center' },
+    cell: ({ row }) => {
+      const status = row.original.payment?.status
+      return status
+        ? h(
+            Badge,
+            { variant: PAYMENT_STATUS_BADGE_VARIANTS[status] },
+            () => PAYMENT_STATUS_LABELS[status],
+          )
+        : '-'
+    },
   },
   {
     id: 'submittedAt',
@@ -121,15 +126,12 @@ const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
     id: 'actions',
     header: 'Aksi',
     cell: ({ row }) =>
-      h(
-        Button,
-        {
-          variant: 'outline',
-          size: 'sm',
-          onClick: () => router.push(`/admin/applicants/${row.original.id}`),
-        },
-        () => 'Detail',
-      ),
+      h(ActionCell, {
+        viewLabel: 'Lihat detail',
+        hideEdit: true,
+        hideDelete: true,
+        onView: () => router.push(`/admin/applicants/${row.original.id}`),
+      }),
     enableSorting: false,
   },
 ])
@@ -163,17 +165,23 @@ async function handleRegister(payload: {
   isRegistering.value = false
   if (result.success) {
     registerOpen.value = false
-    formOpen.value = true
+    credentialsOpen.value = true
+    void refresh()
   } else {
     registerError.value = result.error ?? 'Gagal mendaftarkan pendaftar.'
   }
 }
 
-function closeForm() {
-  formOpen.value = false
+function closeCredentials() {
+  credentialsOpen.value = false
   clearCredentials()
   reset()
-  void refresh()
+}
+
+function fillForm() {
+  const id = applicationId.value
+  closeCredentials()
+  if (id) void router.push({ name: 'admin-application-form', params: { id } })
 }
 </script>
 
@@ -344,19 +352,11 @@ function closeForm() {
       @submit="handleRegister"
     />
 
-    <AdminApplicationFormDialog
-      :open="formOpen"
+    <ApplicantCredentialsDialog
+      :open="credentialsOpen"
       :credentials="credentials"
-      :application-id="applicationId"
-      :fetch-error="fetchError"
-      :fetch-application="fetchApplication"
-      :update-step="updateStep"
-      :upload-document="uploadDocument"
-      :upload-attachment="uploadAttachment"
-      :upload-payment-proof="uploadPaymentProof"
-      :submit="submit"
-      @update:open="(open) => (open ? (formOpen = true) : closeForm())"
-      @completed="refresh"
+      @update:open="(open) => !open && closeCredentials()"
+      @fill="fillForm"
     />
   </div>
 </template>

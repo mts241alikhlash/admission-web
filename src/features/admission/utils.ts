@@ -1,6 +1,10 @@
 import { isAxiosError } from 'axios'
 import { getIndonesianErrorMessage } from '@mts241alikhlash/web-shared/utils/error-handler'
-import type { AdmissionStatus } from './types'
+import type {
+  AdmissionDocumentStatus,
+  AdmissionPaymentStatus,
+  AdmissionStatus,
+} from './types'
 
 export function formatIDR(value: number) {
   const amount = new Intl.NumberFormat('id-ID', {
@@ -53,6 +57,25 @@ export const STATUS_BADGE_VARIANTS: Record<
   REJECTED: 'destructive',
   ENROLLING: 'outline',
   ENROLLED: 'default',
+}
+
+export const PAYMENT_STATUS_BADGE_VARIANTS: Record<
+  AdmissionPaymentStatus,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
+  UNPAID: 'secondary',
+  PENDING: 'secondary',
+  VERIFIED: 'default',
+  REJECTED: 'destructive',
+}
+
+export const DOCUMENT_STATUS_BADGE_VARIANTS: Record<
+  AdmissionDocumentStatus,
+  'default' | 'secondary' | 'destructive' | 'outline'
+> = {
+  PENDING: 'secondary',
+  APPROVED: 'default',
+  REJECTED: 'destructive',
 }
 
 export function fileUrl(storageKey: string) {

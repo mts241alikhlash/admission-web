@@ -4,7 +4,6 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 import type { AdmissionApplication } from '../types'
 import ApplicationFormView from './ApplicationFormView.vue'
-import AdminApplicationFormDialog from '../components/AdminApplicationFormDialog.vue'
 
 const application: AdmissionApplication = {
   id: 'app-1',
@@ -74,11 +73,14 @@ const application: AdmissionApplication = {
   ],
 }
 
-const { updateStep, fetchMyApplication, formState } = vi.hoisted(() => ({
-  updateStep: vi.fn(),
-  fetchMyApplication: vi.fn(),
-  formState: { error: null as string | null },
-}))
+const { updateStep, fetchMyApplication, formState, routeState, push } =
+  vi.hoisted(() => ({
+    updateStep: vi.fn(),
+    fetchMyApplication: vi.fn(),
+    formState: { error: null as string | null },
+    routeState: { params: {} },
+    push: vi.fn(),
+  }))
 
 vi.mock('../composables/useFormOptions', async () => {
   const { ref } = await import('vue')
@@ -108,6 +110,22 @@ vi.mock('../composables/useMyApplication', async () => {
   }
 })
 
+vi.mock('../composables/useAdminRegistration', async () => {
+  const { computed, ref } = await import('vue')
+  return {
+    useAdminRegistration: () => ({
+      applicationId: ref<string | null>(null),
+      fetchError: computed(() => formState.error),
+      fetchApplication: fetchMyApplication,
+      updateStep,
+      uploadAttachment: vi.fn(),
+      uploadDocument: vi.fn(),
+      uploadPaymentProof: vi.fn(),
+      submit: vi.fn().mockResolvedValue({ success: true }),
+    }),
+  }
+})
+
 vi.mock('@/features/platform/auth', () => ({
   useRoleGuard: () => ({ can: () => false }),
 }))
@@ -117,7 +135,8 @@ vi.mock('vue-sonner', () => ({
 }))
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push }),
+  useRoute: () => routeState,
   RouterLink: defineComponent({ template: '<a><slot /></a>' }),
 }))
 
@@ -159,42 +178,6 @@ const stubs = {
   ReviewStep: passthrough,
   StatusBadge: passthrough,
 }
-
-it('offers retry for admin dialog load failure without claiming the applicant is missing', async () => {
-  const retry = vi.fn().mockResolvedValue(null)
-  const wrapper = mount(AdminApplicationFormDialog, {
-    props: {
-      open: true,
-      credentials: null,
-      applicationId: 'app-1',
-      fetchError: 'load-failed',
-      fetchApplication: retry,
-      updateStep: vi.fn(),
-      uploadDocument: vi.fn(),
-      uploadAttachment: vi.fn(),
-      uploadPaymentProof: vi.fn(),
-      submit: vi.fn(),
-    },
-    global: {
-      stubs: {
-        ...stubs,
-        Dialog: passthrough,
-        DialogContent: passthrough,
-        DialogHeader: passthrough,
-        DialogTitle: passthrough,
-        DialogDescription: passthrough,
-      },
-    },
-  })
-  expect(wrapper.text()).toContain('Gagal memuat formulir pendaftar')
-  expect(wrapper.text()).not.toContain('Data pendaftar tidak ditemukan')
-  await wrapper
-    .findAll('button')
-    .find((button) => button.text() === 'Coba lagi')!
-    .trigger('click')
-  await flushPromises()
-  expect(retry).toHaveBeenCalledOnce()
-})
 
 async function mountView() {
   const wrapper = mount(ApplicationFormView, { global: { stubs } })
@@ -347,7 +330,10 @@ describe.each(['applicant', 'admin'] as const)(
       })
     })
 
-    afterEach(() => vi.useRealTimers())
+    afterEach(() => {
+      vi.useRealTimers()
+      routeState.params = {}
+    })
 
     async function flushForm() {
       await flushPromises()
@@ -373,25 +359,8 @@ describe.each(['applicant', 'admin'] as const)(
           ScrollArea: passthrough,
         },
       }
-      const wrapper =
-        host === 'applicant'
-          ? mount(ApplicationFormView, { global })
-          : mount(AdminApplicationFormDialog, {
-              global,
-              props: {
-                open: false,
-                credentials: null,
-                applicationId: 'app-1',
-                fetchError: null,
-                fetchApplication: fetchMyApplication,
-                updateStep,
-                uploadDocument: vi.fn(),
-                uploadAttachment: vi.fn(),
-                uploadPaymentProof: vi.fn(),
-                submit: vi.fn(),
-              },
-            })
-      if (host === 'admin') await wrapper.setProps({ open: true })
+      routeState.params = host === 'admin' ? { id: 'app-1' } : {}
+      const wrapper = mount(ApplicationFormView, { global })
       await flushForm()
       return wrapper
     }
@@ -667,4 +636,36 @@ describe('ApplicationFormView introduction', () => {
     await button(wrapper, 'Lihat ketentuan')!.trigger('click')
     expect(wrapper.text()).toContain('Ketentuan Pendaftaran')
   })
+})
+
+it('fills an existing application on behalf of the applicant on the admin route', async () => {
+  routeState.params = { id: 'app-1' }
+  fetchMyApplication.mockReset().mockResolvedValue(application)
+  const wrapper = await mountView()
+  expect(wrapper.text()).toContain('Formulir Pendaftar')
+  expect(
+    wrapper.find('[aria-label="Kembali ke detail pendaftar"]').exists(),
+  ).toBe(true)
+  expect(wrapper.text()).not.toContain('Ketentuan Pendaftaran')
+  routeState.params = {}
+})
+
+it('offers retry on the admin route without calling the applicant missing', async () => {
+  routeState.params = { id: 'app-1' }
+  formState.error = 'load-failed'
+  fetchMyApplication
+    .mockReset()
+    .mockResolvedValueOnce(null)
+    .mockResolvedValueOnce(application)
+  const wrapper = await mountView()
+  expect(wrapper.text()).toContain('Formulir gagal dimuat')
+  expect(wrapper.text()).not.toContain('Data pendaftar tidak ditemukan')
+  formState.error = null
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text().includes('Coba lagi'))!
+    .trigger('click')
+  await flushPromises()
+  expect(fetchMyApplication).toHaveBeenCalledTimes(2)
+  routeState.params = {}
 })

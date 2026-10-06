@@ -22,7 +22,7 @@ import { useFormOptions } from '../composables/useFormOptions'
 import { PAYMENT_STATUS_LABELS } from '../types'
 import type { AdmissionPayment } from '../types'
 import type { PaymentForm } from '../composables/useApplicationFormState'
-import { formatDate, formatIDR } from '../utils'
+import { formatDate, formatIDR, PAYMENT_STATUS_BADGE_VARIANTS } from '../utils'
 
 const props = defineProps<{
   applicationPayment: AdmissionPayment | null
@@ -106,15 +106,7 @@ async function upload() {
         <CardTitle class="text-base font-semibold"
           >Pembayaran Pendaftaran</CardTitle
         >
-        <Badge
-          :variant="
-            status === 'VERIFIED'
-              ? 'default'
-              : status === 'REJECTED'
-                ? 'destructive'
-                : 'secondary'
-          "
-        >
+        <Badge :variant="PAYMENT_STATUS_BADGE_VARIANTS[status]">
           {{ PAYMENT_STATUS_LABELS[status] }}
         </Badge>
       </CardHeader>

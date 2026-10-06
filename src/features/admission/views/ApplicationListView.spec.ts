@@ -107,7 +107,6 @@ const dataTable = defineComponent({
 })
 
 const stubs = {
-  AdminApplicationFormDialog: passthrough,
   Button: button,
   Card: passthrough,
   CardHeader: passthrough,

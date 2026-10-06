@@ -94,6 +94,22 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/applicants/:id/form',
+    name: 'admin-application-form',
+    component: () => import('./views/ApplicationFormView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admissions.create',
+      title: 'Formulir Pendaftar',
+      description: 'Isi formulir pendaftaran atas nama pendaftar.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Pendaftar', href: '/admin/applicants' },
+        { title: 'Formulir' },
+      ],
+    },
+  },
+  {
     path: '/admin/waves',
     name: 'admin-waves',
     component: () => import('./views/WaveListView.vue'),

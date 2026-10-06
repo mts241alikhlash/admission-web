@@ -28,11 +28,8 @@ function visibleOnMobile(index: number) {
       <li
         v-for="(step, index) in steps"
         :key="step"
-        class="flex min-w-0 items-center last:flex-none"
-        :class="[
-          index < steps.length - 1 ? 'flex-1' : '',
-          !visibleOnMobile(index) ? 'hidden sm:flex' : '',
-        ]"
+        class="flex min-w-0 flex-none items-center sm:flex-1 sm:last:flex-none"
+        :class="!visibleOnMobile(index) ? 'hidden sm:flex' : ''"
       >
         <button
           type="button"
@@ -58,7 +55,7 @@ function visibleOnMobile(index: number) {
           v-if="index < steps.length - 1"
           data-test="step-connector"
           aria-hidden="true"
-          class="mx-1 h-0.5 flex-1 bg-muted sm:mx-2"
+          class="mx-1 h-0.5 w-3 shrink-0 bg-muted sm:mx-2 sm:w-auto sm:flex-1"
           :class="!visibleOnMobile(index + 1) ? 'hidden sm:block' : ''"
         />
       </li>
