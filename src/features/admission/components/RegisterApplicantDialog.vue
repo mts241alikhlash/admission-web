@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -25,7 +24,6 @@ import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import FloatingField from './AdmissionField.vue'
 import { Loader2 } from '@lucide/vue'
 import type { ActiveWave } from '../types'
-import { formatIDR } from '../utils'
 import { vDigits } from '../vDigits'
 
 const props = defineProps<{
@@ -85,7 +83,7 @@ interface AccountFormValues {
   waveId: string
 }
 
-const { handleSubmit, resetForm, values } = useForm<AccountFormValues>({
+const { handleSubmit, resetForm } = useForm<AccountFormValues>({
   validationSchema: formSchema,
   initialValues: {
     fullName: '',
@@ -96,10 +94,6 @@ const { handleSubmit, resetForm, values } = useForm<AccountFormValues>({
     waveId: '',
   },
 })
-
-const selectedWave = computed(() =>
-  props.waves.find((w) => w.id === values.waveId),
-)
 
 const onSubmit = handleSubmit((formValues) => {
   emit('submit', {
@@ -126,11 +120,11 @@ function handleOpenChange(open: boolean) {
     @update:open="handleOpenChange"
   >
     <DialogContent
-      class="sm:max-w-lg flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
+      class="sm:max-w-2xl flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
     >
       <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
-        <DialogTitle>Daftarkan Pendaftar</DialogTitle>
-        <DialogDescription>
+        <DialogTitle>Tambah Pendaftar</DialogTitle>
+        <DialogDescription class="sr-only">
           Buat akun untuk calon santri. Setelah akun dibuat, Anda akan
           melanjutkan ke pengisian formulir.
         </DialogDescription>
@@ -249,18 +243,9 @@ function handleOpenChange(open: boolean) {
             </Select>
           </FloatingField>
 
-          <p
-            v-if="selectedWave"
-            class="text-xs text-muted-foreground sm:col-span-2"
-          >
-            Biaya pendaftaran:
-            {{ formatIDR(selectedWave.registrationFee) }} · Sisa kuota:
-            {{ selectedWave.remainingQuota }}
-          </p>
-
           <div
             v-if="waves.length === 0"
-            class="rounded-md border border-dashed p-3 text-sm text-muted-foreground sm:col-span-2"
+            class="rounded-md border p-3 text-sm text-muted-foreground sm:col-span-2"
           >
             Tidak ada gelombang yang dibuka saat ini.
           </div>
@@ -288,13 +273,14 @@ function handleOpenChange(open: boolean) {
         <Button
           type="submit"
           form="register-applicant-form"
+          variant="default"
           :disabled="isSubmitting || waves.length === 0"
         >
           <Loader2
             v-if="isSubmitting"
             class="size-4 mr-1.5 animate-spin"
           />
-          {{ isSubmitting ? 'Memproses...' : 'Buat Akun' }}
+          {{ isSubmitting ? 'Menyimpan...' : 'Simpan' }}
         </Button>
       </DialogFooter>
     </DialogContent>

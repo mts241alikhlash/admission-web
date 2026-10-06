@@ -296,7 +296,7 @@ function handleOpenChange(open: boolean) {
     @update:open="handleOpenChange"
   >
     <DialogContent
-      class="sm:max-w-3xl flex flex-col gap-0 p-0 overflow-hidden max-h-[90vh]"
+      class="sm:max-w-3xl flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
     >
       <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
         <DialogTitle>Formulir Pendaftar</DialogTitle>
