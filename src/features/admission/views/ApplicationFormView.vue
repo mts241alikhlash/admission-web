@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { useBreadcrumbs } from '@mts241alikhlash/web-shared/composables/useBreadcrumbs'
+import { BackButton } from '@mts241alikhlash/ui'
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { FileText } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
@@ -18,6 +20,7 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import { useMyApplication } from '../composables/useMyApplication'
+import { useAdminRegistration } from '../composables/useAdminRegistration'
 import { useApplicationFormState } from '../composables/useApplicationFormState'
 import { useApplicationUploads } from '../composables/useApplicationUploads'
 import { useFormOptions } from '../composables/useFormOptions'
@@ -38,6 +41,27 @@ import type { AdmissionApplication } from '../types'
 import { isWaveClosed } from '../utils'
 
 const router = useRouter()
+const route = useRoute()
+
+const adminApplicationId =
+  typeof route.params.id === 'string' ? route.params.id : null
+const isAdminForm = adminApplicationId !== null
+
+function adminSource(id: string) {
+  const admin = useAdminRegistration()
+  admin.applicationId.value = id
+  return {
+    fetchMyApplication: admin.fetchApplication,
+    formError: computed(() =>
+      admin.fetchError.value === 'load-failed' ? 'load-failed' : null,
+    ),
+    updateStep: admin.updateStep,
+    uploadAttachment: admin.uploadAttachment,
+    uploadDocument: admin.uploadDocument,
+    uploadPaymentProof: admin.uploadPaymentProof,
+    submit: admin.submit,
+  }
+}
 
 const {
   fetchMyApplication,
@@ -47,7 +71,7 @@ const {
   uploadDocument: uploadDocumentReq,
   uploadPaymentProof: uploadPaymentProofReq,
   submit: submitReq,
-} = useMyApplication()
+} = adminApplicationId ? adminSource(adminApplicationId) : useMyApplication()
 
 const application = ref<AdmissionApplication | null>(null)
 const loading = ref(true)
@@ -186,8 +210,9 @@ async function loadApplication() {
   if (data) {
     application.value = data
     hydrate(data)
-    introRequiresAgreement.value = data.status === 'DRAFT' && !data.birthDate
-    showIntro.value = true
+    introRequiresAgreement.value =
+      !isAdminForm && data.status === 'DRAFT' && !data.birthDate
+    showIntro.value = !isAdminForm
   }
   loading.value = false
 }
@@ -257,11 +282,27 @@ async function submitApplication() {
   isSubmitting.value = true
   const result = await submitReq()
   if (result.success) {
-    toast.success('Formulir berhasil dikirim! Menunggu verifikasi admin.')
-    await router.push('/registration')
+    if (isAdminForm) {
+      toast.success('Formulir pendaftar berhasil dikirim.')
+      await router.push(`/admin/applicants/${adminApplicationId}`)
+    } else {
+      toast.success('Formulir berhasil dikirim! Menunggu verifikasi admin.')
+      await router.push('/registration')
+    }
   }
   isSubmitting.value = false
 }
+
+useBreadcrumbs(() => {
+  const name = application.value?.fullName
+  if (!isAdminForm || !name) return null
+  const trail = route.meta.breadcrumbs ?? []
+  return [
+    ...trail.slice(0, -1),
+    { title: name, href: `/admin/applicants/${adminApplicationId}` },
+    { title: 'Formulir' },
+  ]
+})
 </script>
 
 <template>
@@ -294,10 +335,25 @@ async function submitApplication() {
       <CardHeader
         class="flex flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-4 sm:px-6 sm:py-5"
       >
-        <CardTitle class="text-xl font-bold tracking-tight"
-          >Formulir Pendaftaran</CardTitle
-        >
+        <div class="flex min-w-0 items-center gap-3">
+          <BackButton
+            :label="
+              isAdminForm ? 'Kembali ke detail pendaftar' : 'Kembali ke dasbor'
+            "
+            @click="
+              router.push(
+                isAdminForm
+                  ? `/admin/applicants/${adminApplicationId}`
+                  : '/registration',
+              )
+            "
+          />
+          <CardTitle class="text-xl font-bold tracking-tight">{{
+            isAdminForm ? 'Formulir Pendaftar' : 'Formulir Pendaftaran'
+          }}</CardTitle>
+        </div>
         <Button
+          v-if="!isAdminForm"
           variant="link"
           size="sm"
           class="h-auto p-0"
@@ -327,8 +383,11 @@ async function submitApplication() {
           v-else-if="!editable"
           class="rounded-md border p-3 text-sm text-muted-foreground"
         >
-          Formulir terkunci karena sudah dikirim. Anda tetap dapat melihat
-          isiannya.
+          {{
+            isAdminForm
+              ? 'Formulir terkunci karena sudah dikirim. Isiannya hanya dapat dilihat.'
+              : 'Formulir terkunci karena sudah dikirim. Anda tetap dapat melihat isiannya.'
+          }}
         </div>
 
         <PersonalDataStep
@@ -477,9 +536,11 @@ async function submitApplication() {
       </h2>
       <p class="mt-2 text-sm text-muted-foreground text-balance">
         {{
-          isAdmin
-            ? 'Akun admin tidak memiliki formulir pendaftaran pribadi. Gunakan daftar pendaftar untuk mengelola pengajuan.'
-            : 'Belum ada formulir pendaftaran yang terhubung dengan akun ini.'
+          isAdminForm
+            ? 'Data pendaftar tidak ditemukan.'
+            : isAdmin
+              ? 'Akun admin tidak memiliki formulir pendaftaran pribadi. Gunakan daftar pendaftar untuk mengelola pengajuan.'
+              : 'Belum ada formulir pendaftaran yang terhubung dengan akun ini.'
         }}
       </p>
       <RouterLink

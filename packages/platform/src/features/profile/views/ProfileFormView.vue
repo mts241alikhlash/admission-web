@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ArrowLeft } from '@lucide/vue'
+import { useBreadcrumbs } from '@mts241alikhlash/web-shared/composables/useBreadcrumbs'
+import { useRoute } from 'vue-router'
+import { BackButton } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import {
@@ -12,8 +14,22 @@ import { useProfileFormPage } from '../composables/useProfileFormPage'
 import ProfileFormBasic from '../components/ProfileFormBasic.vue'
 import ProfileFormAdvanced from '../components/ProfileFormAdvanced.vue'
 
+const route = useRoute()
+
 const { loading, isSaving, activeTab, form, onSubmit, handleNext, handleBack } =
   useProfileFormPage()
+
+useBreadcrumbs(() => {
+  const name = form.values.name
+  const { role, id } = route.params
+  if (!name || typeof role !== 'string' || typeof id !== 'string') return null
+  const trail = route.meta.breadcrumbs ?? []
+  return [
+    ...trail.slice(0, -1),
+    { title: name, href: `/profile/${role}/${id}` },
+    { title: 'Ubah' },
+  ]
+})
 </script>
 
 <template>
@@ -25,14 +41,10 @@ const { loading, isSaving, activeTab, form, onSubmit, handleNext, handleBack } =
         class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b px-6 py-5 shrink-0 gap-4"
       >
         <div class="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            class="h-8 w-8 shrink-0"
+          <BackButton
+            label="Kembali ke profil"
             @click="handleBack"
-          >
-            <ArrowLeft class="h-4 w-4" />
-          </Button>
+          />
           <div>
             <CardTitle class="text-2xl font-bold tracking-tight">
               Ubah Data Diri

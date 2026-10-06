@@ -167,6 +167,17 @@ async function mountView() {
   return wrapper
 }
 
+async function openTab(
+  wrapper: Awaited<ReturnType<typeof mountView>>,
+  label: string,
+) {
+  await wrapper
+    .findAll('button')
+    .find((node) => node.text() === label)!
+    .trigger('mousedown')
+  await flushPromises()
+}
+
 describe('ApplicationDetailView', () => {
   beforeEach(() => {
     application.value = { ...draft }
@@ -181,17 +192,65 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.text()).not.toContain('Dikirim -')
     expect(wrapper.text()).not.toContain('-, -')
     expect(wrapper.text()).toContain('Belum diisi')
-    expect(wrapper.text()).toContain('Belum ada jenis berkas')
     expect(wrapper.find('a button').exists()).toBe(false)
 
     const email = wrapper
       .findAll('dd')
       .find((node) => node.text() === draft.email)
+    await openTab(wrapper, 'Alamat')
     const street = wrapper
       .findAll('dd')
       .find((node) => node.text() === draft.street)
     expect(email?.classes()).toContain('break-all')
     expect(street?.classes()).toContain('break-words')
+  })
+
+  it('lists documents in a table with review actions only for unapproved files', async () => {
+    application.value = {
+      ...draft,
+      documentTypes: [
+        { id: 'kk', code: 'KK', name: 'Kartu Keluarga', isRequired: true },
+        { id: 'akta', code: 'AKTA', name: 'Akta Kelahiran', isRequired: true },
+        { id: 'foto', code: 'FOTO', name: 'Pas Foto', isRequired: false },
+      ],
+      documents: [
+        {
+          id: 'doc-kk',
+          documentTypeId: 'kk',
+          status: 'APPROVED',
+          note: null,
+          file: { originalName: 'kk.pdf', storageKey: 'files/kk.pdf' },
+        },
+        {
+          id: 'doc-akta',
+          documentTypeId: 'akta',
+          status: 'REJECTED',
+          note: 'Buram',
+          file: { originalName: 'akta.pdf', storageKey: 'files/akta.pdf' },
+        },
+      ],
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Berkas')
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows).toHaveLength(3)
+    expect(rows[0].text()).toContain('Disetujui')
+    expect(rows[0].text()).not.toContain('Setujui')
+    expect(rows[0].find('a').attributes('href')).toContain('files/kk.pdf')
+    expect(rows[1].text()).toContain('Ditolak')
+    expect(rows[1].text()).toContain('Catatan: Buram')
+    expect(rows[1].text()).toContain('Setujui')
+    expect(rows[1].text()).toContain('Tolak')
+    expect(rows[2].text()).toContain('Belum diunggah')
+    expect(rows[2].text()).not.toContain('Wajib')
+    expect(rows[2].text()).not.toContain('Setujui')
+  })
+
+  it('shows an empty state when the wave has no document types', async () => {
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Berkas')
+    expect(wrapper.text()).toContain('Belum ada jenis berkas')
   })
 
   it('associates decision fields with labels and disables actions while acting', async () => {

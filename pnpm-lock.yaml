@@ -19,8 +19,8 @@ importers:
         specifier: ^1.52.0
         version: 1.52.0(vue@3.5.42(typescript@5.9.3))
       '@mts241alikhlash/ui':
-        specifier: ^1.2.0
-        version: 1.2.0(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
+        specifier: ^1.3.1
+        version: 1.3.1(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
       '@mts241alikhlash/web-shared':
         specifier: ^1.1.0
         version: 1.1.0(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
@@ -104,8 +104,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@mts241alikhlash/admission-api':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.1.0
+        version: 1.1.0
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3
@@ -483,11 +483,11 @@ packages:
   '@mts241alikhlash/academic-api@1.0.0':
     resolution: {integrity: sha512-WpX26etF8/YGGN6HE+rdgGuURL/BY3HQPagv53uuKvx/A+R5gq3LVUEBQLFzJTVJODXLu64TL4Z9HGfIJA2Hlg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/academic-api/1.0.0/136726dce45d78a4f694c59497eb206120aba9a7}
 
-  '@mts241alikhlash/admission-api@1.0.0':
-    resolution: {integrity: sha512-r+cvjdqn6aSFGnS+BgI+mvFZXxPOY4H4MrjSCz+Y97epN8WYTdev4907k+UNBfBg3+WR20Ba6nVKJa7Ku6Bw2w==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/1.0.0/9d3f59ba9caec171c86e118634693ae694b890c3}
+  '@mts241alikhlash/admission-api@1.1.0':
+    resolution: {integrity: sha512-GpOITJ6+fsm4pTBxJjcxjUGEYBiPN4sVnctvDGvTZ9tZvBwcvHFCKHjpKPAAMfX4g1L+/tWi0j7y1cRoUzTIvA==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/1.1.0/2fbe8e7483c6b36107ba54835570b6e7cd98bcac}
 
-  '@mts241alikhlash/ui@1.2.0':
-    resolution: {integrity: sha512-wzreJEAqBnhREi++00lEOusj+sC5JF64XyiQGcryoMkNRJwjkQK4jT6yAXA7d8wm+hws7YWpBd0K2g0BgVukCg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.2.0/c72b146c8d5e6fa34611e01bf4b49eda51c3aa9e}
+  '@mts241alikhlash/ui@1.3.1':
+    resolution: {integrity: sha512-XJHCmB6EyaseeEPC7IBsP5gIpxerhdCbE3qh2y573o3eltlP7x4psb9C/Sqvrw6SiAGblTLfTf7VKEyl8bhUfQ==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.3.1/53d0efec07adb567d7f3e5f5860736465e1e9e6d}
     peerDependencies:
       vue: ^3.5.41
 
@@ -3167,11 +3167,11 @@ snapshots:
     dependencies:
       openapi-fetch: 0.17.0
 
-  '@mts241alikhlash/admission-api@1.0.0':
+  '@mts241alikhlash/admission-api@1.1.0':
     dependencies:
       openapi-fetch: 0.17.0
 
-  '@mts241alikhlash/ui@1.2.0(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))':
+  '@mts241alikhlash/ui@1.3.1(@unovis/ts@1.7.0)(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@internationalized/date': 3.12.4
       '@lucide/vue': 1.52.0(vue@3.5.42(typescript@5.9.3))

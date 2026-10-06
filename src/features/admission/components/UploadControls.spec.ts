@@ -60,11 +60,14 @@ it('marks required documents and shows each status with the reviewer note', asyn
   })
   await flushPromises()
 
-  expect(wrapper.text()).toContain('Wajib')
   expect(wrapper.text()).toContain('Ditolak')
   expect(wrapper.text()).toContain('Catatan: Foto buram')
   expect(wrapper.text()).toContain('Belum diunggah')
-  expect(wrapper.text().match(/Wajib/g)).toHaveLength(1)
+  expect(
+    wrapper
+      .get('[data-test="mobile-documents"]')
+      .findAll('[aria-label="wajib"]'),
+  ).toHaveLength(1)
 })
 
 it('explains when there are no document types yet', () => {

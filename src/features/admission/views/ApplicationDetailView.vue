@@ -1,16 +1,24 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { useBreadcrumbs } from '@mts241alikhlash/web-shared/composables/useBreadcrumbs'
+import { computed, h, onMounted, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
+import type { ColumnDef } from '@tanstack/vue-table'
+import { DataTable, BackButton } from '@mts241alikhlash/ui'
+import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@mts241alikhlash/ui/card'
-import { Badge } from '@mts241alikhlash/ui/badge'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@mts241alikhlash/ui/tabs'
 import { Input } from '@mts241alikhlash/ui/input'
 import { Label } from '@mts241alikhlash/ui/label'
 import { Textarea } from '@mts241alikhlash/ui/textarea'
@@ -22,16 +30,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { ExternalLink } from '@lucide/vue'
+import { ExternalLink, Info, SquarePen, TriangleAlert } from '@lucide/vue'
+import { Alert, AlertDescription, AlertTitle } from '@mts241alikhlash/ui/alert'
 import { useApplicationDetail } from '../composables/useApplicationDetail'
 import { useFormOptions } from '../composables/useFormOptions'
-import StatusBadge from '../components/StatusBadge.vue'
+import DetailItem from '../components/DetailItem.vue'
+import { addressOwnerOf } from '../schemas/applicationFormSchemas'
 import {
   DOCUMENT_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
   RELATION_LABELS,
+  STATUS_LABELS,
+} from '../types'
+import type {
+  AdmissionApplicationParent,
+  AdmissionDocument,
+  AdmissionDocumentType,
 } from '../types'
 import {
+  DOCUMENT_STATUS_BADGE_VARIANTS,
   fileUrl,
   formatDate,
   formatDateTime,
@@ -73,8 +90,20 @@ const dialogNote = ref('')
 const dialogDocId = ref<string | null>(null)
 const enrollForm = ref({ nis: '', nisn: '' })
 const dialogId = useId()
+const activeTab = ref('personal')
+const tabClass =
+  'min-h-11 flex-none rounded-none border-0 border-b-2 border-transparent px-3 text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:bg-transparent'
 
 const status = computed(() => application.value?.status)
+const editable = computed(
+  () => status.value === 'DRAFT' || status.value === 'REVISION_NEEDED',
+)
+const hasActions = computed(
+  () =>
+    status.value === 'SUBMITTED' ||
+    status.value === 'VERIFIED' ||
+    status.value === 'ACCEPTED',
+)
 
 const documentRows = computed(() =>
   (application.value?.documentTypes ?? []).map((docType) => ({
@@ -86,7 +115,167 @@ const documentRows = computed(() =>
   })),
 )
 
-const { load: loadFormOptions, nameOf } = useFormOptions()
+interface DocumentRow {
+  docType: AdmissionDocumentType
+  doc: AdmissionDocument | null
+}
+
+const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
+  {
+    id: 'name',
+    header: 'Jenis Dokumen',
+    cell: ({ row }) =>
+      h('span', [
+        row.original.docType.name,
+        row.original.docType.isRequired
+          ? h(
+              'span',
+              { class: 'text-destructive', 'aria-label': 'wajib' },
+              ' *',
+            )
+          : null,
+      ]),
+  },
+  {
+    id: 'file',
+    header: 'Berkas',
+    cell: ({ row }) => {
+      const { doc } = row.original
+      return h('div', { class: 'min-w-0 space-y-1' }, [
+        doc?.file
+          ? h(
+              'a',
+              {
+                href: fileUrl(doc.file.storageKey),
+                target: '_blank',
+                rel: 'noopener',
+                class:
+                  'inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline',
+              },
+              [
+                presentValue(doc.file.originalName),
+                h(ExternalLink, { class: 'size-3 shrink-0' }),
+              ],
+            )
+          : h('span', { class: 'text-muted-foreground' }, '-'),
+        doc?.note
+          ? h(
+              'p',
+              { class: 'text-sm text-destructive' },
+              `Catatan: ${doc.note}`,
+            )
+          : null,
+      ])
+    },
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    meta: { align: 'center' },
+    cell: ({ row }) => {
+      const { doc } = row.original
+      return h(
+        Badge,
+        {
+          variant: doc?.file
+            ? DOCUMENT_STATUS_BADGE_VARIANTS[doc.status]
+            : 'outline',
+        },
+        () =>
+          doc?.file ? DOCUMENT_STATUS_LABELS[doc.status] : 'Belum diunggah',
+      )
+    },
+  },
+  ...(documentRows.value.some(({ doc }) => needsReview(doc))
+    ? [actionColumn]
+    : []),
+])
+
+function needsReview(doc: AdmissionDocument | null): doc is AdmissionDocument {
+  return !!doc?.file && doc.status !== 'APPROVED'
+}
+
+const actionColumn: ColumnDef<DocumentRow> = {
+  id: 'actions',
+  header: 'Aksi',
+  meta: { align: 'center' },
+  cell: ({ row }) => {
+    const { doc } = row.original
+    if (!needsReview(doc)) return null
+    return h('div', { class: 'flex justify-center gap-2' }, [
+      h(
+        Button,
+        {
+          size: 'sm',
+          disabled: acting.value,
+          onClick: () => handleApproveDocument(doc.id),
+        },
+        () => 'Setujui',
+      ),
+      h(
+        Button,
+        {
+          variant: 'destructive',
+          size: 'sm',
+          disabled: acting.value,
+          onClick: () => openDialog('reject-doc', doc.id),
+        },
+        () => 'Tolak',
+      ),
+    ])
+  },
+}
+
+const { load: loadFormOptions, nameOf, listOf } = useFormOptions()
+
+const GENDER_LABELS: Record<string, string> = {
+  MALE: 'Laki-laki',
+  FEMALE: 'Perempuan',
+}
+
+function placeAndDate(place?: string | null, date?: string | null) {
+  return (
+    [place?.trim(), date ? formatDate(date) : ''].filter(Boolean).join(', ') ||
+    null
+  )
+}
+
+function rtRw(rt?: string | null, rw?: string | null) {
+  return rt || rw ? `${rt || '-'}/${rw || '-'}` : null
+}
+
+function fullAddress(parent: AdmissionApplicationParent) {
+  const neighbourhood = rtRw(parent.rt, parent.rw)
+  return (
+    [
+      parent.street,
+      neighbourhood && `RT/RW ${neighbourhood}`,
+      parent.village,
+      parent.district,
+      parent.city,
+      parent.province,
+      parent.postalCode,
+    ]
+      .filter(Boolean)
+      .join(', ') || null
+  )
+}
+
+const addressOwner = computed(() =>
+  addressOwnerOf(
+    (application.value?.parents ?? []).map((parent) => ({
+      ...parent,
+      lifeStatusId: parent.lifeStatusId ?? '',
+    })),
+    listOf('parentLifeStatuses'),
+  ),
+)
+
+function parentTitle(parent: AdmissionApplicationParent) {
+  return parent.relation === 'GUARDIAN'
+    ? 'Wali Santri'
+    : `${RELATION_LABELS[parent.relation]} Kandung`
+}
 
 onMounted(() => {
   void loadFormOptions().catch(() => undefined)
@@ -169,6 +358,13 @@ const dialogTitles: Record<Exclude<DialogKind, null>, string> = {
   'reject-doc': 'Tolak Berkas',
   'reject-payment': 'Tolak Bukti Pembayaran',
 }
+
+useBreadcrumbs(() => {
+  const name = application.value?.fullName
+  if (!name) return null
+  const trail = route.meta.breadcrumbs ?? []
+  return [...trail.slice(0, -1), { title: name }]
+})
 </script>
 
 <template>
@@ -217,35 +413,40 @@ const dialogTitles: Record<Exclude<DialogKind, null>, string> = {
     v-else-if="application"
     class="space-y-6 p-4 sm:p-6"
   >
-    <Card>
-      <CardHeader>
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle>{{ application.fullName }}</CardTitle>
-            <CardDescription>
-              <span class="font-mono">
-                {{ application.registrationNumber }}
-              </span>
-              · {{ presentValue(application.wave?.name) }} ·
-              {{
-                application.submittedAt
-                  ? formatDateTime(application.submittedAt)
-                  : 'Belum dikirim'
-              }}
-            </CardDescription>
-            <p
-              v-if="(application.duplicateNikCount ?? 0) > 0"
-              class="mt-1 text-sm font-medium text-destructive"
-            >
-              ⚠ NIK sama dengan {{ application.duplicateNikCount }} pendaftar
-              lain.
-            </p>
-          </div>
-          <StatusBadge :status="application.status" />
+    <Card
+      class="gap-0 overflow-hidden rounded-2xl py-0 shadow-sm shadow-black/5 ring-1 ring-black/4"
+    >
+      <CardHeader
+        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
+      >
+        <div class="flex min-w-0 items-center gap-3">
+          <BackButton
+            label="Kembali ke daftar pendaftar"
+            @click="router.push('/admin/applicants')"
+          />
+          <CardTitle class="text-xl font-bold tracking-tight">
+            Detail Pendaftar
+          </CardTitle>
         </div>
+        <Button
+          v-if="editable"
+          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          @click="
+            router.push({
+              name: 'admin-application-form',
+              params: { id: applicationId },
+            })
+          "
+        >
+          <SquarePen class="mr-1.5 size-4" />
+          Lengkapi Data
+        </Button>
       </CardHeader>
-      <CardContent>
-        <div class="flex flex-wrap gap-2">
+      <CardContent class="space-y-4 px-4 py-5 sm:px-6">
+        <div
+          v-if="hasActions"
+          class="flex flex-wrap gap-2 sm:justify-end"
+        >
           <Button
             v-if="status === 'SUBMITTED'"
             variant="outline"
@@ -253,6 +454,14 @@ const dialogTitles: Record<Exclude<DialogKind, null>, string> = {
             @click="openDialog('revision')"
           >
             Minta Revisi
+          </Button>
+          <Button
+            v-if="status === 'SUBMITTED' || status === 'VERIFIED'"
+            variant="destructive"
+            :disabled="acting"
+            @click="openDialog('reject')"
+          >
+            Tolak
           </Button>
           <Button
             v-if="status === 'SUBMITTED'"
@@ -269,14 +478,6 @@ const dialogTitles: Record<Exclude<DialogKind, null>, string> = {
             Terima
           </Button>
           <Button
-            v-if="status === 'SUBMITTED' || status === 'VERIFIED'"
-            variant="destructive"
-            :disabled="acting"
-            @click="openDialog('reject')"
-          >
-            Tolak
-          </Button>
-          <Button
             v-if="status === 'ACCEPTED'"
             :disabled="acting"
             @click="openDialog('enroll')"
@@ -284,647 +485,676 @@ const dialogTitles: Record<Exclude<DialogKind, null>, string> = {
             Proses Jadi Santri
           </Button>
         </div>
-        <p
+        <Alert
+          v-if="(application.duplicateNikCount ?? 0) > 0"
+          variant="destructive"
+        >
+          <TriangleAlert />
+          <AlertTitle>NIK ganda</AlertTitle>
+          <AlertDescription>
+            NIK ini sama dengan {{ application.duplicateNikCount }} pendaftar
+            lain.
+          </AlertDescription>
+        </Alert>
+        <Alert
           v-if="application.revisionNote && status === 'REVISION_NEEDED'"
-          class="mt-3 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm"
+          variant="destructive"
         >
-          Catatan revisi: {{ application.revisionNote }}
-        </p>
-        <p
-          v-if="application.decisionNote"
-          class="mt-3 rounded-md border p-3 text-sm"
+          <TriangleAlert />
+          <AlertTitle>Catatan revisi</AlertTitle>
+          <AlertDescription>{{ application.revisionNote }}</AlertDescription>
+        </Alert>
+        <Alert v-if="application.decisionNote">
+          <Info />
+          <AlertTitle>Catatan keputusan</AlertTitle>
+          <AlertDescription>{{ application.decisionNote }}</AlertDescription>
+        </Alert>
+
+        <Tabs
+          v-model="activeTab"
+          class="min-w-0 gap-0"
         >
-          Catatan keputusan: {{ application.decisionNote }}
-        </p>
-      </CardContent>
-    </Card>
-
-    <div class="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Identitas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl class="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt class="text-muted-foreground">Jenis kelamin</dt>
-              <dd>
-                {{
-                  presentValue(
-                    application.gender === 'MALE'
-                      ? 'Laki-laki'
-                      : application.gender === 'FEMALE'
-                        ? 'Perempuan'
-                        : null,
-                  )
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Tempat lahir</dt>
-              <dd class="break-words">
-                {{ presentValue(application.birthPlace) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Tanggal lahir</dt>
-              <dd>{{ presentValue(formatDate(application.birthDate)) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">NIK</dt>
-              <dd>{{ presentValue(application.nik) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">NISN</dt>
-              <dd>{{ presentValue(application.nisn) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Nama panggilan</dt>
-              <dd>{{ presentValue(application.nickname) }}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Kontak</CardTitle></CardHeader>
-        <CardContent>
-          <dl class="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt class="text-muted-foreground">Email</dt>
-              <dd class="break-all">{{ presentValue(application.email) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">No. HP</dt>
-              <dd class="break-words">{{ presentValue(application.phone) }}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Alamat</CardTitle></CardHeader>
-        <CardContent>
-          <dl class="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt class="text-muted-foreground">Jalan</dt>
-              <dd class="break-words">
-                {{ presentValue(application.street) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">RT</dt>
-              <dd>{{ presentValue(application.rt) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">RW</dt>
-              <dd>{{ presentValue(application.rw) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Desa / Kelurahan</dt>
-              <dd class="break-words">
-                {{ presentValue(application.village) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Kecamatan</dt>
-              <dd class="break-words">
-                {{ presentValue(application.district) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Kota / Kabupaten</dt>
-              <dd class="break-words">{{ presentValue(application.city) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Provinsi</dt>
-              <dd class="break-words">
-                {{ presentValue(application.province) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Kode pos</dt>
-              <dd>{{ presentValue(application.postalCode) }}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Sekolah Asal</CardTitle></CardHeader>
-        <CardContent>
-          <dl class="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt class="text-muted-foreground">Nama sekolah</dt>
-              <dd class="break-words">
-                {{ presentValue(application.previousSchoolName) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">NPSN</dt>
-              <dd>{{ presentValue(application.previousSchoolNpsn) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Alamat sekolah</dt>
-              <dd class="break-words">
-                {{ presentValue(application.previousSchoolAddress) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Tahun lulus</dt>
-              <dd>{{ presentValue(application.graduationYear) }}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Data Tambahan</CardTitle></CardHeader>
-        <CardContent>
-          <dl class="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt class="text-muted-foreground">Agama</dt>
-              <dd>{{ presentValue(application.religion?.name) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Urutan anak</dt>
-              <dd>{{ presentValue(application.childOrder) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Jumlah saudara</dt>
-              <dd>{{ presentValue(application.siblingCount) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Hobi</dt>
-              <dd class="break-words">{{ presentValue(application.hobby) }}</dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Cita-cita</dt>
-              <dd class="break-words">
-                {{ presentValue(application.aspiration) }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Yang membiayai sekolah</dt>
-              <dd>
-                {{
-                  presentValue(
-                    nameOf('financingSources', application.financingSourceId),
-                  )
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Kebutuhan disabilitas</dt>
-              <dd>
-                {{
-                  presentValue(
-                    nameOf('disabilityTypes', application.disabilityTypeId),
-                  )
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Kebutuhan khusus</dt>
-              <dd>
-                {{
-                  presentValue(
-                    nameOf('specialNeeds', application.specialNeedId),
-                  )
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Status tempat tinggal</dt>
-              <dd>
-                {{
-                  presentValue(
-                    nameOf('studentResidences', application.studentResidenceId),
-                  )
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Jarak tempuh</dt>
-              <dd>
-                {{
-                  presentValue(
-                    nameOf('travelDistances', application.travelDistanceId),
-                  )
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Waktu tempuh</dt>
-              <dd>
-                {{
-                  presentValue(nameOf('travelTimes', application.travelTimeId))
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted-foreground">Transportasi</dt>
-              <dd>
-                {{
-                  presentValue(
-                    nameOf('transportations', application.transportationId),
-                  )
-                }}
-              </dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Orang Tua / Wali</CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-3 text-sm">
-          <p
-            v-if="(application.parents ?? []).length === 0"
-            class="text-muted-foreground"
-          >
-            Belum ada data orang tua atau wali.
-          </p>
           <div
-            v-for="parent in application.parents ?? []"
-            :key="parent.relation"
-            class="rounded-md border p-3"
+            class="-mx-4 overflow-x-auto overflow-y-hidden border-b px-4 [scrollbar-width:none] sm:-mx-6 sm:px-6 [&::-webkit-scrollbar]:hidden"
           >
-            <p class="font-medium">
-              {{ RELATION_LABELS[parent.relation] }}
-              <Badge
-                v-if="parent.isPrimary"
-                variant="secondary"
-                class="ml-1"
+            <TabsList
+              class="-mb-px h-auto w-max gap-0 rounded-none bg-transparent p-0"
+            >
+              <TabsTrigger
+                value="personal"
+                :class="tabClass"
               >
-                Wali
-              </Badge>
-            </p>
-            <dl class="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-              <div>
-                <dt class="text-muted-foreground">Nama</dt>
-                <dd class="break-words">{{ presentValue(parent.name) }}</dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">NIK</dt>
-                <dd>{{ presentValue(parent.nik) }}</dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Tempat lahir</dt>
-                <dd class="break-words">
-                  {{ presentValue(parent.birthPlace) }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Tanggal lahir</dt>
-                <dd>{{ presentValue(formatDate(parent.birthDate)) }}</dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">No. HP</dt>
-                <dd>{{ presentValue(parent.phone) }}</dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Status</dt>
-                <dd>
-                  {{
-                    presentValue(
-                      nameOf('parentLifeStatuses', parent.lifeStatusId),
-                    )
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Pendidikan</dt>
-                <dd>
-                  {{ presentValue(nameOf('educations', parent.educationId)) }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Pekerjaan</dt>
-                <dd>
-                  {{ presentValue(nameOf('occupations', parent.occupationId)) }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Penghasilan</dt>
-                <dd>
-                  {{
-                    presentValue(nameOf('incomeRanges', parent.incomeRangeId))
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Domisili</dt>
-                <dd>
-                  {{ presentValue(nameOf('domiciles', parent.domicileId)) }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Tempat tinggal</dt>
-                <dd>
-                  {{
-                    presentValue(nameOf('parentResidences', parent.residenceId))
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt class="text-muted-foreground">Alamat</dt>
-                <dd class="break-words">
-                  {{
-                    parent.sameAddressAsStudent
-                      ? 'Sama dengan alamat wali'
-                      : presentValue(
-                          [
-                            parent.street,
-                            parent.village,
-                            parent.district,
-                            parent.city,
-                            parent.province,
-                          ]
-                            .filter(Boolean)
-                            .join(', '),
-                        )
-                  }}
-                </dd>
-              </div>
-            </dl>
+                Data Diri
+              </TabsTrigger>
+              <TabsTrigger
+                value="parents"
+                :class="tabClass"
+              >
+                Orang Tua/Wali
+              </TabsTrigger>
+              <TabsTrigger
+                value="address"
+                :class="tabClass"
+              >
+                Alamat
+              </TabsTrigger>
+              <TabsTrigger
+                value="school"
+                :class="tabClass"
+              >
+                Sekolah Asal
+              </TabsTrigger>
+              <TabsTrigger
+                value="achievements"
+                :class="tabClass"
+              >
+                Prestasi & Beasiswa
+              </TabsTrigger>
+              <TabsTrigger
+                value="documents"
+                :class="tabClass"
+              >
+                Berkas
+              </TabsTrigger>
+              <TabsTrigger
+                value="payment"
+                :class="tabClass"
+              >
+                Pembayaran
+              </TabsTrigger>
+            </TabsList>
           </div>
-        </CardContent>
-      </Card>
-    </div>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Prestasi & Beasiswa</CardTitle>
-      </CardHeader>
-      <CardContent class="space-y-3 text-sm">
-        <p
-          v-if="(application.achievements ?? []).length === 0"
-          class="text-muted-foreground"
-        >
-          Belum ada data prestasi.
-        </p>
-        <p
-          v-if="(application.scholarships ?? []).length === 0"
-          class="text-muted-foreground"
-        >
-          Belum ada data beasiswa.
-        </p>
-        <div
-          v-for="row in application.achievements ?? []"
-          :key="row.id"
-          class="min-w-0 rounded-md border p-3"
-        >
-          <p class="font-medium">
-            {{ presentValue(row.year) }} ·
-            {{ presentValue(row.competitionName) }}
-            <span class="text-muted-foreground">
-              ({{
-                presentValue(
-                  nameOf('competitionFields', row.competitionFieldId),
-                )
-              }},
-              {{
-                presentValue(
-                  nameOf('competitionLevels', row.competitionLevelId),
-                )
-              }})
-            </span>
-          </p>
-          <p class="text-muted-foreground">
-            Penyelenggara: {{ presentValue(row.organizer) }} · Peringkat:
-            {{ presentValue(row.rank) }}
-            <template v-if="row.file">
-              ·
-              <a
-                :href="fileUrl(row.file.storageKey)"
-                target="_blank"
-                rel="noopener"
-                class="break-all underline"
-              >
-                {{ presentValue(row.file.originalName) }}
-              </a>
-            </template>
-          </p>
-        </div>
-        <div
-          v-for="row in application.scholarships ?? []"
-          :key="row.id"
-          class="min-w-0 rounded-md border p-3"
-        >
-          <p class="font-medium">
-            {{ presentValue(row.year) }} ·
-            {{ presentValue(row.scholarshipName) }}
-            <span class="text-muted-foreground">
-              ({{
-                presentValue(nameOf('scholarshipCategories', row.categoryId))
-              }})
-            </span>
-          </p>
-          <p
-            v-if="row.kipNumber"
-            class="text-muted-foreground"
+          <TabsContent
+            value="personal"
+            class="space-y-6 pt-5 text-sm"
           >
-            No. KIP: {{ row.kipNumber }}
-          </p>
-          <p class="text-muted-foreground">
-            Pemberi: {{ presentValue(row.providerName) }} ({{
-              presentValue(
-                nameOf('scholarshipProviderTypes', row.providerTypeId),
-              )
-            }}) · Jangka waktu: {{ presentValue(row.duration) }} · Jumlah:
-            {{ row.amount == null ? 'Belum diisi' : formatIDR(row.amount) }}
-            <template v-if="row.file">
-              ·
-              <a
-                :href="fileUrl(row.file.storageKey)"
-                target="_blank"
-                rel="noopener"
-                class="underline"
-              >
-                {{ presentValue(row.file.originalName) }}
-              </a>
-            </template>
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+            <section class="space-y-3">
+              <h3 class="font-semibold">Pendaftaran</h3>
+              <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                <DetailItem
+                  label="No. Pendaftaran"
+                  :value="application.registrationNumber"
+                  wrap="all"
+                />
+                <DetailItem
+                  label="Gelombang"
+                  :value="application.wave?.name"
+                />
+                <DetailItem
+                  label="Status"
+                  :value="STATUS_LABELS[application.status]"
+                />
+                <DetailItem
+                  label="Dikirim"
+                  :value="
+                    application.submittedAt
+                      ? formatDateTime(application.submittedAt)
+                      : 'Belum dikirim'
+                  "
+                />
+              </dl>
+            </section>
+            <section class="space-y-3">
+              <h3 class="font-semibold">Identitas</h3>
+              <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                <DetailItem
+                  label="Nama Lengkap"
+                  :value="application.fullName"
+                />
+                <DetailItem
+                  label="Nama Panggilan"
+                  :value="application.nickname"
+                />
+                <DetailItem
+                  label="Tempat, Tanggal Lahir"
+                  :value="
+                    placeAndDate(application.birthPlace, application.birthDate)
+                  "
+                />
+                <DetailItem
+                  label="Jenis Kelamin"
+                  :value="
+                    application.gender
+                      ? GENDER_LABELS[application.gender]
+                      : null
+                  "
+                />
+                <DetailItem
+                  label="NIK"
+                  :value="application.nik"
+                />
+                <DetailItem
+                  label="NISN"
+                  :value="application.nisn"
+                />
+                <DetailItem
+                  label="Agama"
+                  :value="application.religion?.name"
+                />
+                <DetailItem
+                  label="Anak ke-"
+                  :value="application.childOrder"
+                />
+                <DetailItem
+                  label="Jumlah Saudara"
+                  :value="application.siblingCount"
+                />
+                <DetailItem
+                  label="Email"
+                  :value="application.email"
+                  wrap="all"
+                />
+                <DetailItem
+                  label="No. HP"
+                  :value="application.phone"
+                />
+                <DetailItem
+                  label="Hobi"
+                  :value="application.hobby"
+                />
+                <DetailItem
+                  label="Cita-cita"
+                  :value="application.aspiration"
+                />
+                <DetailItem
+                  label="Yang Membiayai Sekolah"
+                  :value="
+                    nameOf('financingSources', application.financingSourceId)
+                  "
+                />
+                <DetailItem
+                  label="Kebutuhan Disabilitas"
+                  :value="
+                    nameOf('disabilityTypes', application.disabilityTypeId)
+                  "
+                />
+                <DetailItem
+                  label="Kebutuhan Khusus"
+                  :value="nameOf('specialNeeds', application.specialNeedId)"
+                />
+              </dl>
+            </section>
+          </TabsContent>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>Berkas</CardTitle>
-      </CardHeader>
-      <CardContent class="space-y-3">
-        <p
-          v-if="(application.documentTypes ?? []).length === 0"
-          class="text-sm text-muted-foreground"
-        >
-          Belum ada jenis berkas.
-        </p>
-        <div
-          v-for="row in documentRows"
-          :key="row.docType.id"
-          class="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm"
-        >
-          <div>
-            <p class="font-medium">
-              {{ row.docType.name }}
-              <Badge
-                v-if="!row.docType.isRequired"
-                variant="secondary"
-                class="ml-1"
-              >
-                Opsional
-              </Badge>
-            </p>
+          <TabsContent
+            value="parents"
+            class="space-y-3 pt-5 text-sm"
+          >
             <p
-              v-if="row.doc"
+              v-if="(application.parents ?? []).length === 0"
               class="text-muted-foreground"
             >
-              <span class="break-all">{{
-                presentValue(row.doc.file?.originalName)
-              }}</span>
-              ·
-              {{ DOCUMENT_STATUS_LABELS[row.doc.status] }}
-              <span
-                v-if="row.doc.note"
-                class="text-destructive"
-              >
-                {{ row.doc.note }}
-              </span>
+              Belum ada data orang tua atau wali.
             </p>
+            <section
+              v-for="parent in application.parents ?? []"
+              :key="parent.relation"
+              class="rounded-md border p-4"
+            >
+              <h3 class="flex flex-wrap items-center gap-2 font-semibold">
+                {{ parentTitle(parent) }}
+                <Badge
+                  v-if="parent.isPrimary"
+                  variant="secondary"
+                >
+                  Wali
+                </Badge>
+              </h3>
+              <dl class="mt-3 grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                <DetailItem
+                  label="Nama Lengkap"
+                  :value="parent.name"
+                />
+                <DetailItem
+                  label="NIK"
+                  :value="parent.nik"
+                />
+                <DetailItem
+                  label="Tempat, Tanggal Lahir"
+                  :value="placeAndDate(parent.birthPlace, parent.birthDate)"
+                />
+                <DetailItem
+                  label="No. HP"
+                  :value="parent.phone"
+                />
+                <DetailItem
+                  label="Status Hidup"
+                  :value="nameOf('parentLifeStatuses', parent.lifeStatusId)"
+                />
+                <DetailItem
+                  label="Pendidikan"
+                  :value="nameOf('educations', parent.educationId)"
+                />
+                <DetailItem
+                  label="Pekerjaan"
+                  :value="nameOf('occupations', parent.occupationId)"
+                />
+                <DetailItem
+                  label="Penghasilan"
+                  :value="nameOf('incomeRanges', parent.incomeRangeId)"
+                />
+                <DetailItem
+                  label="Domisili"
+                  :value="nameOf('domiciles', parent.domicileId)"
+                />
+                <DetailItem
+                  label="Status Tempat Tinggal"
+                  :value="nameOf('parentResidences', parent.residenceId)"
+                />
+                <DetailItem
+                  label="Alamat"
+                  :value="
+                    parent.sameAddressAsStudent &&
+                    parent.relation !== addressOwner
+                      ? `Sama dengan alamat ${RELATION_LABELS[addressOwner].toLowerCase()}`
+                      : fullAddress(parent)
+                  "
+                />
+              </dl>
+            </section>
+          </TabsContent>
+
+          <TabsContent
+            value="address"
+            class="pt-5"
+          >
+            <dl class="grid gap-x-8 gap-y-3 text-sm xl:grid-cols-2">
+              <DetailItem
+                label="Alamat (Jalan)"
+                :value="application.street"
+              />
+              <DetailItem
+                label="RT/RW"
+                :value="rtRw(application.rt, application.rw)"
+              />
+              <DetailItem
+                label="Desa/Kelurahan"
+                :value="application.village"
+              />
+              <DetailItem
+                label="Kecamatan"
+                :value="application.district"
+              />
+              <DetailItem
+                label="Kota/Kabupaten"
+                :value="application.city"
+              />
+              <DetailItem
+                label="Provinsi"
+                :value="application.province"
+              />
+              <DetailItem
+                label="Kode Pos"
+                :value="application.postalCode"
+              />
+              <DetailItem
+                label="Status Tempat Tinggal"
+                :value="
+                  nameOf('studentResidences', application.studentResidenceId)
+                "
+              />
+              <DetailItem
+                label="Transportasi ke Madrasah"
+                :value="nameOf('transportations', application.transportationId)"
+              />
+              <DetailItem
+                label="Jarak ke Madrasah"
+                :value="nameOf('travelDistances', application.travelDistanceId)"
+              />
+              <DetailItem
+                label="Waktu Tempuh ke Madrasah"
+                :value="nameOf('travelTimes', application.travelTimeId)"
+              />
+            </dl>
+          </TabsContent>
+
+          <TabsContent
+            value="school"
+            class="pt-5"
+          >
+            <dl class="grid gap-x-8 gap-y-3 text-sm xl:grid-cols-2">
+              <DetailItem
+                label="Nama Sekolah Asal"
+                :value="application.previousSchoolName"
+              />
+              <DetailItem
+                label="NPSN"
+                :value="application.previousSchoolNpsn"
+              />
+              <DetailItem
+                label="Alamat Sekolah"
+                :value="application.previousSchoolAddress"
+              />
+              <DetailItem
+                label="Tahun Lulus"
+                :value="application.graduationYear"
+              />
+            </dl>
+          </TabsContent>
+
+          <TabsContent
+            value="achievements"
+            class="space-y-6 pt-5 text-sm"
+          >
+            <section class="space-y-3">
+              <h3 class="font-semibold">Prestasi</h3>
+              <p
+                v-if="(application.achievements ?? []).length === 0"
+                class="text-muted-foreground"
+              >
+                Belum ada data prestasi.
+              </p>
+              <article
+                v-for="row in application.achievements ?? []"
+                :key="row.id"
+                class="min-w-0 rounded-md border p-4"
+              >
+                <h4 class="break-words font-medium">
+                  {{ presentValue(row.competitionName) }}
+                </h4>
+                <dl class="mt-3 grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                  <DetailItem
+                    label="Tahun"
+                    :value="row.year"
+                  />
+                  <DetailItem
+                    label="Bidang"
+                    :value="nameOf('competitionFields', row.competitionFieldId)"
+                  />
+                  <DetailItem
+                    label="Tingkat"
+                    :value="nameOf('competitionLevels', row.competitionLevelId)"
+                  />
+                  <DetailItem
+                    label="Peringkat"
+                    :value="row.rank"
+                  />
+                  <DetailItem
+                    label="Penyelenggara"
+                    :value="row.organizer"
+                  />
+                  <DetailItem
+                    label="Lampiran"
+                    :value="row.file?.originalName"
+                  >
+                    <a
+                      v-if="row.file"
+                      :href="fileUrl(row.file.storageKey)"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
+                    >
+                      {{ presentValue(row.file.originalName) }}
+                      <ExternalLink class="size-3 shrink-0" />
+                    </a>
+                    <span
+                      v-else
+                      class="text-muted-foreground"
+                    >
+                      Tidak ada
+                    </span>
+                  </DetailItem>
+                </dl>
+              </article>
+            </section>
+
+            <section class="space-y-3">
+              <h3 class="font-semibold">Beasiswa & Bantuan</h3>
+              <p
+                v-if="(application.scholarships ?? []).length === 0"
+                class="text-muted-foreground"
+              >
+                Belum ada data beasiswa.
+              </p>
+              <article
+                v-for="row in application.scholarships ?? []"
+                :key="row.id"
+                class="min-w-0 rounded-md border p-4"
+              >
+                <h4 class="break-words font-medium">
+                  {{ presentValue(row.scholarshipName) }}
+                </h4>
+                <dl class="mt-3 grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                  <DetailItem
+                    label="Tahun"
+                    :value="row.year"
+                  />
+                  <DetailItem
+                    label="Kategori"
+                    :value="nameOf('scholarshipCategories', row.categoryId)"
+                  />
+                  <DetailItem
+                    label="Instansi Pemberi"
+                    :value="row.providerName"
+                  />
+                  <DetailItem
+                    label="Jenis Instansi"
+                    :value="
+                      nameOf('scholarshipProviderTypes', row.providerTypeId)
+                    "
+                  />
+                  <DetailItem
+                    label="Jangka Waktu"
+                    :value="row.duration"
+                  />
+                  <DetailItem
+                    label="Jumlah"
+                    :value="row.amount == null ? null : formatIDR(row.amount)"
+                  />
+                  <DetailItem
+                    v-if="row.kipNumber"
+                    label="No. KIP"
+                    :value="row.kipNumber"
+                  />
+                  <DetailItem
+                    label="Lampiran"
+                    :value="row.file?.originalName"
+                  >
+                    <a
+                      v-if="row.file"
+                      :href="fileUrl(row.file.storageKey)"
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
+                    >
+                      {{ presentValue(row.file.originalName) }}
+                      <ExternalLink class="size-3 shrink-0" />
+                    </a>
+                    <span
+                      v-else
+                      class="text-muted-foreground"
+                    >
+                      Tidak ada
+                    </span>
+                  </DetailItem>
+                </dl>
+              </article>
+            </section>
+          </TabsContent>
+
+          <TabsContent
+            value="documents"
+            class="pt-5"
+          >
+            <p
+              v-if="documentRows.length === 0"
+              class="text-sm text-muted-foreground"
+            >
+              Belum ada jenis berkas.
+            </p>
+            <template v-else>
+              <DataTable
+                class="hidden md:block"
+                :columns="documentColumns"
+                :data="documentRows"
+                item-label="dokumen"
+                hide-per-page
+                hide-pagination
+                :page-size="Math.max(1, documentRows.length)"
+              />
+              <ul
+                data-test="mobile-documents"
+                class="divide-y rounded-lg border md:hidden"
+              >
+                <li
+                  v-for="{ docType, doc } in documentRows"
+                  :key="docType.id"
+                  class="min-w-0 space-y-3 p-4 text-sm"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="break-words font-medium">
+                        {{ docType.name
+                        }}<span
+                          v-if="docType.isRequired"
+                          class="text-destructive"
+                          aria-label="wajib"
+                        >
+                          *</span
+                        >
+                      </p>
+                    </div>
+                    <Badge
+                      class="shrink-0"
+                      :variant="
+                        doc?.file
+                          ? DOCUMENT_STATUS_BADGE_VARIANTS[doc.status]
+                          : 'outline'
+                      "
+                    >
+                      {{
+                        doc?.file
+                          ? DOCUMENT_STATUS_LABELS[doc.status]
+                          : 'Belum diunggah'
+                      }}
+                    </Badge>
+                  </div>
+                  <a
+                    v-if="doc?.file"
+                    :href="fileUrl(doc.file.storageKey)"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
+                  >
+                    {{ presentValue(doc.file.originalName) }}
+                    <ExternalLink class="size-3 shrink-0" />
+                  </a>
+                  <p
+                    v-if="doc?.note"
+                    class="text-destructive"
+                  >
+                    Catatan: {{ doc.note }}
+                  </p>
+                  <div
+                    v-if="needsReview(doc)"
+                    class="grid grid-cols-2 gap-2"
+                  >
+                    <Button
+                      variant="destructive"
+                      class="min-h-11"
+                      :disabled="acting"
+                      @click="openDialog('reject-doc', doc.id)"
+                    >
+                      Tolak
+                    </Button>
+                    <Button
+                      class="min-h-11"
+                      :disabled="acting"
+                      @click="handleApproveDocument(doc.id)"
+                    >
+                      Setujui
+                    </Button>
+                  </div>
+                </li>
+              </ul>
+            </template>
+          </TabsContent>
+
+          <TabsContent
+            value="payment"
+            class="space-y-4 pt-5 text-sm"
+          >
+            <template v-if="application.payment">
+              <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                <DetailItem
+                  label="Status"
+                  :value="PAYMENT_STATUS_LABELS[application.payment.status]"
+                />
+                <DetailItem
+                  label="Nominal"
+                  :value="formatIDR(application.payment.amount)"
+                />
+                <DetailItem
+                  label="Rekening Tujuan"
+                  :value="
+                    application.payment.bankAccount
+                      ? `${application.payment.bankAccount.bankName} ${application.payment.bankAccount.accountNumber} a.n. ${application.payment.bankAccount.accountHolder}`
+                      : null
+                  "
+                />
+                <DetailItem
+                  label="Bank Pengirim"
+                  :value="application.payment.bankName"
+                />
+                <DetailItem
+                  label="Nama Pemilik Rekening Pengirim"
+                  :value="application.payment.senderAccountName"
+                />
+                <DetailItem
+                  label="Tanggal Transfer"
+                  :value="
+                    application.payment.transferDate
+                      ? formatDate(application.payment.transferDate)
+                      : null
+                  "
+                />
+                <DetailItem
+                  v-if="application.payment.note"
+                  label="Catatan"
+                  :value="application.payment.note"
+                />
+              </dl>
+              <div class="flex flex-wrap items-center gap-2">
+                <Button
+                  v-if="application.payment.proofFile"
+                  as-child
+                  variant="outline"
+                >
+                  <a
+                    :href="fileUrl(application.payment.proofFile.storageKey)"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <ExternalLink class="mr-1.5 size-4" />
+                    Lihat Bukti Transfer
+                  </a>
+                </Button>
+                <Button
+                  v-if="application.payment.status === 'PENDING'"
+                  variant="destructive"
+                  :disabled="acting"
+                  @click="openDialog('reject-payment')"
+                >
+                  Tolak
+                </Button>
+                <Button
+                  v-if="application.payment.status === 'PENDING'"
+                  :disabled="acting"
+                  @click="handleVerifyPayment"
+                >
+                  Verifikasi Pembayaran
+                </Button>
+              </div>
+            </template>
             <p
               v-else
               class="text-muted-foreground"
             >
-              Belum diunggah
+              Data pembayaran tidak tersedia.
             </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <Button
-              v-if="row.doc?.file"
-              as-child
-              variant="outline"
-              size="sm"
-            >
-              <a
-                :href="fileUrl(row.doc.file.storageKey)"
-                target="_blank"
-                rel="noopener"
-                class="min-h-11"
-              >
-                <ExternalLink class="mr-1 h-3 w-3" />
-                Lihat
-              </a>
-            </Button>
-            <template v-if="row.doc && row.doc.status !== 'APPROVED'">
-              <Button
-                size="sm"
-                :disabled="acting"
-                @click="handleApproveDocument(row.doc.id)"
-              >
-                Setujui
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                :disabled="acting"
-                @click="openDialog('reject-doc', row.doc.id)"
-              >
-                Tolak
-              </Button>
-            </template>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-
-    <Card>
-      <CardHeader>
-        <CardTitle>Pembayaran</CardTitle>
-      </CardHeader>
-      <CardContent class="text-sm">
-        <div
-          v-if="application.payment"
-          class="flex flex-wrap items-center justify-between gap-3"
-        >
-          <div>
-            <p>
-              {{ formatIDR(application.payment.amount) }} ·
-              <span class="font-medium">
-                {{ PAYMENT_STATUS_LABELS[application.payment.status] }}
-              </span>
-            </p>
-            <p
-              v-if="application.payment.bankAccount"
-              class="text-muted-foreground"
-            >
-              Ke rekening: {{ application.payment.bankAccount.bankName }}
-              {{ application.payment.bankAccount.accountNumber }} a.n.
-              {{ application.payment.bankAccount.accountHolder }}
-            </p>
-            <p class="text-muted-foreground">
-              Bank: {{ presentValue(application.payment.bankName) }} · Pengirim:
-              {{ presentValue(application.payment.senderAccountName) }} · Tgl:
-              {{ presentValue(formatDate(application.payment.transferDate)) }}
-            </p>
-            <p
-              v-if="application.payment.note"
-              class="text-destructive"
-            >
-              Catatan: {{ application.payment.note }}
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <Button
-              v-if="application.payment.proofFile"
-              as-child
-              variant="outline"
-              size="sm"
-            >
-              <a
-                :href="fileUrl(application.payment.proofFile.storageKey)"
-                target="_blank"
-                rel="noopener"
-                class="min-h-11"
-              >
-                <ExternalLink class="mr-1 h-3 w-3" />
-                Lihat Bukti
-              </a>
-            </Button>
-            <template
-              v-if="
-                application.payment.status === 'PENDING' ||
-                application.payment.status === 'REJECTED'
-              "
-            >
-              <Button
-                size="sm"
-                :disabled="acting || application.payment.status === 'REJECTED'"
-                @click="handleVerifyPayment"
-              >
-                Verifikasi
-              </Button>
-              <Button
-                v-if="application.payment.status === 'PENDING'"
-                variant="destructive"
-                size="sm"
-                :disabled="acting"
-                @click="openDialog('reject-payment')"
-              >
-                Tolak
-              </Button>
-            </template>
-          </div>
-        </div>
-        <p
-          v-else
-          class="text-muted-foreground"
-        >
-          Data pembayaran tidak tersedia.
-        </p>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
 

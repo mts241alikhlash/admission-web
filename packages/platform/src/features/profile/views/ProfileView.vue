@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useBreadcrumbs } from '@mts241alikhlash/web-shared/composables/useBreadcrumbs'
+import { useRouter, useRoute } from 'vue-router'
+import { BackButton } from '@mts241alikhlash/ui'
 import { onMounted, computed, unref, ref } from 'vue'
 import { Card } from '@mts241alikhlash/ui/card'
 import {
@@ -27,6 +30,10 @@ import ChangePasswordSection from '../components/ChangePasswordSection.vue'
 
 import { useProfileView } from '../composables/useProfileView'
 import { profileConfig } from '../config'
+
+const route = useRoute()
+
+const router = useRouter()
 
 const {
   activeTab,
@@ -72,6 +79,13 @@ const activeTabLabel = computed(() => {
 onMounted(() => {
   reloadProfile()
 })
+
+useBreadcrumbs(() => {
+  const name = isOwnProfile.value ? null : profileData.value?.fullName
+  if (!name) return null
+  const trail = route.meta.breadcrumbs ?? []
+  return [...trail.slice(0, -1), { title: name }]
+})
 </script>
 
 <template>
@@ -98,6 +112,12 @@ onMounted(() => {
           <div
             class="lg:col-span-1 p-6 lg:border-r border-border/60 flex flex-col gap-6"
           >
+            <BackButton
+              v-if="!isOwnProfile"
+              label="Kembali ke halaman sebelumnya"
+              class="self-start"
+              @click="router.back()"
+            />
             <div class="flex flex-col items-center text-center shrink-0">
               <div class="relative shrink-0 mb-4">
                 <Avatar class="size-24 border-2 border-primary/20">
