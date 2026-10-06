@@ -193,7 +193,7 @@ function closeForm() {
           @click="openRegister"
         >
           <Plus class="mr-1.5 size-4" />
-          Daftarkan Pendaftar
+          Tambah Pendaftar
         </Button>
       </CardHeader>
 
