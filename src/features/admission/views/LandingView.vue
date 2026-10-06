@@ -8,15 +8,14 @@ import LandingHowItWorks from '../components/landing/LandingHowItWorks.vue'
 import LandingNavbar from '../components/landing/LandingNavbar.vue'
 import LandingRequirements from '../components/landing/LandingRequirements.vue'
 import LandingWaveSection from '../components/landing/LandingWaveSection.vue'
-import SignUpDialog from '../components/SignUpDialog.vue'
-import { useSignUpDialog } from '../composables/useSignUpDialog'
+import LandingLife from '../components/landing/LandingLife.vue'
+import LandingStories from '../components/landing/LandingStories.vue'
+import LandingCta from '../components/landing/LandingCta.vue'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
 import type { ActiveWave, AdmissionDocumentType } from '../types'
 
 const route = useRoute()
 const router = useRouter()
-
-const { isOpen, open } = useSignUpDialog()
 
 const { fetchActiveWaves } = usePublicAdmission()
 
@@ -44,23 +43,32 @@ async function loadAdmission() {
 
 onMounted(() => {
   if (route.query.signup === '1') {
-    open()
-    void router.replace({ query: {} })
+    void router.replace({ name: 'login', query: route.query })
+    return
   }
   void loadAdmission()
 })
 </script>
 
 <template>
-  <div class="min-h-screen overflow-x-clip bg-[#f7f8f8] text-slate-950">
+  <div class="admission-landing min-h-screen bg-[#f5f2e9] text-slate-950">
+    <a
+      href="#landing-main"
+      class="landing-skip-link"
+      >Langsung ke isi halaman</a
+    >
     <LandingNavbar />
 
-    <main>
+    <main
+      id="landing-main"
+      tabindex="-1"
+    >
       <LandingHero
         :error="hasError"
         :wave="primaryWave"
         :loading="isLoading"
       />
+      <LandingLife />
       <div
         v-if="hasError"
         id="gelombang"
@@ -88,11 +96,51 @@ onMounted(() => {
         :document-types="documentTypes"
         :loading="isLoading"
       />
+      <LandingStories />
       <LandingFaq id="faq" />
+      <LandingCta />
     </main>
 
     <LandingFooter />
-
-    <SignUpDialog v-model="isOpen" />
   </div>
 </template>
+
+<style scoped>
+.landing-skip-link {
+  position: fixed;
+  z-index: 100;
+  left: 1rem;
+  top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  color: #162d53;
+  transform: translateY(-200%);
+}
+.landing-skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid #203f73;
+  outline-offset: 2px;
+}
+.admission-landing :deep(h2) {
+  text-wrap: balance;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .admission-landing :deep(.landing-photo-reveal) {
+      animation: landing-photo-arrive linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 85%;
+    }
+  }
+}
+@keyframes landing-photo-arrive {
+  from {
+    opacity: 0.5;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

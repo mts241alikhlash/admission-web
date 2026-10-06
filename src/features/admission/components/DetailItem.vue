@@ -17,10 +17,10 @@ const empty = computed(() => text.value === presentValue(null))
 
 <template>
   <div
-    class="flex items-start justify-between gap-4 sm:grid sm:grid-cols-[15rem_minmax(0,1fr)] sm:gap-x-2"
+    class="grid grid-cols-[minmax(0,40%)_minmax(0,1fr)] items-start gap-x-3 sm:grid-cols-[15rem_minmax(0,1fr)] sm:gap-x-2"
   >
     <dt
-      class="shrink-0 whitespace-nowrap text-muted-foreground sm:flex sm:justify-between sm:gap-2 sm:after:content-[':']"
+      class="min-w-0 break-words text-muted-foreground sm:flex sm:justify-between sm:gap-2 sm:after:content-[':']"
     >
       {{ label }}
     </dt>

@@ -91,3 +91,32 @@ it('opens on the active academic year', async () => {
     waveId: undefined,
   })
 })
+
+it('puts statistics filters behind one mobile control', async () => {
+  const dialogStubs = Object.fromEntries(
+    [
+      'Dialog',
+      'DialogContent',
+      'DialogHeader',
+      'DialogTitle',
+      'DialogDescription',
+      'DialogFooter',
+    ].map((name) => [name, { template: '<div><slot /></div>' }]),
+  )
+  const wrapper = mount(AdmissionStatsView, {
+    global: { stubs: { ...stubs, ...dialogStubs, RouterLink: true } },
+  })
+  expect(
+    wrapper.findAll('button').some((button) => button.text() === 'Filter'),
+  ).toBe(true)
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text() === 'Filter')!
+    .trigger('click')
+  expect(
+    wrapper
+      .findAll('[data-test="mobile-stats-filter"] label')
+      .map((label) => label.text()),
+  ).toEqual(['Tahun Ajaran', 'Gelombang'])
+  wrapper.unmount()
+})

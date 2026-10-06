@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, RouterLinkStub } from '@vue/test-utils'
 import type { ActiveWave } from '../../types'
 import LandingHero from './LandingHero.vue'
 
@@ -8,6 +8,7 @@ describe('LandingHero', () => {
   it('keeps the route to registration information keyboard accessible without nesting controls', () => {
     const wrapper = mount(LandingHero, {
       props: { wave: null, loading: false, error: false },
+      global: { stubs: { RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.find('a[href="#alur"]').exists()).toBe(true)
@@ -24,6 +25,7 @@ describe('LandingHero', () => {
     } as ActiveWave
     const wrapper = mount(LandingHero, {
       props: { wave, loading: false, error: false },
+      global: { stubs: { RouterLink: RouterLinkStub } },
     })
 
     expect(wrapper.text()).not.toContain('Sisa kuota')

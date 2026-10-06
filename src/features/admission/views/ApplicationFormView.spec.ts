@@ -6,6 +6,7 @@ import type { AdmissionApplication } from '../types'
 import ApplicationFormView from './ApplicationFormView.vue'
 
 const application: AdmissionApplication = {
+  waveIsFull: false,
   id: 'app-1',
   userId: 'user-1',
   waveId: 'wave-1',
@@ -78,7 +79,7 @@ const { updateStep, fetchMyApplication, formState, routeState, push } =
     updateStep: vi.fn(),
     fetchMyApplication: vi.fn(),
     formState: { error: null as string | null },
-    routeState: { params: {} },
+    routeState: { params: {}, query: {} },
     push: vi.fn(),
   }))
 
@@ -333,6 +334,7 @@ describe.each(['applicant', 'admin'] as const)(
     afterEach(() => {
       vi.useRealTimers()
       routeState.params = {}
+      routeState.query = {}
     })
 
     async function flushForm() {
@@ -419,6 +421,7 @@ describe.each(['applicant', 'admin'] as const)(
         wrapper.get<HTMLInputElement>('input[name="fullName"]').element.value,
       ).toBe('Unsaved Budi')
       expect(wrapper.findAll('ol button')[0].classes()).toContain('bg-primary')
+      expect(wrapper.text()).toContain('Gagal menyimpan')
       expect(
         wrapper
           .findAll('ol button')
@@ -569,6 +572,17 @@ describe.each(['applicant', 'admin'] as const)(
       expect(updateStep).not.toHaveBeenCalled()
       expect(wrapper.find('input[name="fullName"]').exists()).toBe(true)
     })
+
+    it('does not report new edits as already saved', async () => {
+      const wrapper = await mountHost()
+      await wrapper.findAll('ol button')[1].trigger('click')
+      await flushForm()
+      await wrapper.findAll('ol button')[0].trigger('click')
+      await flushForm()
+      await wrapper.get('input[name="fullName"]').setValue('Nama yang diubah')
+      expect(wrapper.text()).toContain('Perubahan belum disimpan')
+      wrapper.unmount()
+    })
   },
 )
 
@@ -636,6 +650,24 @@ describe('ApplicationFormView introduction', () => {
     await button(wrapper, 'Lihat ketentuan')!.trigger('click')
     expect(wrapper.text()).toContain('Ketentuan Pendaftaran')
   })
+})
+
+it.each([
+  ['documents', 5],
+  ['payment', 6],
+  ['unknown', 0],
+  [['payment', 'documents'], 0],
+] as const)('opens only supported step %j', async (step, index) => {
+  routeState.params = {}
+  routeState.query = { step }
+  fetchMyApplication.mockResolvedValue({ ...application, status: 'SUBMITTED' })
+  const wrapper = await mountView()
+  expect(wrapper.findAll('ol button')[index].attributes('aria-current')).toBe(
+    'step',
+  )
+  expect(updateStep).not.toHaveBeenCalled()
+  wrapper.unmount()
+  routeState.query = {}
 })
 
 it('fills an existing application on behalf of the applicant on the admin route', async () => {

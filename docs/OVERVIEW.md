@@ -147,7 +147,7 @@ replaces the parent rows and would otherwise lose any field a payload omitted.
 
 ## Google sign-in
 
-`/login` shows "Masuk dengan Google" below the password form. The browser
+`/login` shows "Masuk dengan Google" above the `atau` separator and password form. The browser
 leaves for identity-service, so the access token never passes through a URL:
 identity-service sets the same HttpOnly refresh cookie as a password login, and
 `/oauth/callback` calls `POST /auth/refresh` to mint the first access token.
@@ -168,8 +168,8 @@ the app configures one. It is driven by two new `authConfig` fields:
 | `signUpUrl` | `null` | Where the link points. `null` renders no link at all. |
 | `signUpLabel` | `Belum punya akun?` | The sentence before the link. |
 
-`admission-web` sets `signUpUrl: '/register'` in `src/app/main.ts`, which is the
-existing redirect into `/?signup=1`, so the link opens the sign-up dialog. The
+`admission-web` sets `signUpUrl: '/register'` in `src/app/main.ts`, which redirects
+to `/login?signup=1`, so the link opens the sign-up dialog on the login page. The
 default is `null` on purpose: `LoginForm.vue` is mirrored into six sibling apps
 that have no sign-up flow, and a hard-coded link would hand them a route that
 does not exist. Those copies keep the default and render nothing.
@@ -188,13 +188,19 @@ registered, because identity-service creates the user but grants no role, and
 this app treats "no role" as "not an applicant or an admin yet". Google
 **sign-up** is the answer to that, and it is opt-in per deployment. See below.
 
-## Sign-up is a dialog, not a page
+## Landing registration leads to login; sign-up lives there
 
 There is no `/register` screen. It used to be a page with its own form, its own
 wave picker and a phone field; a visitor landing there was asked to choose a
 wave they had no basis to choose, and the page and the form then disagreed about
-which wave was in play. `/register` is now a redirect to `/?signup=1`, which
-opens `SignUpDialog` on the landing page and clears the query.
+which wave was in play. `/register` redirects to `/login?signup=1`, which
+opens `SignUpDialog` in `AdmissionLoginView` and clears only the signup query.
+
+The hero, each available wave and the closing call-to-action link directly to
+`/login` without opening a dialog. The login page's `Daftar` link opens sign-up.
+Old `/?signup=1` links replace their history entry with the login sign-up URL,
+preserving query parameters. Landing no longer mounts a dialog, and its unused
+`useSignUpDialog` composable has been removed.
 
 The dialog asks for name, email, password and confirmation, and nothing else.
 No phone, no wave, no wave list. The wave is resolved **server-side** from the
@@ -209,9 +215,8 @@ one from `POST /admissions/my-application/ensure`, which is idempotent. The
 existence read runs before any create, so a repeat call returns the same
 application rather than a second registration number.
 
-Google sign-up lives in the same dialog as a second control, so the entry points
-did not multiply: the navbar, hero, wave section and closing call-to-action all
-open the one dialog. It only creates an account when the deployment enables
+Google sign-up lives in the same dialog on the login page as a second control.
+It only creates an account when the deployment enables
 `GOOGLE_SIGNUP_ENABLED` on identity-service. When it is off, the visitor is told
 sign-up is not open instead of being handed a roleless account, and no refresh
 cookie is set.

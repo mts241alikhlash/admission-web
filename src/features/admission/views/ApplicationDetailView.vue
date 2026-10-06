@@ -564,6 +564,9 @@ useBreadcrumbs(() => {
               </TabsTrigger>
             </TabsList>
           </div>
+          <p class="pt-2 text-xs text-muted-foreground sm:hidden">
+            Geser untuk melihat bagian lain
+          </p>
 
           <TabsContent
             value="personal"
@@ -1075,6 +1078,17 @@ useBreadcrumbs(() => {
             value="payment"
             class="space-y-4 pt-5 text-sm"
           >
+            <Alert
+              v-if="application.waveIsFull"
+              variant="destructive"
+            >
+              <TriangleAlert />
+              <AlertTitle>Gelombang penuh</AlertTitle>
+              <AlertDescription>
+                Belum ada gelombang tujuan; pembayaran pendaftar ini belum dapat
+                diverifikasi.
+              </AlertDescription>
+            </Alert>
             <template v-if="application.payment">
               <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
                 <DetailItem

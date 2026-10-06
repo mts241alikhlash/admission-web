@@ -236,8 +236,13 @@ function handleOpenChange(open: boolean) {
                   v-for="wave in waves"
                   :key="wave.id"
                   :value="wave.id"
+                  :disabled="wave.remainingQuota <= 0"
                 >
-                  {{ wave.name }}
+                  {{
+                    wave.remainingQuota <= 0
+                      ? `${wave.name} (penuh)`
+                      : wave.name
+                  }}
                 </SelectItem>
               </SelectContent>
             </Select>

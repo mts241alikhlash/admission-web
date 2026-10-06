@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { CalendarDays } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
-import { useSignUpDialog } from '../../composables/useSignUpDialog'
 import type { ActiveWave } from '../../types'
 import { formatDate, formatIDR } from '../../utils'
 
@@ -10,8 +10,6 @@ const props = defineProps<{
   waves: ActiveWave[]
   loading: boolean
 }>()
-
-const { open } = useSignUpDialog()
 
 const waveCards = computed(() =>
   props.waves.map((wave) => ({
@@ -23,15 +21,15 @@ const waveCards = computed(() =>
 </script>
 
 <template>
-  <section class="scroll-mt-24 bg-white py-16 sm:py-24">
+  <section class="scroll-mt-24 bg-white py-14 sm:py-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="max-w-2xl">
+      <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-16">
         <h2
-          class="text-3xl font-bold tracking-tight text-[#203f73] sm:text-4xl"
+          class="max-w-xl font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight text-[#203f73] sm:text-5xl"
         >
           Jadwal dan biaya pendaftaran
         </h2>
-        <p class="mt-4 leading-7 text-slate-700">
+        <p class="max-w-md text-sm leading-7 text-slate-700">
           Periksa gelombang yang tersedia, termasuk periode, kuota, dan biaya,
           sebelum membuat akun.
         </p>
@@ -74,13 +72,15 @@ const waveCards = computed(() =>
         <article
           v-for="wave in waveCards"
           :key="wave.id"
-          class="grid gap-7 border-b border-[#203f73]/25 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] lg:items-start lg:gap-10"
+          class="grid gap-7 border-b border-[#203f73]/25 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] lg:items-center lg:gap-10"
         >
           <div>
             <p class="text-xs font-bold text-[#203f73]">
               {{ wave.code }} · Pendaftaran dibuka
             </p>
-            <h3 class="mt-3 text-2xl font-bold text-[#203f73]">
+            <h3
+              class="mt-3 text-2xl font-semibold tracking-tight text-[#203f73]"
+            >
               {{ wave.name }}
             </h3>
             <p class="mt-1 text-sm text-slate-600">
@@ -104,10 +104,13 @@ const waveCards = computed(() =>
             <div>
               <dt class="text-sm text-slate-600">Sisa kuota</dt>
               <dd class="mt-2 text-sm font-bold text-[#203f73]">
-                {{ wave.remainingQuota }}
-                <span class="font-medium text-slate-600">
-                  dari {{ wave.quota }}
-                </span>
+                <template v-if="wave.remainingQuota > 0">
+                  {{ wave.remainingQuota }}
+                  <span class="font-medium text-slate-600">
+                    dari {{ wave.quota }}
+                  </span>
+                </template>
+                <template v-else>Penuh</template>
               </dd>
             </div>
             <div>
@@ -119,10 +122,11 @@ const waveCards = computed(() =>
           </dl>
 
           <Button
+            v-if="wave.remainingQuota > 0"
+            as-child
             class="min-h-11 bg-[#203f73] font-bold text-white hover:bg-[#162d53]"
-            @click="open"
           >
-            Mulai pendaftaran
+            <RouterLink to="/login">Mulai pendaftaran</RouterLink>
           </Button>
         </article>
       </div>

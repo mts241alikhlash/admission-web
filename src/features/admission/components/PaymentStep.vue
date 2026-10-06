@@ -3,8 +3,9 @@ import { computed, ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { toast } from 'vue-sonner'
-import { Copy, UploadCloud } from '@lucide/vue'
+import { Copy, TriangleAlert, UploadCloud } from '@lucide/vue'
 import { DatePicker } from '@mts241alikhlash/ui'
+import { Alert, AlertDescription, AlertTitle } from '@mts241alikhlash/ui/alert'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
@@ -27,6 +28,7 @@ import { formatDate, formatIDR, PAYMENT_STATUS_BADGE_VARIANTS } from '../utils'
 const props = defineProps<{
   applicationPayment: AdmissionPayment | null
   editable: boolean
+  waveFull?: boolean
   paymentFile: File | null
   uploadingPayment: boolean
   onFileChange: (event: Event) => void
@@ -120,7 +122,7 @@ async function upload() {
             v-if="applicationPayment"
             variant="ghost"
             size="sm"
-            class="h-auto p-1"
+            class="size-11 shrink-0 p-0"
             aria-label="Salin nominal"
             @click="copy(String(applicationPayment.amount), 'Nominal')"
           >
@@ -162,8 +164,19 @@ async function upload() {
       </CardContent>
     </Card>
 
+    <Alert
+      v-if="canUpload && waveFull"
+      variant="destructive"
+    >
+      <TriangleAlert />
+      <AlertTitle>Gelombang penuh</AlertTitle>
+      <AlertDescription>
+        Gelombang ini sudah penuh. Anda akan dipindahkan ke gelombang berikutnya
+        begitu dibuka.
+      </AlertDescription>
+    </Alert>
     <Card
-      v-if="canUpload"
+      v-else-if="canUpload"
       class="gap-0 overflow-hidden py-0"
     >
       <CardHeader class="border-b px-4 py-3">
@@ -192,40 +205,44 @@ async function upload() {
               aria-label="Rekening tujuan"
               class="grid gap-2 sm:grid-cols-2"
             >
-              <label
+              <div
                 v-for="account in accounts"
                 :key="account.id"
-                class="flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                class="flex min-w-0 items-start gap-2"
               >
-                <input
-                  type="radio"
-                  name="bankAccountId"
-                  class="mt-1"
-                  :value="account.id"
-                  :checked="values.bankAccountId === account.id"
-                  @change="setFieldValue('bankAccountId', account.id)"
-                />
-                <span class="min-w-0 flex-1 space-y-0.5">
-                  <span class="block font-medium">{{ account.bankName }}</span>
-                  <span class="flex flex-wrap items-center gap-1">
-                    <span class="font-mono">{{ account.accountNumber }}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      class="h-auto p-1"
-                      :aria-label="`Salin nomor rekening ${account.bankName}`"
-                      @click.prevent="
-                        copy(account.accountNumber, 'Nomor rekening')
-                      "
-                    >
-                      <Copy class="size-4" />
-                    </Button>
+                <label
+                  class="flex min-h-11 min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                >
+                  <input
+                    type="radio"
+                    name="bankAccountId"
+                    class="mt-1"
+                    :value="account.id"
+                    :checked="values.bankAccountId === account.id"
+                    @change="setFieldValue('bankAccountId', account.id)"
+                  />
+                  <span class="min-w-0 flex-1 space-y-0.5">
+                    <span class="block font-medium">{{
+                      account.bankName
+                    }}</span>
+                    <span class="block break-all font-mono">{{
+                      account.accountNumber
+                    }}</span>
+                    <span class="block text-muted-foreground">
+                      a.n. {{ account.accountHolder }}
+                    </span>
                   </span>
-                  <span class="block text-muted-foreground">
-                    a.n. {{ account.accountHolder }}
-                  </span>
-                </span>
-              </label>
+                </label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  class="size-11 shrink-0 p-0"
+                  :aria-label="`Salin nomor rekening ${account.bankName}`"
+                  @click="copy(account.accountNumber, 'Nomor rekening')"
+                >
+                  <Copy class="size-4" />
+                </Button>
+              </div>
             </div>
             <p
               v-if="errorMessage"

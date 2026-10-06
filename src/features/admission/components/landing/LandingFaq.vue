@@ -5,7 +5,7 @@ const questions = [
   {
     question: 'Bagaimana cara memulai pendaftaran?',
     answer:
-      'Pilih Mulai pendaftaran, lalu buat akun dengan email aktif. Periksa detail gelombang sebelum mengisi formulir.',
+      'Pilih Mulai pendaftaran untuk menuju halaman login. Masuk dengan akun Anda, atau pilih Daftar untuk membuat akun dengan email aktif.',
   },
   {
     question: 'Apakah saya bisa menyimpan formulir sebelum selesai?',
@@ -26,20 +26,22 @@ const questions = [
 </script>
 
 <template>
-  <section class="scroll-mt-24 bg-white py-16 sm:py-24">
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+  <section class="scroll-mt-24 bg-white py-14 sm:py-20">
+    <div
+      class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:px-8"
+    >
       <div>
         <h2
-          class="text-3xl font-bold tracking-tight text-[#203f73] sm:text-4xl"
+          class="max-w-md font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight text-[#203f73] sm:text-5xl"
         >
           Pertanyaan seputar pendaftaran
         </h2>
-        <p class="mt-4 leading-7 text-slate-600">
+        <p class="mt-5 max-w-sm text-sm leading-7 text-slate-600">
           Jawaban singkat untuk hal yang sering ditanyakan orang tua.
         </p>
       </div>
 
-      <div class="mt-10 divide-y divide-slate-300 border-y border-slate-300">
+      <div class="divide-y divide-slate-300 border-y border-slate-300">
         <details
           v-for="item in questions"
           :key="item.question"
@@ -50,7 +52,7 @@ const questions = [
           >
             {{ item.question }}
             <ChevronDown
-              class="size-5 shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-180"
+              class="size-5 shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none"
               aria-hidden="true"
             />
           </summary>

@@ -32,6 +32,7 @@ import {
   FileWarning,
   Megaphone,
   PartyPopper,
+  TriangleAlert,
   Wallet,
   XCircle,
 } from '@lucide/vue'
@@ -142,6 +143,7 @@ interface Task {
   title: string
   detail?: string | null
   icon: typeof AlertCircle
+  step?: 'documents' | 'payment'
 }
 
 const tasks = computed<Task[]>(() => {
@@ -171,6 +173,7 @@ const tasks = computed<Task[]>(() => {
       if (document?.status === 'REJECTED') {
         list.push({
           key: `doc-${type.id}`,
+          step: 'documents',
           title: `Unggah ulang ${type.name}`,
           detail: document.note,
           icon: FileWarning,
@@ -187,6 +190,7 @@ const tasks = computed<Task[]>(() => {
   ) {
     list.push({
       key: 'payment',
+      step: 'payment',
       title:
         payment.status === 'REJECTED'
           ? 'Unggah ulang bukti pembayaran'
@@ -255,12 +259,23 @@ onMounted(() => {
             · {{ application.wave?.name }}
           </CardDescription>
         </div>
-        <StatusBadge :status="application.status" />
       </CardHeader>
 
       <CardContent class="space-y-6 px-4 py-5 sm:px-6">
+        <StatusBadge :status="application.status" />
         <p class="text-base font-semibold">{{ nextAction }}</p>
 
+        <Alert
+          v-if="application.waveIsFull"
+          variant="destructive"
+        >
+          <TriangleAlert />
+          <AlertTitle>Gelombang penuh</AlertTitle>
+          <AlertDescription>
+            Gelombang ini sudah penuh. Anda akan dipindahkan ke gelombang
+            berikutnya begitu dibuka.
+          </AlertDescription>
+        </Alert>
         <Alert
           v-if="application.status === 'REVISION_NEEDED'"
           variant="destructive"
@@ -300,9 +315,98 @@ onMounted(() => {
           </AlertDescription>
         </Alert>
 
+        <Button
+          v-if="editable"
+          as-child
+          class="min-h-11"
+        >
+          <RouterLink to="/registration/form">
+            Lanjutkan Pengisian Formulir
+            <ArrowRight class="ml-1 size-4" />
+          </RouterLink>
+        </Button>
+        <Button
+          v-else-if="tasks.some((task) => task.key === 'payment')"
+          as-child
+          variant="outline"
+          class="min-h-11"
+        >
+          <RouterLink
+            :to="{ path: '/registration/form', query: { step: 'payment' } }"
+          >
+            Unggah Bukti Pembayaran
+            <ArrowRight class="ml-1 size-4" />
+          </RouterLink>
+        </Button>
+
+        <template v-if="tasks.length">
+          <Separator />
+          <section class="space-y-3">
+            <h2 class="font-semibold">Langkah yang perlu diselesaikan</h2>
+            <ul class="space-y-2">
+              <li
+                v-for="task in tasks"
+                :key="task.key"
+                class="flex items-start gap-3 rounded-lg border p-3 text-sm"
+              >
+                <component
+                  :is="task.icon"
+                  class="mt-0.5 size-4 shrink-0 text-destructive"
+                  aria-hidden="true"
+                />
+                <div class="min-w-0 flex-1">
+                  <RouterLink
+                    :to="
+                      task.step
+                        ? {
+                            path: '/registration/form',
+                            query: { step: task.step },
+                          }
+                        : '/registration/form'
+                    "
+                    class="inline-flex min-h-11 items-center font-medium underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  >
+                    {{ task.title }}
+                  </RouterLink>
+                  <p
+                    v-if="task.detail"
+                    class="break-words text-muted-foreground"
+                  >
+                    {{ task.detail }}
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </template>
+
+        <details class="sm:hidden">
+          <summary
+            class="flex min-h-11 cursor-pointer items-center font-medium"
+          >
+            Tahapan pendaftaran
+          </summary>
+          <ol class="space-y-3 border-l-2 border-muted pl-4 text-sm">
+            <li
+              v-for="(step, index) in TIMELINE"
+              :key="step.status"
+            >
+              <span
+                :class="
+                  index + 1 <= currentStep
+                    ? 'font-semibold text-primary'
+                    : 'text-muted-foreground'
+                "
+                >{{ step.label }}</span
+              >
+              <p class="text-muted-foreground">{{ step.description }}</p>
+            </li>
+          </ol>
+        </details>
+
         <Stepper
           :model-value="currentStep"
-          class="flex w-full items-start gap-1 sm:gap-2"
+          class="hidden w-full items-start gap-1 sm:flex sm:gap-2"
           aria-label="Tahapan pendaftaran"
         >
           <StepperItem
@@ -385,55 +489,6 @@ onMounted(() => {
             </p>
           </div>
         </div>
-
-        <template v-if="tasks.length">
-          <Separator />
-          <section class="space-y-3">
-            <h2 class="font-semibold">Langkah yang perlu diselesaikan</h2>
-            <ul class="space-y-2">
-              <li
-                v-for="task in tasks"
-                :key="task.key"
-                class="flex items-start gap-3 rounded-lg border p-3 text-sm"
-              >
-                <component
-                  :is="task.icon"
-                  class="mt-0.5 size-4 shrink-0 text-destructive"
-                  aria-hidden="true"
-                />
-                <div class="min-w-0 flex-1">
-                  <p class="font-medium">{{ task.title }}</p>
-                  <p
-                    v-if="task.detail"
-                    class="break-words text-muted-foreground"
-                  >
-                    {{ task.detail }}
-                  </p>
-                </div>
-              </li>
-            </ul>
-          </section>
-        </template>
-
-        <Button
-          v-if="editable"
-          as-child
-        >
-          <RouterLink to="/registration/form">
-            Lanjutkan Pengisian Formulir
-            <ArrowRight class="ml-1 size-4" />
-          </RouterLink>
-        </Button>
-        <Button
-          v-else-if="tasks.some((task) => task.key === 'payment')"
-          as-child
-          variant="outline"
-        >
-          <RouterLink to="/registration/form">
-            Unggah Bukti Pembayaran
-            <ArrowRight class="ml-1 size-4" />
-          </RouterLink>
-        </Button>
       </CardContent>
     </Card>
 

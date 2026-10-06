@@ -1,11 +1,28 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, useId, useTemplateRef } from 'vue'
+import {
+  computed,
+  h,
+  nextTick,
+  onMounted,
+  ref,
+  useId,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { useIntersectionObserver } from '@vueuse/core'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Plus } from '@lucide/vue'
+import { Filter, Plus } from '@lucide/vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@mts241alikhlash/ui/dialog'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
 import {
   Select,
@@ -35,6 +52,12 @@ const yearFilter = ref('ALL')
 const statusFilter = ref('ALL')
 const statusFilterId = useId()
 const yearFilterId = useId()
+const mobileYearFilterId = useId()
+const mobileStatusFilterId = useId()
+const filterOpen = ref(false)
+const mobilePage = ref(1)
+const changingPage = ref(false)
+let filterRevision = 0
 
 const {
   waves,
@@ -44,6 +67,8 @@ const {
   loading,
   hasNextPage,
   isFetchingNextPage,
+  isFetching,
+  filtersPending,
   loadMore,
   refresh,
   isSaving,
@@ -51,6 +76,45 @@ const {
   saveWave,
   deleteWave,
 } = useWaveList(search, yearFilter, statusFilter)
+const mobileWaves = computed(() =>
+  waves.value.slice((mobilePage.value - 1) * 10, mobilePage.value * 10),
+)
+watch(
+  [search, yearFilter, statusFilter],
+  () => {
+    filterRevision++
+    mobilePage.value = 1
+  },
+  { flush: 'sync' },
+)
+watch(totalItems, (total) => {
+  mobilePage.value = Math.min(
+    mobilePage.value,
+    Math.max(1, Math.ceil(total / 10)),
+  )
+})
+async function nextMobilePage() {
+  if (changingPage.value || isFetching.value || filtersPending.value) return
+  const revision = filterRevision
+  const page = mobilePage.value
+  changingPage.value = true
+  try {
+    if (page * 10 >= waves.value.length) await loadMore()
+    if (
+      revision === filterRevision &&
+      page === mobilePage.value &&
+      waves.value.length > page * 10
+    )
+      mobilePage.value = page + 1
+    await nextTick()
+  } finally {
+    changingPage.value = false
+  }
+}
+function resetFilters() {
+  statusFilter.value = 'ALL'
+  yearFilter.value = 'ALL'
+}
 
 const isFormOpen = ref(false)
 const selectedWave = ref<AdmissionWaveSummary | null>(null)
@@ -60,7 +124,7 @@ const yearOptions = computed(() =>
 )
 const loadMoreButton = useTemplateRef('loadMoreButton')
 useIntersectionObserver(loadMoreButton, ([entry]) => {
-  if (entry?.isIntersecting) loadMore()
+  if (entry?.isIntersecting) void loadMore()
 })
 
 const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
@@ -97,8 +161,7 @@ const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
     id: 'quota',
     header: 'Kuota',
     meta: { align: 'center' },
-    cell: ({ row }) =>
-      `${row.original._count?.applications ?? 0} / ${row.original.quota}`,
+    cell: ({ row }) => quotaLabel(row.original),
   },
   {
     id: 'fee',
@@ -162,6 +225,11 @@ async function confirmDelete() {
     await refresh()
   }
 }
+
+function quotaLabel(wave: { filledCount: number; quota: number }) {
+  const label = `${wave.filledCount} / ${wave.quota}`
+  return wave.filledCount >= wave.quota ? `${label} · Penuh` : label
+}
 </script>
 
 <template>
@@ -186,7 +254,7 @@ async function confirmDelete() {
 
       <div class="space-y-4 p-4 sm:p-6">
         <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+          class="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
             <FloatingLabelField
@@ -242,6 +310,38 @@ async function confirmDelete() {
             label="Cari gelombang"
           />
         </div>
+        <div class="flex items-center gap-2 md:hidden">
+          <SearchInput
+            v-model="search"
+            label="Cari gelombang"
+            class="min-w-0 flex-1 [&_input]:h-11"
+          />
+          <Button
+            variant="outline"
+            class="min-h-11 shrink-0"
+            @click="filterOpen = true"
+            ><Filter class="mr-1.5 size-4" />Filter</Button
+          >
+        </div>
+        <div
+          v-if="statusFilter !== 'ALL' || yearFilter !== 'ALL'"
+          class="flex flex-wrap gap-2 md:hidden"
+        >
+          <Button
+            v-if="statusFilter !== 'ALL'"
+            variant="outline"
+            class="min-h-11"
+            @click="statusFilter = 'ALL'"
+            >Hapus filter status</Button
+          >
+          <Button
+            v-if="yearFilter !== 'ALL'"
+            variant="outline"
+            class="min-h-11"
+            @click="yearFilter = 'ALL'"
+            >Hapus filter tahun ajaran</Button
+          >
+        </div>
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
@@ -268,17 +368,24 @@ async function confirmDelete() {
             hide-pagination
           />
           <p
-            v-if="!loading && !waves.length"
+            v-if="!loading && !filtersPending && !waves.length"
             class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
           >
             Tidak ada data.
           </p>
+          <p
+            v-if="loading || filtersPending"
+            class="text-center text-sm text-muted-foreground md:hidden"
+          >
+            Memuat gelombang…
+          </p>
           <ul
+            v-if="!loading && !filtersPending"
             data-test="mobile-waves"
             class="space-y-2 md:hidden"
           >
             <li
-              v-for="wave in waves"
+              v-for="wave in mobileWaves"
               :key="wave.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
@@ -290,9 +397,7 @@ async function confirmDelete() {
                 {{ formatDate(wave.startDate) }} –
                 {{ formatDate(wave.endDate) }}
               </p>
-              <p class="text-sm">
-                Kuota {{ wave._count?.applications ?? 0 }} / {{ wave.quota }}
-              </p>
+              <p class="text-sm">Kuota {{ quotaLabel(wave) }}</p>
               <p class="text-sm">
                 Biaya {{ formatIDR(Number(wave.registrationFee)) }}
               </p>
@@ -318,8 +423,39 @@ async function confirmDelete() {
             </li>
           </ul>
           <div
+            v-if="!loading && !filtersPending && totalItems > 10"
+            class="flex flex-wrap items-center justify-between gap-2 text-sm md:hidden"
+          >
+            <span
+              >Halaman {{ mobilePage }} dari
+              {{ Math.ceil(totalItems / 10) }}</span
+            >
+            <div class="flex gap-2">
+              <Button
+                variant="outline"
+                class="min-h-11"
+                :disabled="mobilePage === 1"
+                @click="mobilePage--"
+                >Sebelumnya</Button
+              >
+              <Button
+                variant="outline"
+                class="min-h-11"
+                :disabled="
+                  mobilePage * 10 >= totalItems ||
+                  changingPage ||
+                  isFetchingNextPage ||
+                  isFetching ||
+                  filtersPending
+                "
+                @click="nextMobilePage"
+                >Selanjutnya</Button
+              >
+            </div>
+          </div>
+          <div
             v-if="hasNextPage"
-            class="flex flex-col items-center gap-2"
+            class="hidden flex-col items-center gap-2 md:flex"
           >
             <p class="text-sm text-muted-foreground">
               Menampilkan {{ waves.length }} dari {{ totalItems }} gelombang
@@ -336,6 +472,72 @@ async function confirmDelete() {
         </template>
       </div>
     </Card>
+
+    <Dialog v-model:open="filterOpen">
+      <DialogContent
+        class="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <DialogHeader class="shrink-0 border-b px-4 py-4 sm:px-6"
+          ><DialogTitle>Filter Gelombang</DialogTitle
+          ><DialogDescription class="sr-only"
+            >Pilih status dan tahun ajaran.</DialogDescription
+          ></DialogHeader
+        >
+        <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+          <FloatingLabelField
+            label="Status"
+            :for="mobileStatusFilterId"
+            floating
+          >
+            <Select v-model="statusFilter"
+              ><SelectTrigger
+                :id="mobileStatusFilterId"
+                class="min-h-11 w-full"
+                ><SelectValue /></SelectTrigger
+              ><SelectContent
+                ><SelectItem value="ALL">Semua</SelectItem
+                ><SelectItem value="true">Aktif</SelectItem
+                ><SelectItem value="false">Nonaktif</SelectItem></SelectContent
+              ></Select
+            >
+          </FloatingLabelField>
+          <FloatingLabelField
+            label="Tahun Ajaran"
+            :for="mobileYearFilterId"
+            floating
+          >
+            <Select v-model="yearFilter"
+              ><SelectTrigger
+                :id="mobileYearFilterId"
+                class="min-h-11 w-full"
+                ><SelectValue /></SelectTrigger
+              ><SelectContent
+                ><SelectItem value="ALL">Semua</SelectItem
+                ><SelectItem
+                  v-for="year in yearOptions"
+                  :key="year.id"
+                  :value="year.id"
+                  >{{ year.name }}</SelectItem
+                ></SelectContent
+              ></Select
+            >
+          </FloatingLabelField>
+        </div>
+        <DialogFooter class="flex-row gap-2 border-t px-4 py-4 sm:px-6">
+          <Button
+            variant="outline"
+            class="min-h-11 flex-1"
+            @click="resetFilters"
+            >Atur Ulang</Button
+          >
+          <Button
+            class="min-h-11 flex-1"
+            @click="filterOpen = false"
+            >Tutup</Button
+          >
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <WaveFormDialog
       v-model:open="isFormOpen"

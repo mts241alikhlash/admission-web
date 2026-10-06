@@ -100,6 +100,52 @@ it('links every payment field to its visible label', () => {
   wrapper.unmount()
 })
 
+it('copies an account without selecting its radio option', async () => {
+  useFormOptions().options.value = {
+    bankAccounts: [
+      {
+        id: 'acc-1',
+        bankName: 'BSI',
+        accountNumber: '7123456789',
+        accountHolder: 'MTs',
+      },
+    ],
+  } as never
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText },
+  })
+  const wrapper = mount(PaymentStep, {
+    props: {
+      modelValue: {
+        bankAccountId: '',
+        bankName: '',
+        senderAccountName: '',
+        transferDate: '',
+      },
+      applicationPayment: null,
+      editable: true,
+      paymentFile: null,
+      uploadingPayment: false,
+      onFileChange: vi.fn(),
+      onUpload: vi.fn(),
+    },
+  })
+  await wrapper
+    .get('button[aria-label="Salin nomor rekening BSI"]')
+    .trigger('click')
+  await flushPromises()
+  expect(writeText).toHaveBeenCalledWith('7123456789')
+  expect(wrapper.find('label button').exists()).toBe(false)
+  expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  expect(
+    wrapper.get<HTMLInputElement>('input[type="radio"]').element.checked,
+  ).toBe(false)
+  wrapper.unmount()
+  useFormOptions().options.value = null
+})
+
 it('shows payment errors under their fields and uploads only a valid form', async () => {
   useFormOptions().options.value = {
     bankAccounts: [
@@ -188,4 +234,27 @@ it('drops the chosen proof when a file of the wrong type replaces it', async () 
 
   expect(wrapper.text()).toContain('Format berkas harus JPG, PNG, atau PDF.')
   expect(onFileChange).toHaveBeenCalledTimes(1)
+})
+
+it('replaces the proof upload with a notice while the wave is full', () => {
+  const wrapper = mount(PaymentStep, {
+    props: {
+      modelValue: {
+        bankAccountId: '',
+        bankName: '',
+        senderAccountName: '',
+        transferDate: '',
+      },
+      applicationPayment: null,
+      editable: true,
+      waveFull: true,
+      paymentFile: null,
+      uploadingPayment: false,
+      onFileChange: vi.fn(),
+      onUpload: vi.fn(),
+    },
+  })
+  expect(wrapper.text()).toContain('Gelombang ini sudah penuh')
+  expect(wrapper.find('input[type="file"]').exists()).toBe(false)
+  wrapper.unmount()
 })

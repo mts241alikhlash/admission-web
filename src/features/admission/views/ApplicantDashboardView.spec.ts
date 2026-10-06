@@ -59,7 +59,7 @@ const mountView = () =>
         RouterLink: {
           props: ['to'],
           template:
-            "<a :href=\"typeof to === 'string' ? to : '/'\"><slot /></a>",
+            "<a :href=\"typeof to === 'string' ? to : to.path + (to.query?.step ? '?step=' + to.query.step : '')\"><slot /></a>",
         },
       },
     },
@@ -135,6 +135,12 @@ it('lists what the applicant still has to do', () => {
   expect(wrapper.text()).toContain('Buram')
   expect(wrapper.text()).toContain('Unggah bukti pembayaran')
   expect(wrapper.text()).toContain('1 dari 2 berkas wajib')
+  expect(
+    wrapper.find('a[href="/registration/form?step=documents"]').exists(),
+  ).toBe(true)
+  expect(
+    wrapper.find('a[href="/registration/form?step=payment"]').exists(),
+  ).toBe(true)
 })
 
 it('has nothing left to do once enrolled', () => {

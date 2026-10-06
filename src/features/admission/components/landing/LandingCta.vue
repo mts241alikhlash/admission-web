@@ -1,32 +1,125 @@
 <script setup lang="ts">
+import { RouterLink } from 'vue-router'
 import { Button } from '@mts241alikhlash/ui/button'
-import { useSignUpDialog } from '../../composables/useSignUpDialog'
-
-const { open } = useSignUpDialog()
 </script>
 
 <template>
-  <section class="px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
-    <div
-      class="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-12 sm:py-18"
-    >
-      <div class="relative mx-auto max-w-2xl">
-        <p class="text-sm font-bold tracking-wider text-white">SIAP MEMULAI?</p>
-        <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-          Buat akun pendaftaran Anda hari ini.
-        </h2>
-        <p class="mt-4 leading-7 text-white">
-          Semua informasi dan perkembangan proses pendaftaran dapat diakses dari
-          satu akun.
-        </p>
-        <Button
-          size="lg"
-          class="mt-8 bg-white font-bold text-primary shadow-lg hover:bg-slate-100"
-          @click="open"
-        >
-          Daftar Sekarang
-        </Button>
-      </div>
+  <section
+    class="closing-admission"
+    aria-labelledby="closing-title"
+  >
+    <div class="closing-photo landing-photo-reveal">
+      <img
+        src="/bg.webp"
+        alt="Halaman sekolah Al-Ikhlash saat kegiatan bersama santri"
+        width="1150"
+        height="661"
+        loading="lazy"
+      />
+    </div>
+    <div class="closing-copy">
+      <p class="closing-school">MTs Persis 241 Al-Ikhlash</p>
+      <h2 id="closing-title">Sampai bertemu<br />di Al-Ikhlash.</h2>
+      <p class="closing-description">
+        Mulai dengan satu akun. Lengkapi formulir, kirim berkas, dan ikuti
+        perkembangan pendaftaran dari rumah.
+      </p>
+      <Button
+        as-child
+        size="lg"
+        class="closing-button"
+      >
+        <RouterLink to="/login">Mulai pendaftaran</RouterLink>
+      </Button>
+      <a
+        href="#persyaratan"
+        class="closing-requirements"
+        >Periksa persyaratan terlebih dahulu</a
+      >
     </div>
   </section>
 </template>
+
+<style scoped>
+.closing-admission {
+  display: grid;
+  background: #203f73;
+  color: white;
+}
+.closing-photo {
+  min-width: 0;
+}
+.closing-photo img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1.9;
+  object-fit: cover;
+}
+.closing-copy {
+  padding: 2.5rem 1.25rem 3rem;
+}
+.closing-school {
+  font-size: 0.8125rem;
+  color: #e5cc87;
+}
+h2 {
+  margin-top: 1.25rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.5rem, 4.8vw, 4.25rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+.closing-description {
+  max-width: 23rem;
+  margin-top: 1.5rem;
+  color: #e2e8f0;
+  font-size: 0.9375rem;
+  line-height: 1.85;
+}
+.closing-button {
+  margin-top: 1.75rem;
+  min-height: 3rem;
+  padding-inline: 1.5rem;
+  background: #e5cc87;
+  color: #162d53;
+  font-weight: 700;
+}
+.closing-button:hover {
+  background: #f0db9f;
+}
+.closing-requirements {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 2.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.closing-requirements:focus-visible {
+  outline: 2px solid #e5cc87;
+  outline-offset: 4px;
+}
+@media (min-width: 640px) {
+  .closing-admission {
+    grid-template-columns: 0.85fr 1.15fr;
+  }
+  .closing-photo img {
+    aspect-ratio: auto;
+    object-position: 35% center;
+  }
+  .closing-copy {
+    padding: 3.5rem 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .closing-admission {
+    grid-template-columns: 1fr 1fr;
+  }
+  .closing-copy {
+    padding: 4.5rem max(3rem, calc((100vw - 76rem) / 2)) 4.5rem 4rem;
+  }
+}
+</style>

@@ -115,9 +115,7 @@ export const applicationDetailService = {
     const store = useApplicationDetailStore()
     store.acting = true
     try {
-      const res = await admissionApi.acceptApplication(applicationId, note)
-      const warning = res.data.data.quotaWarning
-      if (warning) toast.warning(warning)
+      await admissionApi.acceptApplication(applicationId, note)
       toast.success('Pendaftar dinyatakan DITERIMA.')
       await applicationDetailService.fetchDetail(applicationId)
       return { success: true }
