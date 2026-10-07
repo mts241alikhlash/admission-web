@@ -117,13 +117,16 @@ export function admissionErrorMessage(error: unknown, fallback: string) {
   return getIndonesianErrorMessage(error, fallback)
 }
 
+export function jakartaToday(now: Date = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(
+    now,
+  )
+}
+
 export function isWaveClosed(
   endDate: string | null | undefined,
   now: Date = new Date(),
 ) {
   if (!endDate) return false
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Jakarta',
-  }).format(now)
-  return endDate.slice(0, 10) < today
+  return endDate.slice(0, 10) < jakartaToday(now)
 }

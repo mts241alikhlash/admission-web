@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { jakartaToday } from '../utils'
 import {
   achievementsSchema,
   achievementsSchemaFor,
@@ -454,7 +455,7 @@ describe('achievementsSchema', () => {
 
 describe('paymentSchema', () => {
   it('asks the destination account, bank, sender and a transfer date no later than today', () => {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = jakartaToday()
     expect(
       issuesOf(paymentSchema, {
         bankAccountId: 'acc-1',

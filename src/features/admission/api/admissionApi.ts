@@ -9,6 +9,10 @@ import type {
   AdmissionDocumentTypeAdmin,
   BankAccountSavePayload,
   DocumentTypeSavePayload,
+  AddPaymentPayload,
+  AdmissionEligibleApplication,
+  AdmissionPaymentQueue,
+  PaymentQueueQuery,
   AdmissionAcademicYear,
   AdmissionAcceptedApplication,
   AdmissionAnnouncement,
@@ -347,6 +351,36 @@ export const admissionApi = {
 
   deleteDocumentType: (id: string) =>
     api.delete<void>(`/admissions/document-types/${id}`),
+
+  getPaymentQueue: (params: PaymentQueueQuery) =>
+    api.get<AdmissionPaymentQueue>('/admissions/payments', { params }),
+
+  getEligiblePaymentApplications: (search?: string) =>
+    api.get<{ data: AdmissionEligibleApplication[] }>(
+      '/admissions/payments/eligible-applications',
+      { params: { search: search || undefined } },
+    ),
+
+  verifyQueuePayment: (
+    applicationId: string,
+    payload: { status: 'VERIFIED' | 'REJECTED'; note?: string },
+  ) => api.patch(`/admissions/payments/${applicationId}/verify`, payload),
+
+  cancelPaymentVerification: (applicationId: string, note: string) =>
+    api.post(`/admissions/payments/${applicationId}/cancel`, { note }),
+
+  addPayment: (payload: AddPaymentPayload, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('applicationId', payload.applicationId)
+    formData.append('bankAccountId', payload.bankAccountId)
+    formData.append('bankName', payload.bankName)
+    formData.append('senderAccountName', payload.senderAccountName)
+    formData.append('transferDate', payload.transferDate)
+    return api.post('/admissions/payments', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 
   getManageAnnouncements: (params?: {
     page?: number

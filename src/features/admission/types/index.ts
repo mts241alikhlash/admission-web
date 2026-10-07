@@ -18,6 +18,26 @@ export interface BankAccountSavePayload {
 }
 export type AdmissionDocumentTypeAdmin =
   Schemas['AdmissionDocumentTypeResponseDto']
+export type AdmissionPaymentQueueRow =
+  Schemas['AdmissionPaymentQueueRowResponseDto']
+export type AdmissionPaymentQueue = Schemas['AdmissionPaymentQueueResponseDto']
+export type AdmissionEligibleApplication =
+  Schemas['AdmissionEligibleApplicationResponseDto']
+export type PaymentQueueStatus = 'PENDING' | 'VERIFIED' | 'REJECTED'
+export interface PaymentQueueQuery {
+  status: PaymentQueueStatus
+  search?: string
+  waveId?: string
+  page: number
+  limit: number
+}
+export interface AddPaymentPayload {
+  applicationId: string
+  bankAccountId: string
+  bankName: string
+  senderAccountName: string
+  transferDate: string
+}
 export interface DocumentTypeSavePayload {
   name: string
   isRequired: boolean

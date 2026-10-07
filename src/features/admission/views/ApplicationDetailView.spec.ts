@@ -15,6 +15,14 @@ const { application, acting, error, fetchDetail, setActing } = vi.hoisted(
   }),
 )
 
+const access = vi.hoisted(() => ({ granted: new Set<string>() }))
+vi.mock('@/features/platform/auth', () => ({
+  useRoleGuard: () => ({
+    can: (...permissions: string[]) =>
+      permissions.some((p) => access.granted.has(p)),
+  }),
+}))
+
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { id: 'app-1' } }),
   useRouter: () => ({ push: vi.fn() }),
@@ -98,6 +106,10 @@ const stubs = {
   ExternalLink: true,
   Input: input,
   Label: label,
+  RouterLink: {
+    props: ['to'],
+    template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+  },
   StatusBadge: passthrough,
   Textarea: textarea,
 }
@@ -182,6 +194,10 @@ async function openTab(
 describe('ApplicationDetailView', () => {
   beforeEach(() => {
     application.value = { ...draft }
+    access.granted = new Set([
+      'admission-payments.verify',
+      'admission-payments.create',
+    ])
     acting.value = false
     error.value = null
     vi.clearAllMocks()
@@ -363,5 +379,117 @@ describe('ApplicationDetailView', () => {
     const notFound = await mountView()
     expect(notFound.text()).toContain('Pendaftar tidak ditemukan.')
     expect(notFound.text()).not.toContain('Coba lagi')
+  })
+
+  it('lets a payment verifier approve or reject a pending proof', async () => {
+    application.value = {
+      ...draft,
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: { storageKey: 'files/bukti.png' },
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    expect(wrapper.text()).toContain('Verifikasi Pembayaran')
+    expect(wrapper.text()).toContain('Tolak')
+  })
+
+  it('shows no payment buttons without the verify permission', async () => {
+    access.granted = new Set()
+    application.value = {
+      ...draft,
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: { storageKey: 'files/bukti.png' },
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    expect(wrapper.text()).not.toContain('Verifikasi Pembayaran')
+    expect(wrapper.text()).not.toContain('Tolak')
+    expect(wrapper.text()).toContain('Lihat Bukti Transfer')
+  })
+
+  it('links to the payment page with the applicant for those who may add payments', async () => {
+    application.value = {
+      ...draft,
+      id: 'app-1',
+      status: 'SUBMITTED',
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: null,
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    const link = wrapper.get('[data-test="add-payment-link"]')
+    expect(link.text()).toContain('Tambah pembayaran')
+    expect(JSON.parse(link.attributes('data-to')!)).toEqual({
+      name: 'admin-payments',
+      query: { applicationId: 'app-1' },
+    })
+  })
+
+  it.each([
+    ['VERIFIED', 'SUBMITTED'],
+    ['PENDING', 'ACCEPTED'],
+  ])(
+    'hides the add link for a %s payment on a %s application',
+    async (paymentStatus, status) => {
+      application.value = {
+        ...draft,
+        status,
+        payment: {
+          id: 'pay1',
+          applicationId: 'app-1',
+          amount: 150000,
+          status: paymentStatus,
+          note: null,
+          proofFile: null,
+        },
+      } as unknown as AdmissionApplication
+      const wrapper = await mountView()
+      await openTab(wrapper, 'Pembayaran')
+
+      expect(wrapper.find('[data-test="add-payment-link"]').exists()).toBe(
+        false,
+      )
+    },
+  )
+
+  it('hides the add link without the create permission', async () => {
+    access.granted = new Set(['admission-payments.verify'])
+    application.value = {
+      ...draft,
+      status: 'SUBMITTED',
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: null,
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    expect(wrapper.find('[data-test="add-payment-link"]').exists()).toBe(false)
   })
 })

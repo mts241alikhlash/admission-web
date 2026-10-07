@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import { jakartaToday } from '../utils'
 
 const postalCodeSchema = z
   .string()
@@ -56,7 +57,7 @@ function countSchema(min: number, message: string) {
     )
 }
 
-const today = () => new Date().toISOString().slice(0, 10)
+const today = () => jakartaToday()
 
 export const personalSchema = z.object({
   fullName: z.string().trim().min(1, 'Nama lengkap wajib diisi').max(100),

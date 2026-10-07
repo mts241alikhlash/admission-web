@@ -7,6 +7,7 @@ export default {
     documentType: 'Document Types',
     form: 'Form',
     myProfile: 'My Profile',
+    payment: 'Payments',
     registrationStatus: 'Registration Status',
     section: {
       admission: 'Admission Desk',

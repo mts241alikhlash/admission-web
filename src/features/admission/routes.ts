@@ -155,6 +155,21 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/payments',
+    name: 'admin-payments',
+    component: () => import('./views/PaymentListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-payments.read',
+      title: 'Pembayaran',
+      description: 'Verifikasi pembayaran biaya pendaftaran.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Pembayaran' },
+      ],
+    },
+  },
+  {
     path: '/admin/announcements',
     name: 'admin-announcements',
     component: () => import('./views/AnnouncementListView.vue'),
