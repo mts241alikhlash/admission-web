@@ -28,9 +28,12 @@ const emit = defineEmits<{
 }>()
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
-const today = new Date().toISOString().slice(0, 10)
+const jakartaDate = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Jakarta',
+})
+const today = ref(jakartaDate.format(new Date()))
 
-const { options } = useFormOptions()
+const { options, load: loadOptions } = useFormOptions()
 const accounts = computed(() => options.value?.bankAccounts ?? [])
 
 const search = ref('')
@@ -91,7 +94,7 @@ function validate() {
   if (!senderAccountName.value.trim())
     next.senderAccountName = 'Nama pengirim wajib diisi'
   if (!transferDate.value) next.transferDate = 'Tanggal transfer wajib diisi'
-  else if (transferDate.value > today) {
+  else if (transferDate.value > today.value) {
     next.transferDate = 'Tanggal transfer tidak boleh melewati hari ini'
   }
   if (!file.value)
@@ -122,7 +125,14 @@ watch(
   async (open) => {
     if (!open) return
     reset()
-    await loadApplicants()
+    today.value = jakartaDate.format(new Date())
+    await Promise.all([loadOptions(), loadApplicants()])
+    if (
+      applicationId.value &&
+      !applicants.value.some((a) => a.applicationId === applicationId.value)
+    ) {
+      applicationId.value = ''
+    }
   },
   { immediate: true },
 )

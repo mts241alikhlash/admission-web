@@ -5,11 +5,13 @@ import { ref } from 'vue'
 import AddPaymentDialog from './AddPaymentDialog.vue'
 
 const service = vi.hoisted(() => ({ fetchEligible: vi.fn(), add: vi.fn() }))
+const loadOptions = vi.hoisted(() => vi.fn())
 vi.mock('../services/paymentQueueService', () => ({
   paymentQueueService: service,
 }))
 vi.mock('../composables/useFormOptions', () => ({
   useFormOptions: () => ({
+    load: loadOptions,
     options: ref({
       bankAccounts: [
         {
@@ -174,4 +176,39 @@ it('refuses a file that is not JPG, PNG or PDF', async () => {
   await input.trigger('change')
 
   expect(wrapper.text()).toContain('Format berkas harus JPG, PNG, atau PDF.')
+})
+
+it('loads the form options when opened', async () => {
+  mountDialog()
+  await flushPromises()
+
+  expect(loadOptions).toHaveBeenCalled()
+})
+
+it('drops a pre-selected applicant that is not in the loaded list', async () => {
+  service.add.mockResolvedValue({ success: true })
+  const wrapper = mountDialog('app99')
+  await flushPromises()
+
+  await fill(wrapper)
+  await wrapper.get('form').trigger('submit')
+  await flushPromises()
+
+  expect(service.add).not.toHaveBeenCalled()
+  expect(wrapper.text()).toContain('Pilih pendaftar')
+})
+
+it('refuses a transfer date after today', async () => {
+  const wrapper = mountDialog('app1')
+  await flushPromises()
+
+  await fill(wrapper)
+  await wrapper.get('input[name="transferDate"]').setValue('2999-01-01')
+  await wrapper.get('form').trigger('submit')
+  await flushPromises()
+
+  expect(service.add).not.toHaveBeenCalled()
+  expect(wrapper.text()).toContain(
+    'Tanggal transfer tidak boleh melewati hari ini',
+  )
 })
