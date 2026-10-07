@@ -1,5 +1,11 @@
 # admission-web
 
+## 1.8.0
+
+### Minor Changes
+
+- 984ad9c: Files open in a preview popup on the same page (images and PDFs, with a download button) instead of a link, in the applicant detail and in the payment queue. The links used to point at `localhost` in production and did not work.
+
 ## 1.7.0
 
 ### Minor Changes
