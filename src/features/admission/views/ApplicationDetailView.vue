@@ -32,6 +32,7 @@ import {
 } from '@mts241alikhlash/ui/dialog'
 import { ExternalLink, Info, SquarePen, TriangleAlert } from '@lucide/vue'
 import { Alert, AlertDescription, AlertTitle } from '@mts241alikhlash/ui/alert'
+import { useRoleGuard } from '@/features/platform/auth'
 import { useApplicationDetail } from '../composables/useApplicationDetail'
 import { useFormOptions } from '../composables/useFormOptions'
 import DetailItem from '../components/DetailItem.vue'
@@ -56,6 +57,7 @@ import {
   presentValue,
 } from '../utils'
 
+const { can } = useRoleGuard()
 const route = useRoute()
 const router = useRouter()
 const applicationId = computed(() => String(route.params.id))
@@ -76,6 +78,16 @@ const {
   reject,
   enroll,
 } = useApplicationDetail()
+
+const canVerifyPayment = computed(() => can('admission-payments.verify'))
+const canAddPayment = computed(
+  () =>
+    can('admission-payments.create') &&
+    application.value?.payment?.status !== 'VERIFIED' &&
+    ['DRAFT', 'SUBMITTED', 'REVISION_NEEDED'].includes(
+      application.value?.status ?? '',
+    ),
+)
 
 type DialogKind =
   | 'revision'
@@ -1148,7 +1160,9 @@ useBreadcrumbs(() => {
                   </a>
                 </Button>
                 <Button
-                  v-if="application.payment.status === 'PENDING'"
+                  v-if="
+                    canVerifyPayment && application.payment.status === 'PENDING'
+                  "
                   variant="destructive"
                   :disabled="acting"
                   @click="openDialog('reject-payment')"
@@ -1156,11 +1170,28 @@ useBreadcrumbs(() => {
                   Tolak
                 </Button>
                 <Button
-                  v-if="application.payment.status === 'PENDING'"
+                  v-if="
+                    canVerifyPayment && application.payment.status === 'PENDING'
+                  "
                   :disabled="acting"
                   @click="handleVerifyPayment"
                 >
                   Verifikasi Pembayaran
+                </Button>
+                <Button
+                  v-if="canAddPayment"
+                  as-child
+                  variant="outline"
+                >
+                  <RouterLink
+                    data-test="add-payment-link"
+                    :to="{
+                      name: 'admin-payments',
+                      query: { applicationId: application.id },
+                    }"
+                  >
+                    Tambah pembayaran
+                  </RouterLink>
                 </Button>
               </div>
             </template>

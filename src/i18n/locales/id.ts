@@ -7,6 +7,7 @@ export default {
     documentType: 'Jenis Berkas',
     form: 'Formulir',
     myProfile: 'Profil Saya',
+    payment: 'Pembayaran',
     registrationStatus: 'Status Pendaftaran',
     section: {
       admission: 'Admin PSB',
