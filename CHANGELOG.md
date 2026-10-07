@@ -1,5 +1,12 @@
 # admission-web
 
+## 1.6.0
+
+### Minor Changes
+
+- a7d6916: Jenis Berkas drops the reorder buttons (new types still go last), shows the code in its own column, renames the "Wajib" header to "Kewajiban", and in the add/edit dialog the Wajib diunggah and Aktif switches can be toggled by clicking anywhere on their row; the Aktif label no longer carries a parenthetical.
+- 5e4074c: The landing page and the sign-in screen get a new design: a hero with school photos, sections that reveal as they scroll into view, a looping carousel of school life and alumni stories, and a sign-in page with a photo carousel. Sign-in copy now reads "Selamat datang kembali".
+
 ## 1.5.1
 
 ### Patch Changes
