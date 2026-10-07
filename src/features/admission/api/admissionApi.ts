@@ -345,12 +345,6 @@ export const admissionApi = {
       payload,
     ),
 
-  reorderDocumentTypes: (ids: string[]) =>
-    api.put<{ data: AdmissionDocumentTypeAdmin[] }>(
-      '/admissions/document-types/order',
-      { ids },
-    ),
-
   deleteDocumentType: (id: string) =>
     api.delete<void>(`/admissions/document-types/${id}`),
 

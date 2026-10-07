@@ -29,6 +29,22 @@ export function formatDate(value: string | null | undefined) {
   }).format(new Date(value))
 }
 
+export function formatDateRange(
+  start: string | null | undefined,
+  end: string | null | undefined,
+) {
+  if (!start || !end) return formatDate(start ?? end)
+  const from = new Date(start)
+  const to = new Date(end)
+  const sameYear = from.getFullYear() === to.getFullYear()
+  if (!sameYear) return `${formatDate(start)} – ${formatDate(end)}`
+  if (from.getMonth() === to.getMonth()) {
+    return `${from.getDate()}–${formatDate(end)}`
+  }
+  const month = new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(from)
+  return `${from.getDate()} ${month} – ${formatDate(end)}`
+}
+
 export function formatDateTime(value: string | null | undefined) {
   if (!value) return '-'
   return new Intl.DateTimeFormat('id-ID', {

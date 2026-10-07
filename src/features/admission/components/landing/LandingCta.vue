@@ -10,16 +10,15 @@ import { Button } from '@mts241alikhlash/ui/button'
   >
     <div class="closing-photo landing-photo-reveal">
       <img
-        src="/bg.webp"
-        alt="Halaman sekolah Al-Ikhlash saat kegiatan bersama santri"
-        width="1150"
-        height="661"
+        src="/hero/rapat-orangtua.webp"
+        alt="Orang tua santri menghadiri pertemuan di MTs Persis 241 Al-Ikhlash"
+        width="1600"
+        height="1066"
         loading="lazy"
       />
     </div>
     <div class="closing-copy">
-      <p class="closing-school">MTs Persis 241 Al-Ikhlash</p>
-      <h2 id="closing-title">Sampai bertemu<br />di Al-Ikhlash.</h2>
+      <h2 id="closing-title">Sampai bertemu di MTs Persis 241 Al-Ikhlash.</h2>
       <p class="closing-description">
         Mulai dengan satu akun. Lengkapi formulir, kirim berkas, dan ikuti
         perkembangan pendaftaran dari rumah.
@@ -58,14 +57,9 @@ import { Button } from '@mts241alikhlash/ui/button'
 .closing-copy {
   padding: 2.5rem 1.25rem 3rem;
 }
-.closing-school {
-  font-size: 0.8125rem;
-  color: #e5cc87;
-}
 h2 {
-  margin-top: 1.25rem;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.5rem, 4.8vw, 4.25rem);
+  font-size: clamp(2.1rem, 3.8vw, 3.25rem);
   font-weight: 400;
   line-height: 1.08;
   letter-spacing: -0.045em;
@@ -117,9 +111,11 @@ h2 {
 @media (min-width: 1024px) {
   .closing-admission {
     grid-template-columns: 1fr 1fr;
+    min-height: calc(100svh - 3.5rem);
   }
   .closing-copy {
-    padding: 4.5rem max(3rem, calc((100vw - 76rem) / 2)) 4.5rem 4rem;
+    align-self: center;
+    padding: 2rem max(3rem, calc((100vw - 76rem) / 2)) 2rem 4rem;
   }
 }
 </style>

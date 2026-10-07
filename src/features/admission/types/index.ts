@@ -175,3 +175,14 @@ export const RELATION_LABELS: Record<ParentRelation, string> = {
   MOTHER: 'Ibu',
   GUARDIAN: 'Wali',
 }
+
+export interface LandingStory {
+  id: string
+  kind: string
+  quote: string
+  name: string
+  position?: string | null
+  tags?: string[]
+  photoUrl?: string | null
+  placeholder?: boolean
+}

@@ -33,23 +33,6 @@ export const documentTypeService = {
     }
   },
 
-  reorder: async (
-    ids: string[],
-  ): Promise<{ types: AdmissionDocumentTypeAdmin[] } | { error: string }> => {
-    try {
-      return {
-        types: (await admissionApi.reorderDocumentTypes(ids)).data.data ?? [],
-      }
-    } catch (error: unknown) {
-      const message = admissionErrorMessage(
-        error,
-        'Gagal mengubah urutan jenis berkas.',
-      )
-      toast.error(message)
-      return { error: message }
-    }
-  },
-
   remove: async (id: string) => {
     try {
       await admissionApi.deleteDocumentType(id)

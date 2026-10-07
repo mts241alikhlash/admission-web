@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@mts241alikhlash/ui/alert-dialog'
-import { ChevronDown, ChevronUp, Plus } from '@lucide/vue'
+import { Plus } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useRoleGuard } from '@/features/platform/auth'
 import FloatingField from '../components/AdmissionField.vue'
@@ -52,69 +52,35 @@ const types = ref<AdmissionDocumentTypeAdmin[]>([])
 const loading = ref(false)
 const listError = ref<string | null>(null)
 const isSaving = ref(false)
-const reordering = ref(false)
 const isFormOpen = ref(false)
 const editing = ref<AdmissionDocumentTypeAdmin | null>(null)
 const pendingDelete = ref<AdmissionDocumentTypeAdmin | null>(null)
-const requiredId = useId()
-const activeId = useId()
+const switchRows = [
+  { field: 'isRequired', id: useId(), label: 'Wajib diunggah' },
+  { field: 'isActive', id: useId(), label: 'Aktif' },
+] as const
+
+function toggle(field: 'isRequired' | 'isActive') {
+  if (isSaving.value) return
+  setFieldValue(field, !values[field])
+}
 
 const { handleSubmit, resetForm, values, setFieldValue } =
   useForm<DocumentTypeSavePayload>({
     validationSchema: toTypedSchema(documentTypeSchema),
   })
 
-const lastIndex = computed(() => types.value.length - 1)
-
-function moveButton(
-  type: AdmissionDocumentTypeAdmin,
-  index: number,
-  offset: -1 | 1,
-) {
-  const blocked =
-    reordering.value ||
-    (offset === -1 ? index === 0 : index === lastIndex.value)
-  return h(
-    Button,
-    {
-      variant: 'outline',
-      size: 'icon',
-      class: 'aria-disabled:opacity-50',
-      'aria-label': `${offset === -1 ? 'Naikkan' : 'Turunkan'} ${type.name}`,
-      'aria-disabled': String(blocked),
-      onClick: () => move(index, offset),
-    },
-    () => h(offset === -1 ? ChevronUp : ChevronDown, { class: 'size-4' }),
-  )
-}
-
 const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
-  ...(canUpdate.value
-    ? [
-        {
-          id: 'order',
-          header: 'Urutan',
-          cell: ({ row }) =>
-            h('div', { class: 'flex gap-1' }, [
-              moveButton(row.original, row.index, -1),
-              moveButton(row.original, row.index, 1),
-            ]),
-          enableSorting: false,
-        } satisfies ColumnDef<AdmissionDocumentTypeAdmin>,
-      ]
-    : []),
+  { accessorKey: 'name', header: 'Nama' },
   {
-    id: 'name',
-    header: 'Nama',
+    accessorKey: 'code',
+    header: 'Kode',
     cell: ({ row }) =>
-      h('div', { class: 'min-w-0' }, [
-        h('p', { class: 'font-medium' }, row.original.name),
-        h('p', { class: 'text-xs text-muted-foreground' }, row.original.code),
-      ]),
+      h('span', { class: 'text-muted-foreground' }, row.original.code),
   },
   {
     id: 'isRequired',
-    header: 'Wajib',
+    header: 'Kewajiban',
     cell: ({ row }) =>
       h(
         Badge,
@@ -171,18 +137,6 @@ async function load() {
   listError.value = 'error' in result ? result.error : null
   types.value = 'types' in result ? result.types : []
   loading.value = false
-}
-
-async function move(index: number, offset: -1 | 1) {
-  const target = index + offset
-  if (reordering.value || target < 0 || target >= types.value.length) return
-  const ids = types.value.map((type) => type.id)
-  ;[ids[index], ids[target]] = [ids[target], ids[index]]
-  reordering.value = true
-  const result = await documentTypeService.reorder(ids)
-  if ('types' in result) types.value = result.types
-  else await load()
-  reordering.value = false
 }
 
 async function remove(type: AdmissionDocumentTypeAdmin) {
@@ -282,7 +236,7 @@ onMounted(load)
             class="space-y-2 md:hidden"
           >
             <li
-              v-for="(type, index) in types"
+              v-for="type in types"
               :key="type.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
@@ -299,26 +253,6 @@ onMounted(load)
                 >
               </div>
               <div class="flex flex-wrap gap-2">
-                <Button
-                  v-if="canUpdate"
-                  variant="outline"
-                  class="min-h-11 aria-disabled:opacity-50"
-                  :aria-label="`Naikkan ${type.name}`"
-                  :aria-disabled="reordering || index === 0"
-                  @click="move(index, -1)"
-                >
-                  <ChevronUp class="size-4" />
-                </Button>
-                <Button
-                  v-if="canUpdate"
-                  variant="outline"
-                  class="min-h-11 aria-disabled:opacity-50"
-                  :aria-label="`Turunkan ${type.name}`"
-                  :aria-disabled="reordering || index === lastIndex"
-                  @click="move(index, 1)"
-                >
-                  <ChevronDown class="size-4" />
-                </Button>
                 <Button
                   v-if="canUpdate"
                   variant="outline"
@@ -374,37 +308,25 @@ onMounted(load)
               </FormControl>
             </FloatingField>
             <div
-              class="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
+              v-for="row in switchRows"
+              :key="row.field"
+              :data-test="`switch-row-${row.field}`"
+              class="flex cursor-pointer items-center justify-between gap-4 rounded-md border px-3 py-2"
+              @click="toggle(row.field)"
             >
-              <label
-                :for="requiredId"
-                class="text-sm font-medium"
+              <span
+                :id="row.id"
+                data-test="switch-label"
+                class="flex-1 text-sm font-medium"
+                >{{ row.label }}</span
               >
-                Wajib diunggah
-              </label>
               <Switch
-                :id="requiredId"
-                :model-value="values.isRequired"
+                :aria-labelledby="row.id"
+                :model-value="values[row.field]"
                 :disabled="isSaving"
                 class="focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                @update:model-value="setFieldValue('isRequired', $event)"
-              />
-            </div>
-            <div
-              class="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
-            >
-              <label
-                :for="activeId"
-                class="text-sm font-medium"
-              >
-                Aktif (tampil untuk pendaftar)
-              </label>
-              <Switch
-                :id="activeId"
-                :model-value="values.isActive"
-                :disabled="isSaving"
-                class="focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                @update:model-value="setFieldValue('isActive', $event)"
+                @click.stop
+                @update:model-value="setFieldValue(row.field, $event)"
               />
             </div>
             <p

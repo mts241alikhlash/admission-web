@@ -4,25 +4,49 @@ import { RouterLink } from 'vue-router'
 import { CalendarDays } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import type { ActiveWave } from '../../types'
-import { formatDate, formatIDR } from '../../utils'
+import { useInView } from '../../composables/useInView'
+import { formatDateRange, formatIDR } from '../../utils'
 
 const props = defineProps<{
   waves: ActiveWave[]
   loading: boolean
 }>()
 
-const waveCards = computed(() =>
-  props.waves.map((wave) => ({
-    ...wave,
-    dateRange: `${formatDate(wave.startDate)} – ${formatDate(wave.endDate)}`,
-    registrationFeeLabel: formatIDR(wave.registrationFee),
-  })),
-)
+const DAY = 24 * 60 * 60 * 1000
+
+function clamp(value: number) {
+  return Math.min(Math.max(value, 0), 100)
+}
+
+const waveCards = computed(() => {
+  const now = Date.now()
+  return props.waves.map((wave) => {
+    const start = new Date(wave.startDate).getTime()
+    const end = new Date(wave.endDate).getTime()
+    const daysLeft = Math.ceil((end - now) / DAY)
+    return {
+      ...wave,
+      dateRange: formatDateRange(wave.startDate, wave.endDate),
+      registrationFeeLabel: formatIDR(wave.registrationFee),
+      periodProgress:
+        end > start ? clamp(((now - start) / (end - start)) * 100) : 100,
+      daysLeftLabel:
+        daysLeft > 1 ? `Tersisa ${daysLeft} hari` : 'Hari terakhir pendaftaran',
+      quotaPercent:
+        wave.quota > 0 ? clamp((wave.remainingQuota / wave.quota) * 100) : 0,
+    }
+  })
+})
+
+const { target, visible } = useInView()
 </script>
 
 <template>
-  <section class="scroll-mt-24 bg-white py-14 sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <section
+    :ref="target"
+    class="scroll-mt-14 bg-white py-14 sm:py-20 lg:flex lg:min-h-[calc(100svh-3.5rem)] lg:items-center lg:py-8"
+  >
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-16">
         <h2
           class="max-w-xl font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight text-[#203f73] sm:text-5xl"
@@ -30,8 +54,9 @@ const waveCards = computed(() =>
           Jadwal dan biaya pendaftaran
         </h2>
         <p class="max-w-md text-sm leading-7 text-slate-700">
-          Periksa gelombang yang tersedia, termasuk periode, kuota, dan biaya,
-          sebelum membuat akun.
+          Lihat kapan pendaftaran dibuka, berapa kursi yang tersedia, dan
+          biayanya. Kursi baru menjadi milikmu setelah pembayaran kami
+          konfirmasi, jadi selesaikan pembayaran lebih awal.
         </p>
       </div>
 
@@ -67,67 +92,112 @@ const waveCards = computed(() =>
 
       <div
         v-else
-        class="mt-10 border-t border-[#203f73]/25"
+        class="mt-10 grid gap-6"
       >
         <article
-          v-for="wave in waveCards"
+          v-for="(wave, index) in waveCards"
           :key="wave.id"
-          class="grid gap-7 border-b border-[#203f73]/25 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] lg:items-center lg:gap-10"
+          class="rounded-2xl bg-[#f5f2e9] p-6 transition duration-700 ease-out motion-reduce:transition-none lg:p-10"
+          :class="
+            visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+          "
+          :style="{ transitionDelay: `${index * 120}ms` }"
         >
-          <div>
-            <p class="text-xs font-bold text-[#203f73]">
-              {{ wave.code }} · Pendaftaran dibuka
-            </p>
-            <h3
-              class="mt-3 text-2xl font-semibold tracking-tight text-[#203f73]"
+          <div class="flex flex-wrap items-start justify-between gap-6">
+            <div>
+              <p
+                class="flex items-center gap-2 text-xs font-bold text-[#203f73]"
+              >
+                <span class="relative flex size-2.5">
+                  <span
+                    class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60 motion-reduce:animate-none"
+                  />
+                  <span
+                    class="relative inline-flex size-2.5 rounded-full bg-emerald-600"
+                  />
+                </span>
+                Pendaftaran dibuka
+              </p>
+              <h3
+                class="mt-3 font-[Georgia,serif] text-3xl font-normal tracking-tight text-[#203f73] lg:text-4xl"
+              >
+                {{ wave.name }}
+              </h3>
+              <p class="mt-1 text-sm text-slate-600">
+                Tahun Ajaran {{ wave.academicYear }}
+              </p>
+              <p
+                v-if="wave.description"
+                class="mt-4 max-w-md text-sm leading-6 text-slate-600"
+              >
+                {{ wave.description }}
+              </p>
+            </div>
+            <Button
+              v-if="wave.remainingQuota > 0"
+              as-child
+              size="lg"
+              class="min-h-12 bg-[#203f73] px-6 font-bold text-white hover:bg-[#162d53]"
             >
-              {{ wave.name }}
-            </h3>
-            <p class="mt-1 text-sm text-slate-600">
-              Tahun Ajaran {{ wave.academicYear }}
-            </p>
-            <p
-              v-if="wave.description"
-              class="mt-5 max-w-sm text-sm leading-6 text-slate-600"
-            >
-              {{ wave.description }}
-            </p>
+              <RouterLink to="/login">Mulai pendaftaran</RouterLink>
+            </Button>
           </div>
 
-          <dl class="grid gap-5 sm:grid-cols-3">
+          <dl
+            class="mt-8 grid gap-8 border-t border-[#203f73]/20 pt-8 lg:grid-cols-3"
+          >
             <div>
-              <dt class="text-sm text-slate-600">Periode</dt>
-              <dd class="mt-2 text-sm font-bold leading-6 text-[#203f73]">
+              <dt class="text-sm text-slate-600">Periode pendaftaran</dt>
+              <dd
+                class="mt-2 font-[Georgia,serif] text-2xl text-[#203f73] lg:whitespace-nowrap"
+              >
                 {{ wave.dateRange }}
               </dd>
+              <div
+                class="mt-4 h-2 overflow-hidden rounded-full bg-[#203f73]/10"
+                aria-hidden="true"
+              >
+                <div
+                  class="h-full rounded-full bg-[#836d29] transition-[width] duration-1000 ease-out motion-reduce:transition-none"
+                  :style="{ width: visible ? `${wave.periodProgress}%` : '0%' }"
+                />
+              </div>
+              <p class="mt-2 text-xs text-slate-600">
+                {{ wave.daysLeftLabel }}
+              </p>
             </div>
             <div>
-              <dt class="text-sm text-slate-600">Sisa kuota</dt>
-              <dd class="mt-2 text-sm font-bold text-[#203f73]">
-                <template v-if="wave.remainingQuota > 0">
-                  {{ wave.remainingQuota }}
-                  <span class="font-medium text-slate-600">
-                    dari {{ wave.quota }}
+              <dt class="text-sm text-slate-600">Kuota</dt>
+              <dd class="mt-2 font-[Georgia,serif] text-2xl text-[#203f73]">
+                <template v-if="wave.remainingQuota <= 0">Penuh</template>
+                <template v-else-if="wave.remainingQuota === wave.quota">
+                  {{ wave.quota }} kursi
+                </template>
+                <template v-else>
+                  Sisa {{ wave.remainingQuota }}
+                  <span class="font-sans text-sm text-slate-600">
+                    dari {{ wave.quota }} kursi
                   </span>
                 </template>
-                <template v-else>Penuh</template>
               </dd>
+              <div
+                class="mt-4 h-2 overflow-hidden rounded-full bg-[#203f73]/10"
+                aria-hidden="true"
+              >
+                <div
+                  class="h-full rounded-full bg-[#203f73] transition-[width] duration-1000 ease-out motion-reduce:transition-none"
+                  :style="{ width: visible ? `${wave.quotaPercent}%` : '0%' }"
+                />
+              </div>
+              <p class="mt-2 text-xs text-slate-600">Kursi masih tersedia</p>
             </div>
             <div>
-              <dt class="text-sm text-slate-600">Biaya</dt>
-              <dd class="mt-2 text-sm font-bold text-[#203f73]">
+              <dt class="text-sm text-slate-600">Biaya pendaftaran</dt>
+              <dd class="mt-2 font-[Georgia,serif] text-2xl text-[#203f73]">
                 {{ wave.registrationFeeLabel }}
               </dd>
             </div>
           </dl>
-
-          <Button
-            v-if="wave.remainingQuota > 0"
-            as-child
-            class="min-h-11 bg-[#203f73] font-bold text-white hover:bg-[#162d53]"
-          >
-            <RouterLink to="/login">Mulai pendaftaran</RouterLink>
-          </Button>
         </article>
       </div>
     </div>

@@ -11,6 +11,7 @@ import LandingWaveSection from '../components/landing/LandingWaveSection.vue'
 import LandingLife from '../components/landing/LandingLife.vue'
 import LandingStories from '../components/landing/LandingStories.vue'
 import LandingCta from '../components/landing/LandingCta.vue'
+import { landingStories } from '../data/landingStories'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
 import type { ActiveWave, AdmissionDocumentType } from '../types'
 
@@ -73,7 +74,7 @@ onMounted(() => {
         v-if="hasError"
         id="gelombang"
         role="alert"
-        class="scroll-mt-24 border-b border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-950"
+        class="scroll-mt-14 border-b border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-950"
       >
         Informasi pendaftaran belum dapat dimuat. Silakan coba kembali.
         <button
@@ -96,7 +97,10 @@ onMounted(() => {
         :document-types="documentTypes"
         :loading="isLoading"
       />
-      <LandingStories />
+      <LandingStories
+        v-if="landingStories.length"
+        :stories="landingStories"
+      />
       <LandingFaq id="faq" />
       <LandingCta />
     </main>

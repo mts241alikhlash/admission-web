@@ -1,6 +1,11 @@
 import { AxiosError, AxiosHeaders } from 'axios'
 import { expect, it } from 'vitest'
-import { admissionErrorMessage, isWaveClosed, presentValue } from './utils'
+import {
+  admissionErrorMessage,
+  formatDateRange,
+  isWaveClosed,
+  presentValue,
+} from './utils'
 
 it('keeps zero but names absent and placeholder values', () => {
   expect([null, undefined, '', '   ', '-'].map(presentValue)).toEqual(
@@ -56,4 +61,16 @@ it('closes a wave the day after its end date, in Jakarta time', () => {
   expect(isWaveClosed('2026-02-01', lastDay)).toBe(false)
   expect(isWaveClosed('2026-02-01T00:00:00.000Z', nextDay)).toBe(true)
   expect(isWaveClosed(null, nextDay)).toBe(false)
+})
+
+it('shortens a date range to what actually differs', () => {
+  expect(formatDateRange('2026-10-01T12:00:00', '2026-10-31T12:00:00')).toBe(
+    '1–31 Oktober 2026',
+  )
+  expect(formatDateRange('2026-10-01T12:00:00', '2026-11-15T12:00:00')).toBe(
+    '1 Oktober – 15 November 2026',
+  )
+  expect(formatDateRange('2026-12-20T12:00:00', '2027-01-10T12:00:00')).toBe(
+    '20 Desember 2026 – 10 Januari 2027',
+  )
 })

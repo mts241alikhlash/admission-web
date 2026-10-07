@@ -52,7 +52,7 @@ const description = computed(() => {
     case 'signup-disabled':
       return 'Pendaftaran akun baru sedang tidak dibuka. Hubungi admin sekolah untuk informasi pendaftaran.'
     case 'staff-account':
-      return 'Akun Google ini milik staf. Masuk lewat tombol "Staf? Masuk lewat akun sekolah".'
+      return 'Akun Google ini milik staf. Masuk lewat tombol "Masuk sebagai staf".'
     case 'sso-failed':
       return 'Tautan masuk sudah dipakai atau kedaluwarsa. Silakan coba lagi.'
     default:

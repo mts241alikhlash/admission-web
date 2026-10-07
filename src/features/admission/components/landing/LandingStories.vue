@@ -1,40 +1,154 @@
+<script setup lang="ts">
+import { ArrowLeft, ArrowRight } from '@lucide/vue'
+import { useInView } from '../../composables/useInView'
+import { useLoopCarousel } from '../../composables/useLoopCarousel'
+import type { LandingStory } from '../../types'
+
+const props = defineProps<{
+  stories: LandingStory[]
+}>()
+
+const canScroll = props.stories.length > 1
+
+const { bindTrack, current, middleCopy, onScroll, go, goTo, loop } =
+  useLoopCarousel(props.stories.length)
+const slides = loop(props.stories)
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+}
+
+const { target, visible } = useInView()
+</script>
+
 <template>
   <section
-    class="school-stories"
+    id="cerita"
+    :ref="target"
+    class="school-stories scroll-mt-14"
     aria-labelledby="stories-title"
   >
     <div class="stories-inner">
       <div class="stories-heading">
-        <p class="stories-label">Cerita dari keluarga Al-Ikhlash</p>
-        <h2 id="stories-title">Yang tinggal,<br />bukan hanya kenangan.</h2>
+        <div>
+          <p class="stories-label">Cerita keluarga MTs Persis 241 Al-Ikhlash</p>
+          <h2 id="stories-title">
+            Dengar langsung dari mereka yang menjalaninya.
+          </h2>
+        </div>
         <p class="stories-note">
-          Pratinjau testimoni. Kutipan, nama, dan foto akan diisi setelah cerita
-          asli serta izin publikasi tersedia.
+          Kisah alumni dan orang tua tentang belajar, tumbuh, dan berproses
+          bersama MTs Persis 241 Al-Ikhlash.
         </p>
       </div>
-      <div class="stories-layout">
-        <article class="story-feature">
-          <p class="story-kind">Cerita alumni <span>Placeholder</span></p>
-          <p class="story-quote">
-            [Kutipan alumni tentang pengalaman belajar dan momen yang paling
-            berkesan di Al-Ikhlash.]
-          </p>
-          <div class="story-person">
-            <div class="story-photo">Foto<br />alumni</div>
-            <p>[Nama alumni]<span>[Tahun kelulusan]</span></p>
-          </div>
-        </article>
-        <article class="story-parent">
-          <p class="story-kind">Cerita orang tua <span>Placeholder</span></p>
-          <p class="story-quote">
-            [Cerita orang tua tentang mendampingi putra atau putrinya selama
-            bersekolah di Al-Ikhlash.]
-          </p>
-          <div class="story-person">
-            <div class="story-photo">Foto<br />orang tua</div>
-            <p>[Nama orang tua]<span>[Keterangan narasumber]</span></p>
-          </div>
-        </article>
+
+      <div
+        class="stories-stage"
+        :class="{ 'stories-stage-in': visible }"
+      >
+        <div
+          :ref="bindTrack"
+          class="stories-track"
+          role="region"
+          aria-label="Cerita keluarga MTs Persis 241 Al-Ikhlash"
+          :tabindex="canScroll ? 0 : undefined"
+          @scroll.passive="onScroll"
+        >
+          <figure
+            v-for="story in slides"
+            :key="`${story.copy}-${story.id}`"
+            class="story-slide"
+            :aria-hidden="story.copy === middleCopy ? undefined : 'true'"
+          >
+            <div class="story-body">
+              <p class="story-kind">
+                {{ story.kind }}
+                <span v-if="story.placeholder">Contoh</span>
+              </p>
+              <blockquote class="story-quote">{{ story.quote }}</blockquote>
+              <div class="story-person">
+                <span class="story-name">{{ story.name }}</span>
+                <span
+                  v-if="story.position"
+                  class="story-position"
+                  >{{ story.position }}</span
+                >
+                <span
+                  v-if="story.tags?.length"
+                  class="story-tags"
+                >
+                  <small
+                    v-for="tag in story.tags"
+                    :key="tag"
+                    >{{ tag }}</small
+                  >
+                </span>
+              </div>
+            </div>
+
+            <div class="story-aside">
+              <div class="story-visual">
+                <img
+                  v-if="story.photoUrl"
+                  :src="story.photoUrl"
+                  :alt="story.copy === middleCopy ? story.name : ''"
+                  loading="lazy"
+                />
+                <span
+                  v-else
+                  class="story-initials"
+                  aria-hidden="true"
+                  >{{ initials(story.name) }}</span
+                >
+              </div>
+            </div>
+          </figure>
+        </div>
+
+        <div
+          v-if="canScroll"
+          class="stories-controls"
+        >
+          <button
+            type="button"
+            aria-label="Cerita sebelumnya"
+            @click="go(-1)"
+          >
+            <ArrowLeft
+              class="size-6"
+              aria-hidden="true"
+            />
+          </button>
+          <ol class="stories-dots">
+            <li
+              v-for="(story, index) in stories"
+              :key="story.id"
+            >
+              <button
+                type="button"
+                :aria-label="`Cerita ${index + 1}: ${story.name}`"
+                :aria-current="index === current ? 'true' : undefined"
+                :class="{ 'is-active': index === current }"
+                @click="goTo(index)"
+              />
+            </li>
+          </ol>
+          <button
+            type="button"
+            aria-label="Cerita berikutnya"
+            @click="go(1)"
+          >
+            <ArrowRight
+              class="size-6"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -55,109 +169,245 @@
   font-weight: 600;
   color: #475569;
 }
+.stories-heading {
+  display: grid;
+  gap: 1rem;
+}
 h2 {
-  margin-top: 1.25rem;
+  margin-top: 0.75rem;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.4rem, 4.5vw, 4rem);
+  font-size: clamp(2rem, 3.6vw, 2.75rem);
   font-weight: 400;
-  line-height: 1.08;
-  letter-spacing: -0.045em;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
 }
 .stories-note {
-  max-width: 24rem;
-  margin-top: 1.25rem;
-  font-size: 0.8125rem;
+  max-width: 28rem;
+  font-size: 0.875rem;
   line-height: 1.8;
   color: #475569;
 }
-.stories-layout {
+.stories-stage {
+  position: relative;
+  margin-top: 1.75rem;
+  opacity: 0;
+  transform: translateY(1rem);
+  transition:
+    opacity 600ms ease-out,
+    transform 600ms ease-out;
+}
+.stories-stage-in {
+  opacity: 1;
+  transform: none;
+}
+.stories-track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.stories-track::-webkit-scrollbar {
+  display: none;
+}
+.stories-track:focus-visible,
+.stories-controls button:focus-visible {
+  outline: 2px solid #203f73;
+  outline-offset: 3px;
+}
+.story-slide {
   display: grid;
-  margin-top: 2rem;
-  gap: 1.5rem;
+  flex: 0 0 100%;
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  border-radius: 2rem;
+  background: #fff;
+  scroll-snap-align: start;
 }
-.story-feature {
-  padding: 1.75rem;
-  background: #203f73;
-  color: #fff;
+.story-aside {
+  order: -1;
+  display: flex;
+  flex-direction: column;
 }
-.story-parent {
-  padding: 1.75rem 0;
+.story-visual {
+  flex: 1;
+  min-height: 14rem;
+  background: #e5cc87;
+}
+.story-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.story-initials {
+  display: grid;
+  height: 100%;
+  place-content: center;
+  color: #162d53;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 5rem;
+}
+.story-body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  min-height: 0;
+  padding: 1.75rem 1.5rem 4.5rem;
 }
 .story-kind {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
+  color: #836d29;
 }
 .story-kind span {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid currentColor;
   font-size: 0.625rem;
   font-weight: 400;
-  border: 1px solid currentColor;
-  padding: 0.2rem 0.4rem;
 }
 .story-quote {
-  margin-top: 1.75rem;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.45rem, 2.6vw, 2rem);
-  line-height: 1.4;
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+  line-height: 1.5;
+  color: #162d53;
+  overflow: hidden;
 }
 .story-person {
+  display: grid;
+  gap: 0.2rem;
+  justify-self: end;
+  color: #203f73;
+  text-align: right;
+}
+.story-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.story-position {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #836d29;
+}
+.story-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.story-tags small {
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  background: #203f7314;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #203f73;
+}
+.stories-controls {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  font-size: 0.8125rem;
+  gap: 0.25rem;
+  color: #203f73;
 }
-.story-person p span {
-  display: block;
-  margin-top: 0.3rem;
-  font-size: 0.6875rem;
-}
-.story-photo {
-  flex-shrink: 0;
+.stories-controls > button {
   display: grid;
-  place-content: center;
-  width: 3rem;
-  height: 3.5rem;
-  border: 1px dashed currentColor;
-  text-align: center;
-  font-size: 0.5625rem;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+.stories-controls > button:hover {
+  transform: scale(1.15);
+}
+.stories-dots {
+  display: flex;
+  align-items: center;
+}
+.stories-dots button {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 2.5rem;
+  cursor: pointer;
+}
+.stories-dots button::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: #203f7340;
+  transition:
+    width 200ms ease,
+    background-color 200ms ease;
+}
+.stories-dots button.is-active::before {
+  width: 1.1rem;
+  background: #203f73;
 }
 @media (min-width: 640px) {
   .stories-inner {
     padding: 4.5rem 2rem;
   }
-  .stories-layout {
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 2rem;
-    align-items: center;
+  .story-body {
+    padding: 2.25rem 2rem 4.5rem;
+  }
+  .stories-controls {
+    bottom: 1.25rem;
+    left: 2rem;
   }
 }
 @media (min-width: 1024px) {
+  .school-stories {
+    display: flex;
+    align-items: center;
+    min-height: calc(100svh - 3.5rem);
+  }
   .stories-inner {
-    padding-block: 6rem;
+    width: 100%;
+    padding-block: 2rem;
   }
   .stories-heading {
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    column-gap: 4rem;
+    grid-template-columns: 1.2fr 0.8fr;
     align-items: end;
-  }
-  .stories-label {
-    grid-column: 1 / -1;
-  }
-  .stories-layout {
     gap: 4rem;
-    margin-top: 3rem;
   }
-  .story-feature {
-    padding: 3rem;
+  .story-slide {
+    grid-template-columns: 1.4fr 0.6fr;
+    height: min(calc(100svh - 18.5rem), 34rem);
+  }
+  .story-aside {
+    order: 0;
+    min-height: 0;
+  }
+  .story-visual {
+    min-height: 0;
+  }
+  .story-body {
+    padding: 2.5rem 3rem 1.5rem;
   }
   .story-person {
-    margin-top: 2.5rem;
+    max-width: 60%;
+  }
+  .stories-controls {
+    bottom: 1.5rem;
+    left: 3rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stories-stage {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 </style>

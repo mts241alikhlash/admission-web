@@ -4,10 +4,7 @@ import { admissionApi } from '../api/admissionApi'
 import { documentTypeService } from './documentTypeService'
 
 vi.mock('../api/admissionApi', () => ({
-  admissionApi: {
-    deleteDocumentType: vi.fn(),
-    reorderDocumentTypes: vi.fn(),
-  },
+  admissionApi: { deleteDocumentType: vi.fn() },
 }))
 vi.mock('vue-sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
@@ -28,23 +25,6 @@ describe('documentTypeService', () => {
     })
     expect(toast.error).toHaveBeenCalledWith(
       'Jenis berkas sudah dipakai, nonaktifkan saja',
-    )
-  })
-
-  it('returns the error and toasts when the order is refused', async () => {
-    vi.mocked(admissionApi.reorderDocumentTypes).mockRejectedValueOnce({
-      isAxiosError: true,
-      response: {
-        status: 400,
-        data: { message: 'Urutan jenis berkas tidak lengkap' },
-      },
-    })
-
-    await expect(documentTypeService.reorder(['t1'])).resolves.toEqual({
-      error: 'Urutan jenis berkas tidak lengkap',
-    })
-    expect(toast.error).toHaveBeenCalledWith(
-      'Urutan jenis berkas tidak lengkap',
     )
   })
 })

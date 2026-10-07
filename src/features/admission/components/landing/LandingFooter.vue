@@ -2,51 +2,74 @@
 import { RouterLink } from 'vue-router'
 
 const currentYear = new Date().getFullYear()
+
+const navigationItems = [
+  { label: 'Mengenal', id: 'kehidupan' },
+  { label: 'Gelombang', id: 'gelombang' },
+  { label: 'Alur Daftar', id: 'alur' },
+  { label: 'Persyaratan', id: 'persyaratan' },
+  { label: 'Cerita', id: 'cerita' },
+  { label: 'FAQ', id: 'faq' },
+]
+
+const linkClass =
+  'inline-flex min-h-9 items-center text-sm font-medium text-[#203f73] decoration-[#836d29] decoration-2 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#203f73]'
 </script>
 
 <template>
   <footer class="border-t border-[#203f73]/20 bg-[#f5f2e9]">
-    <div
-      class="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-9 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"
-    >
-      <div class="flex items-center gap-3">
-        <img
-          src="/logo.webp"
-          alt="Logo MTs Persis 241 Al-Ikhlash"
-          class="h-10 w-10 object-contain"
-        />
-        <div>
-          <p class="text-sm font-bold text-[#203f73]">
-            MTs Persis 241 Al-Ikhlash
-          </p>
-          <p class="text-xs text-slate-700">Penerimaan Santri Baru</p>
-        </div>
-      </div>
+    <div class="mx-auto max-w-7xl px-4 py-10 text-center sm:px-6 lg:px-8">
       <div
-        class="flex flex-wrap items-center gap-x-6 text-sm font-medium text-[#203f73]"
+        class="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr] lg:text-left"
       >
-        <a
-          href="#gelombang"
-          class="inline-flex min-h-11 items-center hover:underline focus-visible:outline-2 focus-visible:outline-[#203f73]"
-          >Gelombang</a
-        >
-        <a
-          href="#persyaratan"
-          class="inline-flex min-h-11 items-center hover:underline focus-visible:outline-2 focus-visible:outline-[#203f73]"
-          >Persyaratan</a
-        >
-        <a
-          href="#faq"
-          class="inline-flex min-h-11 items-center hover:underline focus-visible:outline-2 focus-visible:outline-[#203f73]"
-          >FAQ</a
-        >
-        <RouterLink
-          to="/login"
-          class="inline-flex min-h-11 items-center hover:underline focus-visible:outline-2 focus-visible:outline-[#203f73]"
-          >Masuk</RouterLink
-        >
+        <img
+          src="/logo-name.webp"
+          alt="MTs Persis 241 Al-Ikhlash"
+          width="1200"
+          height="329"
+          class="mx-auto h-12 w-auto object-contain sm:col-span-2 lg:col-span-1 lg:mx-0"
+        />
+        <nav aria-labelledby="footer-pages">
+          <h2
+            id="footer-pages"
+            class="text-xs font-semibold tracking-wide text-slate-600 uppercase"
+          >
+            Halaman
+          </h2>
+          <ul class="mt-2 grid gap-0.5">
+            <li
+              v-for="item in navigationItems"
+              :key="item.id"
+            >
+              <a
+                :href="`#${item.id}`"
+                :class="linkClass"
+                >{{ item.label }}</a
+              >
+            </li>
+          </ul>
+        </nav>
+        <nav aria-labelledby="footer-account">
+          <h2
+            id="footer-account"
+            class="text-xs font-semibold tracking-wide text-slate-600 uppercase"
+          >
+            Akun
+          </h2>
+          <ul class="mt-2 grid gap-0.5">
+            <li>
+              <RouterLink
+                to="/login"
+                :class="linkClass"
+                >Masuk / Daftar</RouterLink
+              >
+            </li>
+          </ul>
+        </nav>
       </div>
-      <p class="text-xs text-slate-700">
+      <p
+        class="mt-8 border-t border-[#203f73]/15 pt-6 text-xs text-slate-700 lg:text-left"
+      >
         © {{ currentYear }} MTs Persis 241 Al-Ikhlash
       </p>
     </div>

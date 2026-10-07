@@ -30,7 +30,7 @@ const waveDetails = computed(() => {
         <h1>Di sini, cerita<br />barumu dimulai.</h1>
         <p class="hero-description">
           Kenali lingkungan belajarmu, siapkan langkah berikutnya. Pendaftaran
-          santri baru Al-Ikhlash dimulai dari sini.
+          santri baru MTs Persis 241 Al-Ikhlash dimulai dari sini.
         </p>
         <div class="hero-actions">
           <Button
@@ -54,30 +54,32 @@ const waveDetails = computed(() => {
             class="explore-line"
             aria-hidden="true"
           />
-          Mengenal Al-Ikhlash lebih dekat
+          Mengenal MTs Persis 241 Al-Ikhlash lebih dekat
         </a>
       </div>
 
       <div class="hero-photographs">
         <figure class="hero-school-photo">
           <img
-            src="/bg.webp"
-            alt="Santri berkumpul di halaman MTs Persis 241 Al-Ikhlash"
-            width="1150"
-            height="661"
+            src="/hero/baiat.webp"
+            alt="Santri berbaris khidmat dalam upacara bai'at di MTs Persis 241 Al-Ikhlash"
+            width="1600"
+            height="1066"
             fetchpriority="high"
           />
-          <figcaption>Sepenggal suasana di Al-Ikhlash</figcaption>
+          <figcaption>
+            Bai'at santri, upacara rutin di MTs Persis 241 Al-Ikhlash
+          </figcaption>
         </figure>
         <figure class="hero-study-photo">
           <img
-            src="/landing-study.jpg"
-            alt="Ilustrasi buku dan catatan belajar"
-            width="1000"
-            height="751"
+            src="/hero/tahfidz.webp"
+            alt="Santri menghafal Al-Qur'an bersama pembimbing"
+            width="1600"
+            height="1066"
           />
           <figcaption>
-            Ruang untuk belajar <span>Foto ilustrasi</span>
+            Tahfidz Al-Qur'an <span>Program unggulan</span>
           </figcaption>
         </figure>
         <p class="hero-photo-note">Awal langkah.<br />Banyak cerita.</p>
@@ -126,8 +128,21 @@ const waveDetails = computed(() => {
 
 <style scoped>
 .landing-hero {
+  display: flex;
+  flex-direction: column;
   background: #203f73;
   color: #fff;
+}
+@media (min-width: 1024px) {
+  .landing-hero {
+    min-height: calc(100svh - 3.5rem);
+  }
+  .hero-spread {
+    flex: 1;
+    align-content: center;
+    width: 100%;
+    padding-block: 2rem;
+  }
 }
 .hero-spread {
   max-width: 80rem;
@@ -306,8 +321,8 @@ h1 {
 }
 @media (min-width: 1024px) {
   .hero-spread {
-    padding-top: 4.5rem;
-    padding-bottom: 4.5rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
   }
@@ -316,7 +331,7 @@ h1 {
     margin-right: 1rem;
   }
   .hero-school-photo img {
-    aspect-ratio: 0.94;
+    aspect-ratio: 1.1;
   }
   .hero-school-photo figcaption {
     padding-left: 33%;
@@ -324,10 +339,10 @@ h1 {
   }
   .hero-description {
     font-size: 1rem;
-    margin-top: 2rem;
+    margin-top: 1.25rem;
   }
   .hero-explore {
-    margin-top: 3rem;
+    margin-top: 1.5rem;
   }
   .hero-study-photo {
     left: 0.5rem;
