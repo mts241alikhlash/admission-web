@@ -110,6 +110,21 @@ export function admissionErrorMessage(error: unknown, fallback: string) {
   return getIndonesianErrorMessage(error, fallback)
 }
 
+export async function admissionBlobErrorMessage(
+  error: unknown,
+  fallback: string,
+) {
+  if (isAxiosError(error) && error.response?.data instanceof Blob) {
+    try {
+      const parsed: unknown = JSON.parse(await error.response.data.text())
+      error.response.data = parsed
+    } catch {
+      error.response.data = undefined
+    }
+  }
+  return admissionErrorMessage(error, fallback)
+}
+
 export function jakartaToday(now: Date = new Date()) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(
     now,

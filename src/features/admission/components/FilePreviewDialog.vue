@@ -13,7 +13,7 @@ import {
 } from '@mts241alikhlash/ui/dialog'
 import { admissionApi } from '../api/admissionApi'
 import type { PreviewFile } from '../types'
-import { admissionErrorMessage } from '../utils'
+import { admissionBlobErrorMessage } from '../utils'
 
 const props = defineProps<{ open: boolean; file: PreviewFile | null }>()
 const emit = defineEmits<{ 'update:open': [value: boolean] }>()
@@ -39,8 +39,9 @@ async function load() {
   release()
   error.value = ''
   const file = props.file
-  if (!file || kind.value === 'other') return
   const current = ++request
+  loading.value = false
+  if (!file || kind.value === 'other') return
   loading.value = true
   try {
     const response = await admissionApi.getFile(file.id)
@@ -48,7 +49,10 @@ async function load() {
     url.value = URL.createObjectURL(response.data)
   } catch (failure: unknown) {
     if (current === request) {
-      error.value = admissionErrorMessage(failure, 'Gagal memuat berkas.')
+      error.value = await admissionBlobErrorMessage(
+        failure,
+        'Gagal memuat berkas.',
+      )
     }
   } finally {
     if (current === request) loading.value = false
@@ -65,9 +69,11 @@ async function download() {
     link.href = href
     link.download = file.originalName
     link.click()
-    URL.revokeObjectURL(href)
+    setTimeout(() => URL.revokeObjectURL(href), 0)
   } catch (failure: unknown) {
-    toast.error(admissionErrorMessage(failure, 'Gagal mengunduh berkas.'))
+    toast.error(
+      await admissionBlobErrorMessage(failure, 'Gagal mengunduh berkas.'),
+    )
   }
 }
 
@@ -78,6 +84,7 @@ watch(
       void load()
     } else {
       request++
+      loading.value = false
       release()
     }
   },

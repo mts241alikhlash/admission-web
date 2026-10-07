@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { AxiosError } from 'axios'
 import { admissionApi } from '../api/admissionApi'
 import FilePreviewDialog from './FilePreviewDialog.vue'
 
@@ -141,5 +142,63 @@ describe('FilePreviewDialog', () => {
 
     expect(admissionApi.getFile).toHaveBeenLastCalledWith('f1', true)
     expect(click).toHaveBeenCalledTimes(1)
+  })
+  it('shows the server message when the error body is a blob', async () => {
+    const body = new Blob([
+      JSON.stringify({ message: 'Berkas tidak ditemukan di penyimpanan' }),
+    ])
+    vi.mocked(admissionApi.getFile).mockRejectedValueOnce(
+      new AxiosError('failed', 'ERR_BAD_REQUEST', undefined, undefined, {
+        status: 404,
+        statusText: 'Not Found',
+        headers: {},
+        config: {} as never,
+        data: body,
+      }),
+    )
+    const wrapper = mountDialog(pdf)
+    await flushPromises()
+
+    expect(wrapper.get('[role="alert"]').text()).toContain(
+      'Berkas tidak ditemukan di penyimpanan',
+    )
+  })
+
+  it('does not stay loading when a file that needs no preview opens after a closed slow one', async () => {
+    let resolveSlow: (value: unknown) => void = vi.fn()
+    vi.mocked(admissionApi.getFile).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSlow = resolve
+      }) as never,
+    )
+    const wrapper = mountDialog(pdf)
+    await wrapper.setProps({ open: false })
+    await wrapper.setProps({ file: sheet, open: true })
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Memuat berkas')
+    expect(wrapper.text()).toContain('Pratinjau tidak tersedia')
+
+    resolveSlow(reply())
+    await flushPromises()
+    expect(wrapper.find('iframe').exists()).toBe(false)
+  })
+
+  it('revokes the download URL only after the click had its turn', async () => {
+    const wrapper = mountDialog(pdf)
+    await flushPromises()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(vi.fn())
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Unduh'))!
+      .trigger('click')
+    await flushPromises()
+
+    expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:preview-2')
+    vi.runAllTimers()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview-2')
+    vi.useRealTimers()
   })
 })

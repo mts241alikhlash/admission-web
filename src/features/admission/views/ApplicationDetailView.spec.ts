@@ -419,6 +419,36 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.text()).toContain('Tolak')
   })
 
+  it('opens the payment proof in the preview', async () => {
+    application.value = {
+      ...draft,
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: {
+          id: 'file-bukti',
+          originalName: 'bukti.png',
+          mimeType: 'image/png',
+          storageKey: 'files/bukti.png',
+        },
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    await wrapper.get('button[data-test="open-file"]').trigger('click')
+
+    expect(wrapper.get('[data-test="preview"]').attributes('data-open')).toBe(
+      'true',
+    )
+    expect(wrapper.get('[data-test="preview"]').attributes('data-file')).toBe(
+      'file-bukti',
+    )
+  })
+
   it('shows no payment buttons without the verify permission', async () => {
     access.granted = new Set()
     application.value = {
