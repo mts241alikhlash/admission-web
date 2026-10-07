@@ -9,7 +9,6 @@ import { Eye, EyeOff } from '@lucide/vue'
 
 import { authConfig } from '../config'
 import { authApi } from '../api/authApi'
-import { ssoService } from '../services/ssoService'
 
 const props = defineProps<{
   class?: string
@@ -20,7 +19,7 @@ const { isSubmitting, errorMessage, onSubmit } = useLoginForm()
 const showPassword = ref(false)
 
 const loginTitle = computed(() => authConfig.value.loginTitle)
-
+const loginSubtitle = computed(() => authConfig.value.loginSubtitle)
 const signUpUrl = computed(() => authConfig.value.signUpUrl)
 const signUpLabel = computed(() => authConfig.value.signUpLabel)
 
@@ -34,17 +33,17 @@ function startGoogleSignIn() {
     :class="cn('flex flex-col gap-4', props.class)"
     @submit.prevent="onSubmit"
   >
-    <div class="flex flex-col gap-4">
-      <div class="flex flex-col items-center gap-1 text-center">
-        <h1 class="text-2xl font-bold">{{ loginTitle }}</h1>
-        <p class="text-muted-foreground text-sm text-balance">
-          Masukkan kredensial Anda untuk melanjutkan
-        </p>
-      </div>
+    <div class="flex flex-col items-center gap-1 text-center">
+      <h1 class="text-2xl font-bold">{{ loginTitle }}</h1>
+      <p class="text-muted-foreground text-sm text-balance">
+        {{ loginSubtitle }}
+      </p>
+    </div>
+    <div class="flex flex-col gap-3">
       <Button
         type="button"
         variant="outline"
-        class="w-full cursor-pointer"
+        class="h-10 w-full cursor-pointer bg-background"
         :disabled="isSubmitting"
         @click="startGoogleSignIn"
       >
@@ -70,39 +69,43 @@ function startGoogleSignIn() {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"
           />
         </svg>
-        Masuk dengan Google
+        Lanjutkan dengan Google
       </Button>
-      <div class="flex items-center gap-3">
-        <span class="h-px flex-1 bg-border" />
-        <span class="text-xs text-muted-foreground">atau</span>
-        <span class="h-px flex-1 bg-border" />
-      </div>
-      <div class="space-y-2">
-        <FloatingField
-          v-slot="{ componentField }"
-          name="identifier"
-          :label="authConfig.identifierLabel"
-        >
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="text"
-              autocapitalize="none"
-              autocomplete="username"
-              spellcheck="false"
-            />
-          </FormControl>
-        </FloatingField>
+    </div>
+    <div class="mt-1 flex items-center gap-3">
+      <span class="h-px flex-1 bg-border" />
+      <span class="text-xs text-muted-foreground">atau</span>
+      <span class="h-px flex-1 bg-border" />
+    </div>
+    <div class="-mt-4 flex flex-col gap-2">
+      <FloatingField
+        v-slot="{ componentField }"
+        name="identifier"
+        :label="authConfig.identifierLabel"
+      >
+        <FormControl>
+          <Input
+            v-bind="componentField"
+            type="text"
+            class="h-10 scroll-my-28 bg-transparent"
+            autocapitalize="none"
+            autocomplete="username"
+            spellcheck="false"
+          />
+        </FormControl>
+      </FloatingField>
+      <div class="flex flex-col gap-1">
         <FloatingField
           v-slot="{ componentField }"
           name="password"
-          label="Password"
+          label="Kata sandi"
         >
           <div class="relative">
             <FormControl>
               <Input
                 :type="showPassword ? 'text' : 'password'"
-                class="pr-10"
+                class="h-10 scroll-my-28 bg-transparent pr-10"
+                autocomplete="current-password"
                 v-bind="componentField"
               />
             </FormControl>
@@ -122,29 +125,28 @@ function startGoogleSignIn() {
             </button>
           </div>
         </FloatingField>
-      </div>
-      <div class="flex justify-end">
-        <router-link
-          to="/forgot-password"
-          class="text-xs text-primary font-semibold hover:underline"
-        >
-          Lupa Password?
-        </router-link>
+        <div class="flex justify-end">
+          <router-link
+            to="/forgot-password"
+            class="text-xs text-primary font-semibold hover:underline"
+          >
+            Lupa kata sandi?
+          </router-link>
+        </div>
       </div>
       <Button
         type="submit"
         :disabled="isSubmitting"
-        class="w-full cursor-pointer"
+        class="h-10 w-full cursor-pointer"
       >
-        {{ isSubmitting ? 'Memproses...' : 'Masuk' }}
+        {{ isSubmitting ? 'Sedang masuk...' : 'Masuk' }}
       </Button>
-      <button
-        type="button"
-        class="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline cursor-pointer"
-        @click="ssoService.startSignIn(authConfig.homeRoute)"
+      <p
+        v-if="errorMessage"
+        class="text-center text-sm text-destructive"
       >
-        Staf? Masuk lewat akun sekolah
-      </button>
+        {{ errorMessage }}
+      </p>
       <p
         v-if="signUpUrl"
         class="text-center text-sm text-muted-foreground"
@@ -153,16 +155,10 @@ function startGoogleSignIn() {
         <router-link
           data-testid="login-signup-link"
           :to="signUpUrl"
-          class="text-primary font-semibold hover:underline"
+          class="text-primary font-bold underline underline-offset-4"
         >
-          Daftar
+          Daftar sekarang
         </router-link>
-      </p>
-      <p
-        v-if="errorMessage"
-        class="text-center text-sm text-destructive"
-      >
-        {{ errorMessage }}
       </p>
     </div>
   </form>

@@ -1,65 +1,160 @@
+<script setup lang="ts">
+import { ArrowLeft, ArrowRight } from '@lucide/vue'
+import { useLoopCarousel } from '../../composables/useLoopCarousel'
+
+const photos = [
+  {
+    src: '/hero/baiat.webp',
+    alt: "Santri berbaris khidmat dalam upacara bai'at",
+    title: "Bai'at Santri",
+    caption:
+      'Upacara rutin tempat santri berikrar dan menumbuhkan kedisiplinan.',
+  },
+  {
+    src: '/hero/tahfidz.webp',
+    alt: "Santri menghafal Al-Qur'an bersama pembimbing",
+    title: "Tahfidz Al-Qur'an",
+    caption:
+      "Program unggulan madrasah untuk mencetak generasi penghafal Al-Qur'an.",
+  },
+  {
+    src: '/hero/mabit-rg.webp',
+    alt: 'Santri mengikuti mabit Rijaalul Ghad',
+    title: 'Mabit Rijaalul Ghad',
+    caption:
+      'Program pembentukan iman, takwa, dan karakter santri melalui bina malam.',
+  },
+  {
+    src: '/hero/mabit-ug.webp',
+    alt: 'Santri mengikuti mabit Ummahatul Ghad',
+    title: 'Mabit Ummahatul Ghad',
+    caption:
+      'Program pembentukan iman, takwa, dan karakter santri melalui bina malam.',
+  },
+  {
+    src: '/hero/rapat-orangtua.webp',
+    alt: 'Orang tua santri menghadiri pertemuan di madrasah',
+    title: 'Rapat Orang Tua',
+    caption: 'Madrasah dan orang tua berjalan bersama.',
+  },
+  {
+    src: '/hero/inhouse-training.webp',
+    alt: 'Guru mengikuti in-house training',
+    title: 'In-House Training Guru',
+    caption: 'Guru terus belajar demi mutu pendidikan yang lebih baik.',
+  },
+  {
+    src: '/hero/rapat-evaluasi.webp',
+    alt: 'Guru dan staf dalam rapat evaluasi',
+    title: 'Rapat Evaluasi',
+    caption: 'Evaluasi bersama agar pembelajaran terus membaik.',
+  },
+]
+
+const { bindTrack, current, onScroll, go, loop } = useLoopCarousel(
+  photos.length,
+)
+const loopedPhotos = loop(photos)
+</script>
+
 <template>
   <section
     id="kehidupan"
-    class="school-life scroll-mt-20"
+    class="school-life scroll-mt-14"
     aria-labelledby="school-life-title"
   >
-    <div class="life-intro">
-      <p class="life-label">Mengenal Al-Ikhlash</p>
-      <h2 id="school-life-title">Ada cerita<br />di setiap sudutnya.</h2>
-      <p class="life-description">
-        Sebelum menjadi bagian dari Al-Ikhlash, lihat lebih dekat suasana yang
-        akan menjadi bagian dari cerita sekolahmu.
-      </p>
+    <div class="life-text">
+      <div class="life-intro">
+        <p class="life-label">Mengenal MTs Persis 241 Al-Ikhlash</p>
+        <h2 id="school-life-title">Ada cerita<br />di setiap sudutnya.</h2>
+        <p class="life-description">
+          Sebelum menjadi bagian dari MTs Persis 241 Al-Ikhlash, lihat lebih
+          dekat suasana yang akan menjadi bagian dari cerita sekolahmu.
+        </p>
+      </div>
+
+      <div
+        class="life-current"
+        aria-live="polite"
+      >
+        <p class="life-photo-title">{{ photos[current].title }}</p>
+        <p class="life-photo-caption">{{ photos[current].caption }}</p>
+      </div>
+
+      <div class="life-footnote">
+        <p>Setiap perjalanan dimulai dengan mengenal.</p>
+        <a href="#gelombang">Lihat jadwal pendaftaran</a>
+      </div>
     </div>
-    <div class="life-spread">
-      <figure class="life-school landing-photo-reveal">
-        <div class="life-image">
+
+    <div class="life-stage">
+      <div
+        :ref="bindTrack"
+        class="life-track"
+        role="region"
+        aria-label="Foto kegiatan MTs Persis 241 Al-Ikhlash"
+        tabindex="0"
+        @scroll.passive="onScroll"
+      >
+        <figure
+          v-for="(photo, index) in loopedPhotos"
+          :key="`${photo.copy}-${photo.src}`"
+          class="life-card"
+          :aria-hidden="photo.copy === 1 ? undefined : 'true'"
+        >
           <img
-            src="/bg.webp"
-            alt="Kebersamaan santri dan guru di halaman Al-Ikhlash"
-            width="1150"
-            height="661"
-            loading="lazy"
+            :src="photo.src"
+            :alt="photo.copy === 1 ? photo.alt : ''"
+            width="1600"
+            height="1066"
+            :loading="index === photos.length ? 'eager' : 'lazy'"
           />
-        </div>
-        <figcaption>
-          <span>Keseharian di Al-Ikhlash</span><span>Dokumentasi sekolah</span>
-        </figcaption>
-      </figure>
-      <figure class="life-books landing-photo-reveal">
-        <div class="life-image">
-          <img
-            src="/landing-library.jpg"
-            alt="Ilustrasi rak buku untuk area cerita kegiatan belajar"
-            width="1000"
-            height="586"
-            loading="lazy"
+        </figure>
+      </div>
+      <div class="life-controls">
+        <button
+          type="button"
+          aria-label="Foto sebelumnya"
+          @click="go(-1)"
+        >
+          <ArrowLeft
+            class="size-6"
+            aria-hidden="true"
           />
-        </div>
-        <figcaption>
-          <span>Membuka halaman baru</span
-          ><span>Foto ilustrasi · Unsplash</span>
-        </figcaption>
-      </figure>
-    </div>
-    <div class="life-footnote">
-      <p>Setiap perjalanan dimulai dengan mengenal.</p>
-      <a href="#gelombang">Lihat jadwal pendaftaran</a>
+        </button>
+        <button
+          type="button"
+          aria-label="Foto berikutnya"
+          @click="go(1)"
+        >
+          <ArrowRight
+            class="size-6"
+            aria-hidden="true"
+          />
+        </button>
+      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
 .school-life {
+  display: grid;
+  gap: 2rem;
   max-width: 80rem;
   margin: auto;
   padding: 3.5rem 1.25rem;
   color: #162d53;
 }
+.life-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  min-width: 0;
+}
 .life-intro {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 .life-label {
   font-size: 0.8125rem;
@@ -68,7 +163,7 @@
 }
 h2 {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2.4rem, 4.5vw, 4rem);
+  font-size: clamp(2.2rem, 4.5vw, 3.25rem);
   font-weight: 400;
   line-height: 1.08;
   letter-spacing: -0.045em;
@@ -76,52 +171,68 @@ h2 {
 .life-description {
   max-width: 23rem;
   font-size: 0.9375rem;
-  line-height: 1.85;
+  line-height: 1.8;
   color: #475569;
 }
-.life-spread {
+.life-current {
   display: grid;
-  gap: 2rem;
-  margin-top: 2rem;
+  align-content: start;
+  min-height: 8.5rem;
+  gap: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #203f7326;
 }
-.life-image {
-  overflow: hidden;
-  background: #e8e2d4;
+.life-photo-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.5rem;
+  line-height: 1.2;
 }
-.life-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.life-school .life-image {
-  aspect-ratio: 1.5;
-}
-.life-books .life-image {
-  aspect-ratio: 1.65;
-}
-figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.25rem 1rem;
-  margin-top: 0.875rem;
-  font-size: 0.8125rem;
-}
-figcaption span:last-child {
-  font-size: 0.6875rem;
+.life-photo-caption {
+  max-width: 23rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
   color: #475569;
+}
+.life-stage {
+  position: relative;
+  min-width: 0;
+}
+.life-controls {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  gap: 0.25rem;
+}
+.life-controls button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: #fff;
+  cursor: pointer;
+  filter: drop-shadow(0 1px 3px #0009);
+  transition: transform 150ms ease;
+}
+.life-controls button:hover {
+  transform: scale(1.15);
+}
+.life-controls button:focus-visible,
+.life-track:focus-visible {
+  outline: 2px solid #203f73;
+  outline-offset: 3px;
 }
 .life-footnote {
+  margin-top: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 0.75rem 1rem;
 }
 .life-footnote p {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
 }
 .life-footnote a {
   display: inline-flex;
@@ -135,46 +246,60 @@ figcaption span:last-child {
   outline: 2px solid #203f73;
   outline-offset: 4px;
 }
+.life-track {
+  display: flex;
+  gap: 1rem;
+  min-width: 0;
+  height: 20rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.life-track::-webkit-scrollbar {
+  display: none;
+}
+.life-card {
+  flex: 0 0 85%;
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  border-radius: 1rem;
+  background: #e8e2d4;
+  scroll-snap-align: start;
+}
+.life-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 @media (min-width: 640px) {
   .school-life {
     padding: 4.5rem 2rem;
   }
-  .life-intro {
-    grid-template-columns: 1.2fr 0.8fr;
-    align-items: end;
-    gap: 1.25rem 2rem;
+  .life-track {
+    height: 26rem;
   }
-  .life-label {
-    grid-column: 1 / -1;
-  }
-  .life-spread {
-    grid-template-columns: 1.4fr 0.8fr;
-    align-items: end;
-  }
-  .life-books {
-    margin-bottom: 2.5rem;
-  }
-  .life-books .life-image {
-    aspect-ratio: 0.78;
-  }
-  .life-footnote {
-    margin-top: 2.5rem;
+  .life-card {
+    flex-basis: 70%;
   }
 }
 @media (min-width: 1024px) {
   .school-life {
-    padding-block: 6.5rem;
+    grid-template-columns: 0.7fr 1.3fr;
+    column-gap: 3rem;
+    align-items: stretch;
+    min-height: calc(100svh - 3.5rem);
+    padding-block: 2rem;
   }
-  .life-intro {
-    grid-template-columns: 1.4fr 0.8fr;
-    gap: 1.5rem 4rem;
+  .life-stage {
+    align-self: center;
   }
-  .life-spread {
-    margin-top: 3.5rem;
-    gap: 4rem;
+  .life-track {
+    height: min(calc(100svh - 7.5rem), 46rem);
   }
-  .life-books {
-    margin-bottom: 3rem;
+  .life-card {
+    flex-basis: 78%;
   }
 }
 </style>

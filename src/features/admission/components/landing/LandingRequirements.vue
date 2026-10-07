@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { FileText } from '@lucide/vue'
+import { useInView } from '../../composables/useInView'
 import type { AdmissionDocumentType } from '../../types'
 
 const props = defineProps<{
@@ -12,12 +14,26 @@ const sortedDocumentTypes = computed(() =>
     (first, second) => first.sortOrder - second.sortOrder,
   ),
 )
+
+const groups = computed(() => {
+  const required = sortedDocumentTypes.value.filter((type) => type.isRequired)
+  const optional = sortedDocumentTypes.value.filter((type) => !type.isRequired)
+  return [
+    { key: 'required', label: 'Wajib', items: required, primary: true },
+    { key: 'optional', label: 'Opsional', items: optional, primary: false },
+  ].filter((group) => group.items.length)
+})
+
+const { target, visible } = useInView()
 </script>
 
 <template>
-  <section class="scroll-mt-24 bg-white py-14 sm:py-20">
+  <section
+    :ref="target"
+    class="scroll-mt-14 bg-white py-14 sm:py-20 lg:flex lg:min-h-[calc(100svh-3.5rem)] lg:items-center lg:py-8"
+  >
     <div
-      class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-16 lg:px-8"
+      class="mx-auto grid w-full max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-16 lg:px-8"
     >
       <div>
         <h2
@@ -26,16 +42,18 @@ const sortedDocumentTypes = computed(() =>
           Berkas yang perlu disiapkan
         </h2>
         <p class="mt-5 max-w-xl text-sm leading-7 text-slate-700">
-          Persyaratan mengikuti gelombang yang sedang tersedia. Periksa kembali
-          daftar ini sebelum mengunggah dokumen.
+          Siapkan berkas berikut sebelum mulai mendaftar. Berkas yang berlabel
+          Wajib harus diunggah agar pendaftaranmu lengkap.
         </p>
         <div
-          class="mt-8 max-w-md bg-[#f5f2e9] p-5 text-sm leading-6 text-slate-700"
+          class="mt-8 max-w-md rounded-2xl bg-[#f5f2e9] p-5 text-sm leading-6 text-slate-700"
         >
-          <p class="font-semibold text-[#203f73]">Sebelum mengunggah</p>
+          <p class="font-semibold text-[#203f73]">Tips menyiapkan berkas</p>
           <p class="mt-1">
-            Pastikan setiap dokumen terbaca jelas. Jika ada catatan perbaikan,
-            periksa kembali berkas melalui akun Anda.
+            Foto atau pindai berkasmu sampai tulisannya terbaca jelas, lalu
+            simpan sebagai JPG, PNG, atau PDF dengan ukuran di bawah 5 MB.
+            Tenang, kalau ada yang perlu diperbaiki, panitia akan memberi tahu
+            lewat akunmu.
           </p>
         </div>
       </div>
@@ -45,7 +63,7 @@ const sortedDocumentTypes = computed(() =>
         role="status"
         class="space-y-3 border-t border-[#203f73]/25 pt-5"
       >
-        <p class="text-sm text-slate-600">Memuat persyaratan berkas...</p>
+        <p class="text-sm text-slate-600">Memuat daftar berkas...</p>
         <div
           v-for="skeleton in 4"
           :key="skeleton"
@@ -55,27 +73,60 @@ const sortedDocumentTypes = computed(() =>
 
       <div
         v-else-if="sortedDocumentTypes.length"
-        class="border-t border-[#203f73]/25"
+        class="grid content-start gap-8"
+        :class="groups.length > 1 && 'sm:grid-cols-2'"
       >
-        <article
-          v-for="documentType in sortedDocumentTypes"
-          :key="documentType.id"
-          class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 border-b border-[#203f73]/25 py-5"
+        <section
+          v-for="group in groups"
+          :key="group.key"
+          :aria-label="`Berkas ${group.label.toLowerCase()}`"
         >
-          <p class="min-w-0 text-sm font-semibold text-[#203f73]">
-            {{ documentType.name }}
+          <p class="flex items-center gap-2 text-xs font-semibold">
+            <span
+              class="rounded-full px-3 py-1"
+              :class="
+                group.primary
+                  ? 'bg-[#203f73] text-white'
+                  : 'bg-[#203f73]/10 text-[#203f73]'
+              "
+            >
+              {{ group.label }}
+            </span>
+            <span class="text-slate-600">{{ group.items.length }} berkas</span>
           </p>
-          <p class="text-sm text-slate-700">
-            {{ documentType.isRequired ? 'Wajib' : 'Opsional' }}
-          </p>
-        </article>
+          <ul class="mt-4 grid gap-3">
+            <li
+              v-for="(documentType, index) in group.items"
+              :key="documentType.id"
+              class="flex items-center gap-4 rounded-2xl bg-[#f5f2e9] px-4 py-4 transition duration-500 ease-out motion-reduce:transition-none"
+              :class="
+                visible
+                  ? 'translate-y-0 opacity-100'
+                  : 'translate-y-4 opacity-0'
+              "
+              :style="{ transitionDelay: `${Math.min(index, 8) * 70}ms` }"
+            >
+              <span
+                class="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#203f73]"
+              >
+                <FileText
+                  class="size-5"
+                  aria-hidden="true"
+                />
+              </span>
+              <p class="min-w-0 flex-1 text-sm font-semibold text-[#203f73]">
+                {{ documentType.name }}
+              </p>
+            </li>
+          </ul>
+        </section>
       </div>
 
       <div
         v-else
         class="border-t border-[#203f73]/25 py-8 text-sm leading-6 text-slate-700"
       >
-        Daftar berkas akan muncul setelah informasi gelombang tersedia.
+        Daftar berkas belum tersedia. Silakan cek kembali nanti.
       </div>
     </div>
   </section>

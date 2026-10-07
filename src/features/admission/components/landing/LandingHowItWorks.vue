@@ -2,30 +2,37 @@
 const steps = [
   {
     title: 'Buat akun',
-    description: 'Gunakan email aktif untuk membuat akun pendaftaran.',
+    description:
+      'Daftar dengan email aktif, lalu masuk untuk memulai pendaftaran.',
   },
   {
-    title: 'Lengkapi formulir',
-    description: 'Isi data calon santri, orang tua, alamat, dan sekolah asal.',
+    title: 'Isi formulir',
+    description:
+      'Lengkapi data diri, orang tua atau wali, alamat, sekolah asal, dan prestasi. Bisa dilanjutkan kapan saja sebelum dikirim.',
   },
   {
     title: 'Unggah berkas',
-    description: 'Kirim dokumen persyaratan dari akun pendaftaran Anda.',
+    description:
+      'Foto atau pindai dokumen persyaratan, lalu unggah dari akunmu.',
   },
   {
-    title: 'Bayar & verifikasi',
-    description: 'Unggah bukti pembayaran, lalu tunggu pemeriksaan admin.',
+    title: 'Bayar biaya pendaftaran',
+    description:
+      'Unggah bukti pembayaran. Kursimu terjamin setelah panitia mengonfirmasinya.',
   },
   {
-    title: 'Pantau hasil',
-    description: 'Lihat status dan pengumuman langsung dari akun Anda.',
+    title: 'Kirim dan pantau',
+    description:
+      'Kirim pendaftaran, lalu pantau status dan pengumuman. Jika ada yang perlu diperbaiki, panitia akan memberi catatan.',
   },
 ]
 </script>
 
 <template>
-  <section class="scroll-mt-24 bg-[#203f73] py-14 text-white sm:py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <section
+    class="scroll-mt-14 bg-[#203f73] py-14 text-white sm:py-20 lg:flex lg:min-h-[calc(100svh-3.5rem)] lg:items-center lg:py-8"
+  >
+    <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:gap-16">
         <h2
           class="font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight sm:text-5xl"
@@ -33,7 +40,8 @@ const steps = [
           Tahapan pendaftaran
         </h2>
         <p class="max-w-md text-sm leading-7 text-slate-200">
-          Mulai dengan membuat akun, lalu ikuti setiap tahap hingga pengumuman.
+          Lima langkah dari membuat akun sampai pengumuman hasil, semuanya bisa
+          diselesaikan dari rumah.
         </p>
       </div>
 
