@@ -25,7 +25,7 @@ vi.mock('@/features/platform/auth', () => ({
   }),
 }))
 
-const route = vi.hoisted(() => ({ query: {} as Record<string, string> }))
+const route = vi.hoisted(() => ({ query: {} }))
 vi.mock('vue-router', () => ({
   useRoute: () => route,
   useRouter: () => ({ replace: vi.fn() }),
