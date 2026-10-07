@@ -210,6 +210,17 @@ describe('ApplicationDetailView', () => {
     vi.clearAllMocks()
   })
 
+  it('uses the underlined tab style', async () => {
+    const wrapper = await mountView()
+
+    const list = wrapper.get('[data-slot="tabs-list"]')
+    expect(list.classes()).toContain('border-b')
+    expect(list.classes()).not.toContain('bg-muted')
+    expect(wrapper.get('[data-slot="tabs-trigger"]').classes()).toContain(
+      'border-b-2',
+    )
+  })
+
   it('groups draft values, wraps long values, and avoids nested link buttons', async () => {
     const wrapper = await mountView()
 

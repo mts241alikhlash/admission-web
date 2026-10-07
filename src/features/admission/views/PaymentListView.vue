@@ -200,7 +200,10 @@ onMounted(async () => {
       </CardHeader>
 
       <div class="space-y-4 p-4 sm:p-6">
-        <Tabs v-model="tab">
+        <Tabs
+          v-model="tab"
+          variant="line"
+        >
           <TabsList>
             <TabsTrigger
               v-for="item in TABS"

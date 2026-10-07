@@ -105,8 +105,6 @@ const dialogDocId = ref<string | null>(null)
 const enrollForm = ref({ nis: '', nisn: '' })
 const dialogId = useId()
 const activeTab = ref('personal')
-const tabClass =
-  'min-h-11 flex-none rounded-none border-0 border-b-2 border-transparent px-3 text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:bg-transparent'
 
 const status = computed(() => application.value?.status)
 const editable = computed(
@@ -528,58 +526,20 @@ useBreadcrumbs(() => {
 
         <Tabs
           v-model="activeTab"
+          variant="line"
           class="min-w-0 gap-0"
         >
-          <div
-            class="-mx-4 overflow-x-auto overflow-y-hidden border-b px-4 [scrollbar-width:none] sm:-mx-6 sm:px-6 [&::-webkit-scrollbar]:hidden"
-          >
-            <TabsList
-              class="-mb-px h-auto w-max gap-0 rounded-none bg-transparent p-0"
-            >
-              <TabsTrigger
-                value="personal"
-                :class="tabClass"
-              >
-                Data Diri
-              </TabsTrigger>
-              <TabsTrigger
-                value="parents"
-                :class="tabClass"
-              >
-                Orang Tua/Wali
-              </TabsTrigger>
-              <TabsTrigger
-                value="address"
-                :class="tabClass"
-              >
-                Alamat
-              </TabsTrigger>
-              <TabsTrigger
-                value="school"
-                :class="tabClass"
-              >
-                Sekolah Asal
-              </TabsTrigger>
-              <TabsTrigger
-                value="achievements"
-                :class="tabClass"
-              >
-                Prestasi & Beasiswa
-              </TabsTrigger>
-              <TabsTrigger
-                value="documents"
-                :class="tabClass"
-              >
-                Berkas
-              </TabsTrigger>
-              <TabsTrigger
-                value="payment"
-                :class="tabClass"
-              >
-                Pembayaran
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList class="-mx-4 w-auto px-4 sm:-mx-6 sm:px-6">
+            <TabsTrigger value="personal"> Data Diri </TabsTrigger>
+            <TabsTrigger value="parents"> Orang Tua/Wali </TabsTrigger>
+            <TabsTrigger value="address"> Alamat </TabsTrigger>
+            <TabsTrigger value="school"> Sekolah Asal </TabsTrigger>
+            <TabsTrigger value="achievements">
+              Prestasi & Beasiswa
+            </TabsTrigger>
+            <TabsTrigger value="documents"> Berkas </TabsTrigger>
+            <TabsTrigger value="payment"> Pembayaran </TabsTrigger>
+          </TabsList>
           <p class="pt-2 text-xs text-muted-foreground sm:hidden">
             Geser untuk melihat bagian lain
           </p>
