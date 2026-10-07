@@ -94,13 +94,6 @@ export const DOCUMENT_STATUS_BADGE_VARIANTS: Record<
   REJECTED: 'destructive',
 }
 
-export function fileUrl(storageKey: string) {
-  const base =
-    (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-    'http://localhost:3000'
-  return `${base}/${storageKey}`
-}
-
 export function admissionErrorMessage(error: unknown, fallback: string) {
   if (isAxiosError(error)) {
     const status = error.response?.status

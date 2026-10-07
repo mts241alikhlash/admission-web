@@ -413,4 +413,10 @@ export const admissionApi = {
 
   deleteAnnouncement: (id: string) =>
     api.delete<void>(`/admissions/manage-announcements/${id}`),
+
+  getFile: (fileId: string, download = false) =>
+    api.get<Blob>(`/admissions/files/${fileId}`, {
+      params: download ? { download: 1 } : undefined,
+      responseType: 'blob',
+    }),
 }
