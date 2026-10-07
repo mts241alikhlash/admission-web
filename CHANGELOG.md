@@ -1,5 +1,11 @@
 # admission-web
 
+## 1.5.0
+
+### Minor Changes
+
+- bd21386: Admins manage the documents applicants upload from a new "Jenis Berkas" menu: add, rename, mark required or optional, activate or deactivate, and reorder them. A type already uploaded can only be deactivated, and the applicant detail marks documents of a deactivated type "(nonaktif)".
+
 ## 1.4.0
 
 ### Minor Changes
