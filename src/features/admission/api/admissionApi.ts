@@ -6,7 +6,9 @@ import type {
 import type {
   ActiveWaves,
   AdmissionBankAccount,
+  AdmissionDocumentTypeAdmin,
   BankAccountSavePayload,
+  DocumentTypeSavePayload,
   AdmissionAcademicYear,
   AdmissionAcceptedApplication,
   AdmissionAnnouncement,
@@ -325,6 +327,32 @@ export const admissionApi = {
 
   deleteBankAccount: (id: string) =>
     api.delete<void>(`/admissions/bank-accounts/${id}`),
+
+  getDocumentTypes: () =>
+    api.get<{ data: AdmissionDocumentTypeAdmin[] }>(
+      '/admissions/document-types',
+    ),
+
+  createDocumentType: (payload: DocumentTypeSavePayload) =>
+    api.post<ApiSingleResponse<AdmissionDocumentTypeAdmin>>(
+      '/admissions/document-types',
+      payload,
+    ),
+
+  updateDocumentType: (id: string, payload: Partial<DocumentTypeSavePayload>) =>
+    api.patch<ApiSingleResponse<AdmissionDocumentTypeAdmin>>(
+      `/admissions/document-types/${id}`,
+      payload,
+    ),
+
+  reorderDocumentTypes: (ids: string[]) =>
+    api.put<{ data: AdmissionDocumentTypeAdmin[] }>(
+      '/admissions/document-types/order',
+      { ids },
+    ),
+
+  deleteDocumentType: (id: string) =>
+    api.delete<void>(`/admissions/document-types/${id}`),
 
   getManageAnnouncements: (params?: {
     page?: number
