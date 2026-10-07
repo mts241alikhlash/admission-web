@@ -61,6 +61,7 @@ const types = [
 
 type Row = (typeof types)[number]
 interface Column {
+  header?: string
   accessorKey?: keyof Row
   cell?: (context: { row: { original: Row; index: number } }) => VNode
 }
@@ -71,21 +72,27 @@ const DataTableStub = defineComponent({
     data: { type: Array as PropType<Row[]>, required: true },
   },
   setup: (props) => () =>
-    h(
-      'div',
-      { 'data-test': 'desktop-document-types' },
-      props.data.map((original, index) =>
+    h('div', { 'data-test': 'desktop-document-types' }, [
+      h(
+        'div',
+        { 'data-test': 'headers' },
+        props.columns.map((column) => h('span', column.header)),
+      ),
+      ...props.data.map((original, index) =>
         h(
           'div',
           { class: 'row' },
           props.columns.map((column) =>
-            column.cell
-              ? column.cell({ row: { original, index } })
-              : String(original[column.accessorKey!]),
+            h(
+              'span',
+              column.cell
+                ? column.cell({ row: { original, index } })
+                : String(original[column.accessorKey!]),
+            ),
           ),
         ),
       ),
-    ),
+    ]),
 })
 const ActionCellStub = defineComponent({
   props: { hideDelete: Boolean, hideEdit: Boolean },
@@ -150,33 +157,6 @@ it('adds a type and reloads the list', async () => {
   expect(service.fetchAll).toHaveBeenCalledTimes(2)
 })
 
-it('moves a type down and sends the whole order', async () => {
-  service.fetchAll.mockResolvedValue({ types })
-  service.reorder.mockResolvedValue({ types: [types[1], types[0], types[2]] })
-  const wrapper = mountView()
-  await flushPromises()
-
-  const mobile = wrapper.get('[data-test="mobile-document-types"]')
-  const first = mobile.findAll('li')[0]
-  expect(
-    first
-      .get('button[aria-label="Naikkan Kartu Keluarga"]')
-      .attributes('aria-disabled'),
-  ).toBe('true')
-  await first
-    .get('button[aria-label="Turunkan Kartu Keluarga"]')
-    .trigger('click')
-  await flushPromises()
-
-  expect(service.reorder).toHaveBeenCalledWith(['t2', 't1', 't3'])
-  expect(
-    mobile
-      .findAll('li')[2]
-      .get('button[aria-label="Turunkan Rapor"]')
-      .attributes('aria-disabled'),
-  ).toBe('true')
-})
-
 it('offers delete only for an unused type', async () => {
   service.fetchAll.mockResolvedValue({ types })
   const wrapper = mountView()
@@ -192,54 +172,6 @@ it('offers delete only for an unused type', async () => {
   )
   expect(items[2].text()).toContain('Nonaktif')
   expect(items[2].text()).toContain('Opsional')
-})
-
-it('ignores a second move while the first order is being saved', async () => {
-  service.fetchAll.mockResolvedValue({ types })
-  let finish: (value: unknown) => void = vi.fn()
-  service.reorder.mockReturnValue(
-    new Promise((resolve) => {
-      finish = resolve
-    }),
-  )
-  const wrapper = mountView()
-  await flushPromises()
-  const mobile = wrapper.get('[data-test="mobile-document-types"]')
-  const down = mobile
-    .findAll('li')[0]
-    .get('button[aria-label="Turunkan Kartu Keluarga"]')
-
-  await down.trigger('click')
-  await down.trigger('click')
-  expect(service.reorder).toHaveBeenCalledTimes(1)
-  expect(down.attributes('aria-disabled')).toBe('true')
-
-  finish({ types: [types[1], types[0], types[2]] })
-  await flushPromises()
-  expect(
-    mobile
-      .findAll('li')[1]
-      .get('button[aria-label="Turunkan Kartu Keluarga"]')
-      .attributes('aria-disabled'),
-  ).toBe('false')
-})
-
-it('reloads the list when the order is refused', async () => {
-  service.fetchAll.mockResolvedValue({ types })
-  service.reorder.mockResolvedValue({
-    error: 'Urutan jenis berkas tidak lengkap',
-  })
-  const wrapper = mountView()
-  await flushPromises()
-
-  await wrapper
-    .get('[data-test="mobile-document-types"]')
-    .findAll('li')[0]
-    .get('button[aria-label="Turunkan Kartu Keluarga"]')
-    .trigger('click')
-  await flushPromises()
-
-  expect(service.fetchAll).toHaveBeenCalledTimes(2)
 })
 
 it('hides delete in the desktop actions of a used type', async () => {
@@ -303,12 +235,9 @@ it('offers nothing to change without create, update or delete rights', async () 
     wrapper.findAll('button').filter((b) => b.text().includes('Tambah')),
   ).toHaveLength(0)
   expect(wrapper.find('[data-test="actions"]').exists()).toBe(false)
-  expect(
-    wrapper.get('[data-test="desktop-document-types"]').findAll('button'),
-  ).toHaveLength(0)
 })
 
-it('lets a user who may only update reorder and edit but not delete', async () => {
+it('lets a user who may only update edit but not delete', async () => {
   access.granted = new Set(['admission-document-types.update'])
   service.fetchAll.mockResolvedValue({ types })
   const wrapper = mountView()
@@ -317,11 +246,81 @@ it('lets a user who may only update reorder and edit but not delete', async () =
   const second = wrapper
     .get('[data-test="mobile-document-types"]')
     .findAll('li')[1]
-  expect(second.find('button[aria-label="Naikkan Pas Foto"]').exists()).toBe(
-    true,
-  )
   expect(second.find('button[aria-label="Ubah Pas Foto"]').exists()).toBe(true)
   expect(second.find('button[aria-label="Hapus Pas Foto"]').exists()).toBe(
     false,
   )
+})
+
+it('has no reorder controls', async () => {
+  service.fetchAll.mockResolvedValue({ types })
+  const wrapper = mountView()
+  await flushPromises()
+
+  expect(wrapper.find('button[aria-label^="Naikkan"]').exists()).toBe(false)
+  expect(wrapper.find('button[aria-label^="Turunkan"]').exists()).toBe(false)
+  const headers = wrapper.get('[data-test="headers"]').findAll('span')
+  expect(headers.map((h) => h.text())).not.toContain('Urutan')
+})
+
+it('shows name and code in separate columns with a clear header for the upload requirement', async () => {
+  service.fetchAll.mockResolvedValue({ types })
+  const wrapper = mountView()
+  await flushPromises()
+
+  const headers = wrapper.get('[data-test="headers"]').findAll('span')
+  expect(headers.map((h) => h.text())).toEqual([
+    'Nama',
+    'Kode',
+    'Kewajiban',
+    'Status',
+    'Dipakai',
+    'Aksi',
+  ])
+  const firstRow = wrapper
+    .get('[data-test="desktop-document-types"]')
+    .findAll('.row')[0]
+    .findAll(':scope > span')
+  expect(firstRow[0].text()).toBe('Kartu Keluarga')
+  expect(firstRow[1].text()).toBe('FAMILY_CARD')
+})
+
+it('toggles a switch from anywhere in its row, once per click', async () => {
+  service.fetchAll.mockResolvedValue({ types: [] })
+  service.save.mockResolvedValue({ success: true })
+  const wrapper = mountView()
+  await flushPromises()
+  await wrapper
+    .findAll('button')
+    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .trigger('click')
+  await wrapper.get('input[name="name"]').setValue('Rapor')
+
+  const required = wrapper.get('[data-test="switch-row-isRequired"]')
+  const active = wrapper.get('[data-test="switch-row-isActive"]')
+  expect(required.text()).toBe('Wajib diunggah')
+  expect(active.text()).toBe('Aktif')
+
+  await required.trigger('click')
+  expect(required.get('[role="switch"]').attributes('aria-checked')).toBe(
+    'false',
+  )
+  await required.get('[role="switch"]').trigger('click')
+  expect(required.get('[role="switch"]').attributes('aria-checked')).toBe(
+    'true',
+  )
+  await required.get('[data-test="switch-label"]').trigger('click')
+  expect(required.get('[role="switch"]').attributes('aria-checked')).toBe(
+    'false',
+  )
+  await active.get('[data-test="switch-label"]').trigger('click')
+
+  await wrapper.get('form').trigger('submit')
+  await flushPromises()
+  await vi.waitFor(() => expect(service.save).toHaveBeenCalled())
+  expect(service.save).toHaveBeenCalledWith(null, {
+    name: 'Rapor',
+    isRequired: false,
+    isActive: false,
+  })
 })
