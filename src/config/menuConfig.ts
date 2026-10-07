@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   FileText,
+  FileStack,
   Landmark,
   Megaphone,
   Users,
@@ -66,6 +67,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/bank-accounts',
         icon: Landmark,
         requiredPermission: 'admission-bank-accounts.read',
+      },
+      {
+        title: 'menu.documentType',
+        url: '/admin/document-types',
+        icon: FileStack,
+        requiredPermission: 'admission-document-types.read',
       },
     ],
   },

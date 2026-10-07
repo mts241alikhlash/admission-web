@@ -126,7 +126,9 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
     header: 'Jenis Dokumen',
     cell: ({ row }) =>
       h('span', [
-        row.original.docType.name,
+        row.original.docType.isActive
+          ? row.original.docType.name
+          : `${row.original.docType.name} (nonaktif)`,
         row.original.docType.isRequired
           ? h(
               'span',
@@ -1009,6 +1011,7 @@ useBreadcrumbs(() => {
                     <div class="min-w-0">
                       <p class="break-words font-medium">
                         {{ docType.name
+                        }}{{ docType.isActive ? '' : ' (nonaktif)'
                         }}<span
                           v-if="docType.isRequired"
                           class="text-destructive"

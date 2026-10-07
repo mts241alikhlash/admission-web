@@ -4,6 +4,7 @@ export default {
     applicant: 'Applicants',
     bankAccount: 'Payment Accounts',
     dashboard: 'Dashboard',
+    documentType: 'Document Types',
     form: 'Form',
     myProfile: 'My Profile',
     registrationStatus: 'Registration Status',

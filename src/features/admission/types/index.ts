@@ -16,6 +16,13 @@ export interface BankAccountSavePayload {
   accountHolder: string
   isActive: boolean
 }
+export type AdmissionDocumentTypeAdmin =
+  Schemas['AdmissionDocumentTypeResponseDto']
+export interface DocumentTypeSavePayload {
+  name: string
+  isRequired: boolean
+  isActive: boolean
+}
 export type AdmissionWave = Schemas['AdmissionWaveResponseDto']
 export type ActiveWave = Schemas['AdmissionActiveWavesResponseWavesDto']
 export type ActiveWaves = Schemas['AdmissionActiveWavesResponseDto']

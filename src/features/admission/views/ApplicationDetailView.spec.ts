@@ -248,6 +248,35 @@ describe('ApplicationDetailView', () => {
     expect(rows[2].text()).not.toContain('Setujui')
   })
 
+  it('marks a document of a deactivated type', async () => {
+    application.value = {
+      ...draft,
+      documentTypes: [
+        {
+          id: 'old',
+          code: 'OLD',
+          name: 'Berkas Lama',
+          isRequired: false,
+          isActive: false,
+          sortOrder: 9,
+        },
+      ],
+      documents: [
+        {
+          id: 'doc-old',
+          documentTypeId: 'old',
+          status: 'PENDING',
+          note: null,
+          file: { originalName: 'lama.pdf', storageKey: 'files/lama.pdf' },
+        },
+      ],
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Berkas')
+
+    expect(wrapper.text()).toContain('Berkas Lama (nonaktif)')
+  })
+
   it('shows an empty state when the wave has no document types', async () => {
     const wrapper = await mountView()
     await openTab(wrapper, 'Berkas')

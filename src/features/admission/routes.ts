@@ -140,6 +140,21 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/document-types',
+    name: 'admin-document-types',
+    component: () => import('./views/DocumentTypeListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-document-types.read',
+      title: 'Jenis Berkas',
+      description: 'Kelola berkas yang diunggah pendaftar.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Jenis Berkas' },
+      ],
+    },
+  },
+  {
     path: '/admin/announcements',
     name: 'admin-announcements',
     component: () => import('./views/AnnouncementListView.vue'),

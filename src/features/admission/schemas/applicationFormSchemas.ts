@@ -390,3 +390,9 @@ export const bankAccountSchema = z.object({
   accountHolder: z.string().trim().min(1, 'Atas nama wajib diisi').max(100),
   isActive: z.boolean(),
 })
+
+export const documentTypeSchema = z.object({
+  name: z.string().trim().min(1, 'Nama jenis berkas wajib diisi').max(100),
+  isRequired: z.boolean(),
+  isActive: z.boolean(),
+})
