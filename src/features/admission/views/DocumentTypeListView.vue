@@ -30,6 +30,7 @@ import {
 } from '@mts241alikhlash/ui/alert-dialog'
 import { ChevronDown, ChevronUp, Plus } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
+import { useRoleGuard } from '@/features/platform/auth'
 import FloatingField from '../components/AdmissionField.vue'
 import { documentTypeSchema } from '../schemas/applicationFormSchemas'
 import { documentTypeService } from '../services/documentTypeService'
@@ -41,6 +42,11 @@ import type {
 const deleteTitle = 'Hapus jenis berkas?'
 const deleteDescription =
   'Jenis berkas ini belum pernah diunggah dan akan dihapus permanen.'
+
+const { can } = useRoleGuard()
+const canCreate = computed(() => can('admission-document-types.create'))
+const canUpdate = computed(() => can('admission-document-types.update'))
+const canDelete = computed(() => can('admission-document-types.delete'))
 
 const types = ref<AdmissionDocumentTypeAdmin[]>([])
 const loading = ref(false)
@@ -60,37 +66,43 @@ const { handleSubmit, resetForm, values, setFieldValue } =
 
 const lastIndex = computed(() => types.value.length - 1)
 
+function moveButton(
+  type: AdmissionDocumentTypeAdmin,
+  index: number,
+  offset: -1 | 1,
+) {
+  const blocked =
+    reordering.value ||
+    (offset === -1 ? index === 0 : index === lastIndex.value)
+  return h(
+    Button,
+    {
+      variant: 'outline',
+      size: 'icon',
+      class: 'aria-disabled:opacity-50',
+      'aria-label': `${offset === -1 ? 'Naikkan' : 'Turunkan'} ${type.name}`,
+      'aria-disabled': String(blocked),
+      onClick: () => move(index, offset),
+    },
+    () => h(offset === -1 ? ChevronUp : ChevronDown, { class: 'size-4' }),
+  )
+}
+
 const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
-  {
-    id: 'order',
-    header: 'Urutan',
-    cell: ({ row }) =>
-      h('div', { class: 'flex gap-1' }, [
-        h(
-          Button,
-          {
-            variant: 'outline',
-            size: 'icon',
-            'aria-label': `Naikkan ${row.original.name}`,
-            disabled: reordering.value || row.index === 0,
-            onClick: () => move(row.index, -1),
-          },
-          () => h(ChevronUp, { class: 'size-4' }),
-        ),
-        h(
-          Button,
-          {
-            variant: 'outline',
-            size: 'icon',
-            'aria-label': `Turunkan ${row.original.name}`,
-            disabled: reordering.value || row.index === lastIndex.value,
-            onClick: () => move(row.index, 1),
-          },
-          () => h(ChevronDown, { class: 'size-4' }),
-        ),
-      ]),
-    enableSorting: false,
-  },
+  ...(canUpdate.value
+    ? [
+        {
+          id: 'order',
+          header: 'Urutan',
+          cell: ({ row }) =>
+            h('div', { class: 'flex gap-1' }, [
+              moveButton(row.original, row.index, -1),
+              moveButton(row.original, row.index, 1),
+            ]),
+          enableSorting: false,
+        } satisfies ColumnDef<AdmissionDocumentTypeAdmin>,
+      ]
+    : []),
   {
     id: 'name',
     header: 'Nama',
@@ -122,22 +134,35 @@ const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
       ),
   },
   { accessorKey: 'documentCount', header: 'Dipakai' },
-  {
-    id: 'actions',
-    header: 'Aksi',
-    cell: ({ row }) =>
-      h(ActionCell, {
-        hideDelete: row.original.documentCount > 0,
-        deleteTitle,
-        deleteDescription,
-        onEdit: () => openForm(row.original),
-        onDelete: async ({ closeAlert }: { closeAlert: () => void }) => {
-          await remove(row.original)
-          closeAlert()
-        },
-      }),
-    enableSorting: false,
-  },
+  ...(canUpdate.value || canDelete.value
+    ? [
+        {
+          id: 'actions',
+          header: 'Aksi',
+          cell: ({ row }) =>
+            h(ActionCell, {
+              hideEdit: !canUpdate.value,
+              hideDelete: !canDelete.value || row.original.documentCount > 0,
+              deleteTitle,
+              deleteDescription,
+              onEdit: () => openForm(row.original),
+              onDelete: async ({
+                closeAlert,
+                setLoading,
+              }: {
+                closeAlert: () => void
+                setLoading: (state: boolean) => void
+              }) => {
+                setLoading(true)
+                await remove(row.original)
+                setLoading(false)
+                closeAlert()
+              },
+            }),
+          enableSorting: false,
+        } satisfies ColumnDef<AdmissionDocumentTypeAdmin>,
+      ]
+    : []),
 ])
 
 async function load() {
@@ -150,14 +175,14 @@ async function load() {
 
 async function move(index: number, offset: -1 | 1) {
   const target = index + offset
-  if (target < 0 || target >= types.value.length) return
+  if (reordering.value || target < 0 || target >= types.value.length) return
   const ids = types.value.map((type) => type.id)
   ;[ids[index], ids[target]] = [ids[target], ids[index]]
   reordering.value = true
   const result = await documentTypeService.reorder(ids)
-  reordering.value = false
   if ('types' in result) types.value = result.types
   else await load()
+  reordering.value = false
 }
 
 async function remove(type: AdmissionDocumentTypeAdmin) {
@@ -211,6 +236,7 @@ onMounted(load)
           Jenis Berkas
         </CardTitle>
         <Button
+          v-if="canCreate"
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
           @click="openForm(null)"
         >
@@ -274,24 +300,27 @@ onMounted(load)
               </div>
               <div class="flex flex-wrap gap-2">
                 <Button
+                  v-if="canUpdate"
                   variant="outline"
-                  class="min-h-11"
+                  class="min-h-11 aria-disabled:opacity-50"
                   :aria-label="`Naikkan ${type.name}`"
-                  :disabled="reordering || index === 0"
+                  :aria-disabled="reordering || index === 0"
                   @click="move(index, -1)"
                 >
                   <ChevronUp class="size-4" />
                 </Button>
                 <Button
+                  v-if="canUpdate"
                   variant="outline"
-                  class="min-h-11"
+                  class="min-h-11 aria-disabled:opacity-50"
                   :aria-label="`Turunkan ${type.name}`"
-                  :disabled="reordering || index === lastIndex"
+                  :aria-disabled="reordering || index === lastIndex"
                   @click="move(index, 1)"
                 >
                   <ChevronDown class="size-4" />
                 </Button>
                 <Button
+                  v-if="canUpdate"
                   variant="outline"
                   class="min-h-11"
                   :aria-label="`Ubah ${type.name}`"
@@ -299,7 +328,7 @@ onMounted(load)
                   >Ubah</Button
                 >
                 <Button
-                  v-if="type.documentCount === 0"
+                  v-if="canDelete && type.documentCount === 0"
                   variant="outline"
                   class="min-h-11"
                   :aria-label="`Hapus ${type.name}`"
