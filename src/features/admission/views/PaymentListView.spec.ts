@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
+import type { ComponentPublicInstance } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PaymentListView from './PaymentListView.vue'
@@ -26,14 +27,16 @@ vi.mock('@/features/platform/auth', () => ({
 }))
 
 const route = vi.hoisted(() => ({ query: {} }))
+const router = vi.hoisted(() => ({ replace: vi.fn() }))
 vi.mock('vue-router', () => ({
   useRoute: () => route,
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => router,
 }))
 
 const passthrough = { template: '<div><slot /></div>' }
 const AddPaymentDialogStub = {
   props: ['open', 'initialApplicationId'],
+  emits: ['update:open'],
   template:
     '<div data-test="add-dialog" :data-open="open" :data-applicant="initialApplicationId" />',
 }
@@ -279,4 +282,53 @@ it('opens the add dialog from the header button', async () => {
   expect(wrapper.get('[data-test="add-dialog"]').attributes('data-open')).toBe(
     'true',
   )
+})
+
+it('drops the applicant from the address once the dialog opens', async () => {
+  route.query = { applicationId: 'app9' }
+  mountView()
+  await flushPromises()
+
+  expect(router.replace).toHaveBeenCalledWith({ query: {} })
+})
+
+it('forgets the applicant and reloads the list when the add dialog is closed', async () => {
+  route.query = { applicationId: 'app9' }
+  const wrapper = mountView()
+  await flushPromises()
+  const loads = service.fetchQueue.mock.calls.length
+
+  wrapper
+    .getComponent<ComponentPublicInstance>('[data-test="add-dialog"]')
+    .vm.$emit('update:open', false)
+  await flushPromises()
+  expect(service.fetchQueue.mock.calls.length).toBe(loads + 1)
+
+  await wrapper
+    .findAll('button')
+    .find((b) => b.text().includes('Tambah Pembayaran'))!
+    .trigger('click')
+
+  expect(
+    wrapper.get('[data-test="add-dialog"]').attributes('data-applicant'),
+  ).toBeUndefined()
+})
+
+it('ignores a slow response from a tab that is no longer shown', async () => {
+  let release: (value: unknown) => void = () => undefined
+  service.fetchQueue.mockReturnValueOnce(
+    new Promise((resolve) => (release = resolve)),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+
+  service.fetchQueue.mockResolvedValue(page([verified]))
+  await tab(wrapper, 'Terverifikasi').trigger('mousedown')
+  await flushPromises()
+  release(page([pending]))
+  await flushPromises()
+
+  const rows = wrapper.findAll('[data-test="payment-row"]')
+  expect(rows).toHaveLength(1)
+  expect(rows[0].text()).toContain('Terverifikasi')
 })

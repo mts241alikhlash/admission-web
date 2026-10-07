@@ -106,7 +106,10 @@ const stubs = {
   ExternalLink: true,
   Input: input,
   Label: label,
-  RouterLink: { template: '<a><slot /></a>' },
+  RouterLink: {
+    props: ['to'],
+    template: '<a :data-to="JSON.stringify(to)"><slot /></a>',
+  },
   StatusBadge: passthrough,
   Textarea: textarea,
 }
@@ -414,6 +417,7 @@ describe('ApplicationDetailView', () => {
     await openTab(wrapper, 'Pembayaran')
 
     expect(wrapper.text()).not.toContain('Verifikasi Pembayaran')
+    expect(wrapper.text()).not.toContain('Tolak')
     expect(wrapper.text()).toContain('Lihat Bukti Transfer')
   })
 
@@ -436,6 +440,10 @@ describe('ApplicationDetailView', () => {
 
     const link = wrapper.get('[data-test="add-payment-link"]')
     expect(link.text()).toContain('Tambah pembayaran')
+    expect(JSON.parse(link.attributes('data-to')!)).toEqual({
+      name: 'admin-payments',
+      query: { applicationId: 'app-1' },
+    })
   })
 
   it.each([

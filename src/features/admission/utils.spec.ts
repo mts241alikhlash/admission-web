@@ -4,6 +4,7 @@ import {
   admissionErrorMessage,
   formatDateRange,
   isWaveClosed,
+  jakartaToday,
   presentValue,
 } from './utils'
 
@@ -73,4 +74,8 @@ it('shortens a date range to what actually differs', () => {
   expect(formatDateRange('2026-12-20T12:00:00', '2027-01-10T12:00:00')).toBe(
     '20 Desember 2026 – 10 Januari 2027',
   )
+})
+
+it('reads today in Jakarta, not UTC', () => {
+  expect(jakartaToday(new Date('2026-10-07T20:00:00Z'))).toBe('2026-10-08')
 })

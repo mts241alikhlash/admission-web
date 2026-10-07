@@ -23,7 +23,12 @@ import { useFormOptions } from '../composables/useFormOptions'
 import { PAYMENT_STATUS_LABELS } from '../types'
 import type { AdmissionPayment } from '../types'
 import type { PaymentForm } from '../composables/useApplicationFormState'
-import { formatDate, formatIDR, PAYMENT_STATUS_BADGE_VARIANTS } from '../utils'
+import {
+  formatDate,
+  formatIDR,
+  jakartaToday,
+  PAYMENT_STATUS_BADGE_VARIANTS,
+} from '../utils'
 
 const props = defineProps<{
   applicationPayment: AdmissionPayment | null
@@ -36,7 +41,7 @@ const props = defineProps<{
 }>()
 
 const payment = defineModel<PaymentForm>({ required: true })
-const today = new Date().toISOString().slice(0, 10)
+const today = jakartaToday()
 const fileError = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 

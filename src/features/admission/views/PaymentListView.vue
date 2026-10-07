@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useId, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { refDebounced } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
 import { SearchInput } from '@mts241alikhlash/ui'
@@ -46,6 +46,7 @@ import {
 const LIMIT = 50
 
 const route = useRoute()
+const router = useRouter()
 const { can } = useRoleGuard()
 const canVerify = computed(() => can('admission-payments.verify'))
 const canCreate = computed(() => can('admission-payments.create'))
@@ -61,6 +62,7 @@ const total = ref(0)
 const counts = ref({ pending: 0, verified: 0, rejected: 0 })
 const page = ref(1)
 const loading = ref(false)
+let latestRequest = 0
 const listError = ref<string | null>(null)
 
 const addOpen = ref(false)
@@ -88,6 +90,7 @@ const TABS: {
 
 async function load(reset = true) {
   if (reset) page.value = 1
+  const request = ++latestRequest
   loading.value = true
   const result = await paymentQueueService.fetchQueue({
     status: tab.value,
@@ -96,10 +99,12 @@ async function load(reset = true) {
     page: page.value,
     limit: LIMIT,
   })
+  if (request !== latestRequest) return
   loading.value = false
   if ('error' in result) {
     listError.value = result.error
     if (reset) rows.value = []
+    else page.value -= 1
     return
   }
   listError.value = null
@@ -149,6 +154,14 @@ async function submitReason() {
 function openAdd(applicationId: string | null) {
   addApplicantId.value = applicationId
   addOpen.value = true
+  if (route.query.applicationId) void router.replace({ query: {} })
+}
+
+async function onAddOpen(open: boolean) {
+  addOpen.value = open
+  if (open) return
+  addApplicantId.value = null
+  await load()
 }
 
 async function onAdded() {
@@ -448,7 +461,7 @@ onMounted(async () => {
     <AddPaymentDialog
       :open="addOpen"
       :initial-application-id="addApplicantId"
-      @update:open="addOpen = $event"
+      @update:open="onAddOpen"
       @saved="onAdded"
     />
   </div>

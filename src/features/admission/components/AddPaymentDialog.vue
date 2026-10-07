@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { refDebounced } from '@vueuse/core'
 import { UploadCloud } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
+import { DatePicker } from '@mts241alikhlash/ui'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import {
@@ -16,7 +17,7 @@ import {
 import { useFormOptions } from '../composables/useFormOptions'
 import { paymentQueueService } from '../services/paymentQueueService'
 import type { AdmissionEligibleApplication } from '../types'
-import { formatIDR } from '../utils'
+import { formatIDR, jakartaToday } from '../utils'
 
 const props = defineProps<{
   open: boolean
@@ -28,10 +29,8 @@ const emit = defineEmits<{
 }>()
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'application/pdf']
-const jakartaDate = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Jakarta',
-})
-const today = ref(jakartaDate.format(new Date()))
+const MAX_FILE_BYTES = 5 * 1024 * 1024
+const today = ref(jakartaToday())
 
 const { options, load: loadOptions } = useFormOptions()
 const accounts = computed(() => options.value?.bankAccounts ?? [])
@@ -72,17 +71,22 @@ function reset() {
 function pickFile(event: Event) {
   const input = event.target as HTMLInputElement
   const picked = input.files?.[0] ?? null
-  if (picked && !ACCEPTED_TYPES.includes(picked.type)) {
-    errors.value = {
-      ...errors.value,
-      file: 'Format berkas harus JPG, PNG, atau PDF.',
-    }
+  const problem =
+    picked && !ACCEPTED_TYPES.includes(picked.type)
+      ? 'Format berkas harus JPG, PNG, atau PDF.'
+      : picked && picked.size > MAX_FILE_BYTES
+        ? 'Ukuran berkas maksimal 5 MB.'
+        : ''
+  if (problem) {
+    errors.value = { ...errors.value, file: problem }
     file.value = null
+    input.value = ''
     return
   }
   const { file: _cleared, ...rest } = errors.value
   errors.value = rest
   file.value = picked
+  input.value = ''
 }
 
 function validate() {
@@ -125,7 +129,7 @@ watch(
   async (open) => {
     if (!open) return
     reset()
-    today.value = jakartaDate.format(new Date())
+    today.value = jakartaToday()
     await Promise.all([loadOptions(), loadApplicants()])
     if (
       applicationId.value &&
@@ -280,11 +284,9 @@ watch(debouncedSearch, loadApplicants)
               <span class="font-medium">
                 Tanggal Transfer <span class="text-destructive">*</span>
               </span>
-              <Input
+              <DatePicker
                 v-model="transferDate"
-                type="date"
-                name="transferDate"
-                :max="today"
+                :max-date="today"
               />
               <span
                 v-if="errors.transferDate"

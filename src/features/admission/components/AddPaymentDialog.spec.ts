@@ -32,6 +32,12 @@ vi.mock('../composables/useFormOptions', () => ({
 }))
 
 const passthrough = { template: '<div><slot /></div>' }
+const datePicker = {
+  props: ['modelValue', 'maxDate'],
+  emits: ['update:modelValue'],
+  template:
+    '<input name="transferDate" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+}
 const applicants = [
   {
     applicationId: 'app1',
@@ -62,6 +68,7 @@ function mountDialog(initial: string | null = null) {
         DialogTitle: passthrough,
         DialogDescription: passthrough,
         DialogFooter: passthrough,
+        DatePicker: datePicker,
       },
     },
   })
@@ -211,4 +218,20 @@ it('refuses a transfer date after today', async () => {
   expect(wrapper.text()).toContain(
     'Tanggal transfer tidak boleh melewati hari ini',
   )
+})
+
+it('refuses a file larger than 5 MB', async () => {
+  const wrapper = mountDialog('app1')
+  await flushPromises()
+
+  const big = new File(['x'], 'bukti.png', { type: 'image/png' })
+  Object.defineProperty(big, 'size', { value: 5 * 1024 * 1024 + 1 })
+  const input = wrapper.get('input[type="file"]')
+  Object.defineProperty(input.element, 'files', {
+    value: [big],
+    configurable: true,
+  })
+  await input.trigger('change')
+
+  expect(wrapper.text()).toContain('Ukuran berkas maksimal 5 MB.')
 })
