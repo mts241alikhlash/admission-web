@@ -129,7 +129,7 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
         row.original.docType.isActive
           ? row.original.docType.name
           : `${row.original.docType.name} (nonaktif)`,
-        row.original.docType.isRequired
+        row.original.docType.isRequired && row.original.docType.isActive
           ? h(
               'span',
               { class: 'text-destructive', 'aria-label': 'wajib' },
@@ -1013,7 +1013,7 @@ useBreadcrumbs(() => {
                         {{ docType.name
                         }}{{ docType.isActive ? '' : ' (nonaktif)'
                         }}<span
-                          v-if="docType.isRequired"
+                          v-if="docType.isRequired && docType.isActive"
                           class="text-destructive"
                           aria-label="wajib"
                         >

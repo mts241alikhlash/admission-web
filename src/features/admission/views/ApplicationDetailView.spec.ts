@@ -274,7 +274,44 @@ describe('ApplicationDetailView', () => {
     const wrapper = await mountView()
     await openTab(wrapper, 'Berkas')
 
-    expect(wrapper.text()).toContain('Berkas Lama (nonaktif)')
+    expect(wrapper.get('tbody').text()).toContain('Berkas Lama (nonaktif)')
+    expect(wrapper.get('[data-test="mobile-documents"]').text()).toContain(
+      'Berkas Lama (nonaktif)',
+    )
+  })
+
+  it('shows no required marker on a deactivated type', async () => {
+    application.value = {
+      ...draft,
+      documentTypes: [
+        {
+          id: 'kk',
+          code: 'KK',
+          name: 'Kartu Keluarga',
+          isRequired: true,
+          isActive: true,
+          sortOrder: 1,
+        },
+        {
+          id: 'old',
+          code: 'OLD',
+          name: 'Berkas Lama',
+          isRequired: true,
+          isActive: false,
+          sortOrder: 9,
+        },
+      ],
+      documents: [],
+    }
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Berkas')
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0].find('[aria-label="wajib"]').exists()).toBe(true)
+    expect(rows[1].find('[aria-label="wajib"]').exists()).toBe(false)
+    const mobile = wrapper.get('[data-test="mobile-documents"]').findAll('li')
+    expect(mobile[0].find('[aria-label="wajib"]').exists()).toBe(true)
+    expect(mobile[1].find('[aria-label="wajib"]').exists()).toBe(false)
   })
 
   it('shows an empty state when the wave has no document types', async () => {
