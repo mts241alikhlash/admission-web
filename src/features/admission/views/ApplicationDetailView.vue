@@ -30,11 +30,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { ExternalLink, Info, SquarePen, TriangleAlert } from '@lucide/vue'
+import { Eye, Info, SquarePen, TriangleAlert } from '@lucide/vue'
 import { Alert, AlertDescription, AlertTitle } from '@mts241alikhlash/ui/alert'
 import { useRoleGuard } from '@/features/platform/auth'
 import { useApplicationDetail } from '../composables/useApplicationDetail'
+import { useFilePreview } from '../composables/useFilePreview'
 import { useFormOptions } from '../composables/useFormOptions'
+import FilePreviewDialog from '../components/FilePreviewDialog.vue'
 import DetailItem from '../components/DetailItem.vue'
 import { addressOwnerOf } from '../schemas/applicationFormSchemas'
 import {
@@ -50,7 +52,6 @@ import type {
 } from '../types'
 import {
   DOCUMENT_STATUS_BADGE_VARIANTS,
-  fileUrl,
   formatDate,
   formatDateTime,
   formatIDR,
@@ -58,6 +59,7 @@ import {
 } from '../utils'
 
 const { can } = useRoleGuard()
+const preview = useFilePreview()
 const route = useRoute()
 const router = useRouter()
 const applicationId = computed(() => String(route.params.id))
@@ -158,17 +160,17 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
       return h('div', { class: 'min-w-0 space-y-1' }, [
         doc?.file
           ? h(
-              'a',
+              'button',
               {
-                href: fileUrl(doc.file.storageKey),
-                target: '_blank',
-                rel: 'noopener',
+                type: 'button',
+                'data-test': 'open-file',
                 class:
-                  'inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline',
+                  'inline-flex items-center gap-1 break-all text-left text-primary underline-offset-4 hover:underline',
+                onClick: () => preview.show(doc.file!),
               },
               [
                 presentValue(doc.file.originalName),
-                h(ExternalLink, { class: 'size-3 shrink-0' }),
+                h(Eye, { class: 'size-3 shrink-0' }),
               ],
             )
           : h('span', { class: 'text-muted-foreground' }, '-'),
@@ -895,16 +897,16 @@ useBreadcrumbs(() => {
                     label="Lampiran"
                     :value="row.file?.originalName"
                   >
-                    <a
+                    <button
                       v-if="row.file"
-                      :href="fileUrl(row.file.storageKey)"
-                      target="_blank"
-                      rel="noopener"
-                      class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
+                      type="button"
+                      data-test="open-file"
+                      class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline text-left"
+                      @click="preview.show(row.file)"
                     >
                       {{ presentValue(row.file.originalName) }}
-                      <ExternalLink class="size-3 shrink-0" />
-                    </a>
+                      <Eye class="size-3 shrink-0" />
+                    </button>
                     <span
                       v-else
                       class="text-muted-foreground"
@@ -968,16 +970,16 @@ useBreadcrumbs(() => {
                     label="Lampiran"
                     :value="row.file?.originalName"
                   >
-                    <a
+                    <button
                       v-if="row.file"
-                      :href="fileUrl(row.file.storageKey)"
-                      target="_blank"
-                      rel="noopener"
-                      class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
+                      type="button"
+                      data-test="open-file"
+                      class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline text-left"
+                      @click="preview.show(row.file)"
                     >
                       {{ presentValue(row.file.originalName) }}
-                      <ExternalLink class="size-3 shrink-0" />
-                    </a>
+                      <Eye class="size-3 shrink-0" />
+                    </button>
                     <span
                       v-else
                       class="text-muted-foreground"
@@ -1048,16 +1050,16 @@ useBreadcrumbs(() => {
                       }}
                     </Badge>
                   </div>
-                  <a
+                  <button
                     v-if="doc?.file"
-                    :href="fileUrl(doc.file.storageKey)"
-                    target="_blank"
-                    rel="noopener"
-                    class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline"
+                    type="button"
+                    data-test="open-file"
+                    class="inline-flex items-center gap-1 break-all text-primary underline-offset-4 hover:underline text-left"
+                    @click="preview.show(doc.file)"
                   >
                     {{ presentValue(doc.file.originalName) }}
-                    <ExternalLink class="size-3 shrink-0" />
-                  </a>
+                    <Eye class="size-3 shrink-0" />
+                  </button>
                   <p
                     v-if="doc?.note"
                     class="text-destructive"
@@ -1147,17 +1149,12 @@ useBreadcrumbs(() => {
               <div class="flex flex-wrap items-center gap-2">
                 <Button
                   v-if="application.payment.proofFile"
-                  as-child
                   variant="outline"
+                  data-test="open-file"
+                  @click="preview.show(application.payment.proofFile)"
                 >
-                  <a
-                    :href="fileUrl(application.payment.proofFile.storageKey)"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <ExternalLink class="mr-1.5 size-4" />
-                    Lihat Bukti Transfer
-                  </a>
+                  <Eye class="mr-1.5 size-4" />
+                  Lihat Bukti Transfer
                 </Button>
                 <Button
                   v-if="
@@ -1290,4 +1287,9 @@ useBreadcrumbs(() => {
       Kembali
     </Button>
   </div>
+
+  <FilePreviewDialog
+    v-model:open="preview.open.value"
+    :file="preview.file.value"
+  />
 </template>

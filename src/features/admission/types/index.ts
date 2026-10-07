@@ -206,3 +206,9 @@ export interface LandingStory {
   photoUrl?: string | null
   placeholder?: boolean
 }
+
+export interface PreviewFile {
+  id: string
+  originalName: string
+  mimeType: string
+}

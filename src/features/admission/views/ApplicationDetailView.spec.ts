@@ -64,6 +64,13 @@ vi.mock('../composables/useFormOptions', () => ({
 }))
 
 vi.mock('vue-sonner', () => ({ toast: { error: vi.fn() } }))
+vi.mock('../components/FilePreviewDialog.vue', () => ({
+  default: {
+    props: ['open', 'file'],
+    template:
+      '<div data-test="preview" :data-open="String(open)" :data-file="file?.id" />',
+  },
+}))
 
 const card = defineComponent({ template: '<section><slot /></section>' })
 const passthrough = defineComponent({ template: '<div><slot /></div>' })
@@ -236,7 +243,12 @@ describe('ApplicationDetailView', () => {
           documentTypeId: 'kk',
           status: 'APPROVED',
           note: null,
-          file: { originalName: 'kk.pdf', storageKey: 'files/kk.pdf' },
+          file: {
+            id: 'file-kk',
+            originalName: 'kk.pdf',
+            mimeType: 'application/pdf',
+            storageKey: 'files/kk.pdf',
+          },
         },
         {
           id: 'doc-akta',
@@ -254,7 +266,14 @@ describe('ApplicationDetailView', () => {
     expect(rows).toHaveLength(3)
     expect(rows[0].text()).toContain('Disetujui')
     expect(rows[0].text()).not.toContain('Setujui')
-    expect(rows[0].find('a').attributes('href')).toContain('files/kk.pdf')
+    expect(rows[0].find('a').exists()).toBe(false)
+    await rows[0].get('button[data-test="open-file"]').trigger('click')
+    expect(wrapper.get('[data-test="preview"]').attributes('data-open')).toBe(
+      'true',
+    )
+    expect(wrapper.get('[data-test="preview"]').attributes('data-file')).toBe(
+      'file-kk',
+    )
     expect(rows[1].text()).toContain('Ditolak')
     expect(rows[1].text()).toContain('Catatan: Buram')
     expect(rows[1].text()).toContain('Setujui')
@@ -398,6 +417,36 @@ describe('ApplicationDetailView', () => {
 
     expect(wrapper.text()).toContain('Verifikasi Pembayaran')
     expect(wrapper.text()).toContain('Tolak')
+  })
+
+  it('opens the payment proof in the preview', async () => {
+    application.value = {
+      ...draft,
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: {
+          id: 'file-bukti',
+          originalName: 'bukti.png',
+          mimeType: 'image/png',
+          storageKey: 'files/bukti.png',
+        },
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    await wrapper.get('button[data-test="open-file"]').trigger('click')
+
+    expect(wrapper.get('[data-test="preview"]').attributes('data-open')).toBe(
+      'true',
+    )
+    expect(wrapper.get('[data-test="preview"]').attributes('data-file')).toBe(
+      'file-bukti',
+    )
   })
 
   it('shows no payment buttons without the verify permission', async () => {

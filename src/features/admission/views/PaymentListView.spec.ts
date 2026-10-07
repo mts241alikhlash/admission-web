@@ -18,6 +18,14 @@ vi.mock('../services/applicationService', () => ({
   applicationService: { fetchWaves: vi.fn() },
 }))
 
+vi.mock('../components/FilePreviewDialog.vue', () => ({
+  default: {
+    props: ['open', 'file'],
+    template:
+      '<div data-test="preview" :data-open="String(open)" :data-file="file?.id" />',
+  },
+}))
+
 const access = vi.hoisted(() => ({ granted: new Set<string>() }))
 vi.mock('@/features/platform/auth', () => ({
   useRoleGuard: () => ({
@@ -134,7 +142,14 @@ it('shows the pending tab first with the counts of every tab', async () => {
   expect(row.text()).toContain('PSB-001')
   expect(row.text()).toContain('Gelombang 1')
   expect(row.text()).toContain('Budi Santoso')
-  expect(row.find('a[href$="payments/bukti.png"]').exists()).toBe(true)
+  expect(row.find('a').exists()).toBe(false)
+  await row.get('[data-test="open-file"]').trigger('click')
+  expect(wrapper.get('[data-test="preview"]').attributes('data-open')).toBe(
+    'true',
+  )
+  expect(wrapper.get('[data-test="preview"]').attributes('data-file')).toBe(
+    'f1',
+  )
 })
 
 it('loads another status when its tab is opened', async () => {
@@ -234,7 +249,7 @@ it('shows no action buttons and no add button without the verify and create perm
   await flushPromises()
 
   const row = wrapper.get('[data-test="payment-row"]')
-  expect(row.findAll('button')).toHaveLength(0)
+  expect(row.findAll('button:not([data-test="open-file"])')).toHaveLength(0)
   expect(
     wrapper
       .findAll('button')

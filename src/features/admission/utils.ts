@@ -94,13 +94,6 @@ export const DOCUMENT_STATUS_BADGE_VARIANTS: Record<
   REJECTED: 'destructive',
 }
 
-export function fileUrl(storageKey: string) {
-  const base =
-    (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-    'http://localhost:3000'
-  return `${base}/${storageKey}`
-}
-
 export function admissionErrorMessage(error: unknown, fallback: string) {
   if (isAxiosError(error)) {
     const status = error.response?.status
@@ -115,6 +108,21 @@ export function admissionErrorMessage(error: unknown, fallback: string) {
     if (status === 400 && Array.isArray(message)) return fallback
   }
   return getIndonesianErrorMessage(error, fallback)
+}
+
+export async function admissionBlobErrorMessage(
+  error: unknown,
+  fallback: string,
+) {
+  if (isAxiosError(error) && error.response?.data instanceof Blob) {
+    try {
+      const parsed: unknown = JSON.parse(await error.response.data.text())
+      error.response.data = parsed
+    } catch {
+      error.response.data = undefined
+    }
+  }
+  return admissionErrorMessage(error, fallback)
 }
 
 export function jakartaToday(now: Date = new Date()) {

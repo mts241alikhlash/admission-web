@@ -25,9 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { ExternalLink, Plus } from '@lucide/vue'
+import { Eye, Plus } from '@lucide/vue'
 import { useRoleGuard } from '@/features/platform/auth'
 import AddPaymentDialog from '../components/AddPaymentDialog.vue'
+import FilePreviewDialog from '../components/FilePreviewDialog.vue'
+import { useFilePreview } from '../composables/useFilePreview'
 import { applicationService } from '../services/applicationService'
 import { paymentQueueService } from '../services/paymentQueueService'
 import { useApplicationStore } from '../stores/applicationStore'
@@ -36,18 +38,14 @@ import {
   type AdmissionPaymentQueueRow,
   type PaymentQueueStatus,
 } from '../types'
-import {
-  fileUrl,
-  formatDate,
-  formatIDR,
-  PAYMENT_STATUS_BADGE_VARIANTS,
-} from '../utils'
+import { formatDate, formatIDR, PAYMENT_STATUS_BADGE_VARIANTS } from '../utils'
 
 const LIMIT = 50
 
 const route = useRoute()
 const router = useRouter()
 const { can } = useRoleGuard()
+const preview = useFilePreview()
 const canVerify = computed(() => can('admission-payments.verify'))
 const canCreate = computed(() => can('admission-payments.create'))
 const { waves } = storeToRefs(useApplicationStore())
@@ -347,18 +345,13 @@ onMounted(async () => {
               <div class="flex flex-wrap items-center gap-2">
                 <Button
                   v-if="row.proofFile"
-                  as-child
                   variant="outline"
                   class="min-h-11 sm:min-h-0"
+                  data-test="open-file"
+                  @click="preview.show(row.proofFile)"
                 >
-                  <a
-                    :href="fileUrl(row.proofFile.storageKey)"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <ExternalLink class="mr-1.5 size-4" />
-                    Lihat bukti
-                  </a>
+                  <Eye class="mr-1.5 size-4" />
+                  Lihat bukti
                 </Button>
                 <template v-if="canVerify && row.status === 'PENDING'">
                   <Button
@@ -463,6 +456,11 @@ onMounted(async () => {
       :initial-application-id="addApplicantId"
       @update:open="onAddOpen"
       @saved="onAdded"
+    />
+
+    <FilePreviewDialog
+      v-model:open="preview.open.value"
+      :file="preview.file.value"
     />
   </div>
 </template>
