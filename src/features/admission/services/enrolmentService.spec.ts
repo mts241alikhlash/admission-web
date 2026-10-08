@@ -32,19 +32,41 @@ describe('enrolmentService', () => {
           total: 1,
           totalPages: 1,
           counts: { ready: 1, held: 2, done: 3 },
-          years: [{ academicYearId: 'y1', academicYearName: '2026/2027', locked: false, lockedAt: null }],
+          years: [
+            {
+              academicYearId: 'y1',
+              academicYearName: '2026/2027',
+              locked: false,
+              lockedAt: null,
+            },
+          ],
         },
       },
     } as never)
 
-    const result = await enrolmentService.fetchQueue({ tab: 'ready', page: 1, limit: 50 })
+    const result = await enrolmentService.fetchQueue({
+      tab: 'ready',
+      page: 1,
+      limit: 50,
+    })
 
-    expect(admissionApi.getEnrolmentQueue).toHaveBeenCalledWith({ tab: 'ready', page: 1, limit: 50 })
+    expect(admissionApi.getEnrolmentQueue).toHaveBeenCalledWith({
+      tab: 'ready',
+      page: 1,
+      limit: 50,
+    })
     expect(result).toEqual({
       rows: [{ applicationId: 'a' }],
       total: 1,
       counts: { ready: 1, held: 2, done: 3 },
-      years: [{ academicYearId: 'y1', academicYearName: '2026/2027', locked: false, lockedAt: null }],
+      years: [
+        {
+          academicYearId: 'y1',
+          academicYearName: '2026/2027',
+          locked: false,
+          lockedAt: null,
+        },
+      ],
     })
   })
 
@@ -76,7 +98,15 @@ describe('enrolmentService', () => {
 
   it('composes with the confirmed count and reports what happened', async () => {
     vi.mocked(admissionApi.composeNis).mockResolvedValue({
-      data: { data: { academicYearId: 'y1', written: 5, created: 3, changed: 2, failed: [] } },
+      data: {
+        data: {
+          academicYearId: 'y1',
+          written: 5,
+          created: 3,
+          changed: 2,
+          failed: [],
+        },
+      },
     } as never)
 
     const result = await enrolmentService.composeNis('y1', 2)
@@ -88,9 +118,17 @@ describe('enrolmentService', () => {
     })
     expect(result).toEqual({
       success: true,
-      result: { academicYearId: 'y1', written: 5, created: 3, changed: 2, failed: [] },
+      result: {
+        academicYearId: 'y1',
+        written: 5,
+        created: 3,
+        changed: 2,
+        failed: [],
+      },
     })
-    expect(toast.success).toHaveBeenCalledWith('NIS disusun: 3 baru, 2 berubah.')
+    expect(toast.success).toHaveBeenCalledWith(
+      'NIS disusun: 3 baru, 2 berubah.',
+    )
   })
 
   it('warns about students whose NIS could not be updated', async () => {
@@ -101,7 +139,12 @@ describe('enrolmentService', () => {
           written: 1,
           created: 0,
           changed: 1,
-          failed: [{ applicationId: 'a', reason: 'Gagal memperbarui NIS di data santri' }],
+          failed: [
+            {
+              applicationId: 'a',
+              reason: 'Gagal memperbarui NIS di data santri',
+            },
+          ],
         },
       },
     } as never)
@@ -122,13 +165,17 @@ describe('enrolmentService', () => {
       success: false,
       stale: true,
     })
-    expect(toast.error).toHaveBeenCalledWith('Hasil susun NIS berubah, lihat pratinjau lagi')
+    expect(toast.error).toHaveBeenCalledWith(
+      'Hasil susun NIS berubah, lihat pratinjau lagi',
+    )
   })
 
   it('locks a year', async () => {
     vi.mocked(admissionApi.lockNis).mockResolvedValue({} as never)
 
-    await expect(enrolmentService.lockNis('y1')).resolves.toEqual({ success: true })
+    await expect(enrolmentService.lockNis('y1')).resolves.toEqual({
+      success: true,
+    })
     expect(admissionApi.lockNis).toHaveBeenCalledWith('y1')
     expect(toast.success).toHaveBeenCalledWith('NIS dikunci.')
   })
@@ -139,16 +186,25 @@ describe('enrolmentService', () => {
         data: {
           results: [
             { applicationId: 'a', outcome: 'ENROLLED' },
-            { applicationId: 'b', outcome: 'SKIPPED', reason: 'NIS belum disusun' },
-            { applicationId: 'c', outcome: 'FAILED', reason: 'Duplicate NIS or NISN' },
+            {
+              applicationId: 'b',
+              outcome: 'SKIPPED',
+              reason: 'NIS belum disusun',
+            },
+            {
+              applicationId: 'c',
+              outcome: 'FAILED',
+              reason: 'Duplicate NIS or NISN',
+            },
           ],
         },
       },
     } as never)
 
-    const result = await enrolmentService.process(['a', 'b', 'c'], [
-      { applicationId: 'b', nisn: '0099999999' },
-    ])
+    const result = await enrolmentService.process(
+      ['a', 'b', 'c'],
+      [{ applicationId: 'b', nisn: '0099999999' }],
+    )
 
     expect(admissionApi.processEnrolments).toHaveBeenCalledWith({
       applicationIds: ['a', 'b', 'c'],
@@ -159,29 +215,41 @@ describe('enrolmentService', () => {
       enrolled: 1,
       problems: [
         { applicationId: 'b', outcome: 'SKIPPED', reason: 'NIS belum disusun' },
-        { applicationId: 'c', outcome: 'FAILED', reason: 'Duplicate NIS or NISN' },
+        {
+          applicationId: 'c',
+          outcome: 'FAILED',
+          reason: 'Duplicate NIS or NISN',
+        },
       ],
     })
     expect(toast.success).toHaveBeenCalledWith('1 diproses, 2 bermasalah.')
   })
 
   it('shows the server message when processing is refused', async () => {
-    vi.mocked(admissionApi.processEnrolments).mockRejectedValue(failure(400, 'Pilih 1 sampai 50 pendaftar'))
+    vi.mocked(admissionApi.processEnrolments).mockRejectedValue(
+      failure(400, 'Pilih 1 sampai 50 pendaftar'),
+    )
 
-    await expect(enrolmentService.process(['a'], [])).resolves.toEqual({ success: false })
+    await expect(enrolmentService.process(['a'], [])).resolves.toEqual({
+      success: false,
+    })
     expect(toast.error).toHaveBeenCalledWith('Pilih 1 sampai 50 pendaftar')
   })
 
   it('sets the placement of an applicant', async () => {
     vi.mocked(admissionApi.setPlacement).mockResolvedValue({} as never)
 
-    await expect(enrolmentService.setPlacement('a', 'TRANSFER', 'g8')).resolves.toEqual({
+    await expect(
+      enrolmentService.setPlacement('a', 'TRANSFER', 'g8'),
+    ).resolves.toEqual({
       success: true,
     })
     expect(admissionApi.setPlacement).toHaveBeenCalledWith('a', {
       admissionType: 'TRANSFER',
       targetGradeId: 'g8',
     })
-    expect(toast.success).toHaveBeenCalledWith('Jenis dan tingkat kelas disimpan.')
+    expect(toast.success).toHaveBeenCalledWith(
+      'Jenis dan tingkat kelas disimpan.',
+    )
   })
 })

@@ -4,7 +4,9 @@ import { flushPromises, mount } from '@vue/test-utils'
 import SignUpDialog from './SignUpDialog.vue'
 
 const service = vi.hoisted(() => ({ fetchGrades: vi.fn(), register: vi.fn() }))
-vi.mock('../services/publicAdmissionService', () => ({ publicAdmissionService: service }))
+vi.mock('../services/publicAdmissionService', () => ({
+  publicAdmissionService: service,
+}))
 vi.mock('@/features/platform/auth', () => ({
   authApi: { googleStartUrl: vi.fn() },
   authService: { loginUser: vi.fn().mockResolvedValue(undefined) },
@@ -62,7 +64,9 @@ describe('SignUpDialog placement', () => {
 
     expect(service.fetchGrades).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('Jenis Pendaftaran')
-    expect(wrapper.findAll('option').map((option) => option.text())).toContain('Kelas 7')
+    expect(wrapper.findAll('option').map((option) => option.text())).toContain(
+      'Kelas 7',
+    )
   })
 
   it('cannot be submitted without the choices', async () => {
@@ -116,7 +120,11 @@ describe('SignUpDialog placement', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).not.toContain('Daftar tingkat kelas belum bisa dimuat')
-    expect(wrapper.findAll('option').map((option) => option.text())).toContain('Kelas 7')
+    expect(wrapper.text()).not.toContain(
+      'Daftar tingkat kelas belum bisa dimuat',
+    )
+    expect(wrapper.findAll('option').map((option) => option.text())).toContain(
+      'Kelas 7',
+    )
   })
 })

@@ -37,7 +37,10 @@ export const enrolmentService = {
       }
     } catch (error: unknown) {
       return {
-        error: admissionErrorMessage(error, 'Gagal memuat antrean daftar ulang.'),
+        error: admissionErrorMessage(
+          error,
+          'Gagal memuat antrean daftar ulang.',
+        ),
       }
     }
   },
@@ -67,7 +70,9 @@ export const enrolmentService = {
           syncStudents,
         })
       ).data.data
-      toast.success(`NIS disusun: ${result.created} baru, ${result.changed} berubah.`)
+      toast.success(
+        `NIS disusun: ${result.created} baru, ${result.changed} berubah.`,
+      )
       if (result.failed.length > 0) {
         toast.error(
           `${result.failed.length} santri belum diperbarui NIS-nya. Jalankan sinkronisasi ulang.`,
@@ -99,7 +104,9 @@ export const enrolmentService = {
       const results = (
         await admissionApi.processEnrolments({ applicationIds, nisn })
       ).data.data.results
-      const enrolled = results.filter((result) => result.outcome === 'ENROLLED').length
+      const enrolled = results.filter(
+        (result) => result.outcome === 'ENROLLED',
+      ).length
       const problems = results.filter((result) => result.outcome !== 'ENROLLED')
       toast.success(`${enrolled} diproses, ${problems.length} bermasalah.`)
       return { success: true as const, enrolled, problems }
@@ -122,7 +129,12 @@ export const enrolmentService = {
       toast.success('Jenis dan tingkat kelas disimpan.')
       return { success: true }
     } catch (error: unknown) {
-      toast.error(admissionErrorMessage(error, 'Gagal menyimpan jenis dan tingkat kelas.'))
+      toast.error(
+        admissionErrorMessage(
+          error,
+          'Gagal menyimpan jenis dan tingkat kelas.',
+        ),
+      )
       return { success: false }
     }
   },

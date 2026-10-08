@@ -28,7 +28,13 @@ const grades = [
 
 function mountDialog() {
   return mount(RegisterApplicantDialog, {
-    props: { open: true, waves, grades, isSubmitting: false, errorMessage: null },
+    props: {
+      open: true,
+      waves,
+      grades,
+      isSubmitting: false,
+      errorMessage: null,
+    },
     global: {
       stubs: {
         Dialog: passthrough,
@@ -46,7 +52,8 @@ function mountDialog() {
 
 async function fillAccount(wrapper: ReturnType<typeof mountDialog>) {
   const inputs = wrapper.findAll('input')
-  const byType = (type: string) => inputs.filter((input) => input.attributes('type') === type)
+  const byType = (type: string) =>
+    inputs.filter((input) => input.attributes('type') === type)
   await inputs[0].setValue('Ahmad Fauzi')
   await byType('email')[0].setValue('ahmad@example.com')
   const passwords = byType('password')
@@ -65,7 +72,9 @@ describe('RegisterApplicantDialog placement', () => {
     expect(wrapper.text()).toContain('Jenis Pendaftaran')
     expect(wrapper.text()).toContain('Tingkat Kelas yang Dituju')
     const options = wrapper.findAll('option').map((option) => option.text())
-    expect(options).toEqual(expect.arrayContaining(['Siswa baru', 'Pindahan', 'Kelas 7', 'Kelas 8']))
+    expect(options).toEqual(
+      expect.arrayContaining(['Siswa baru', 'Pindahan', 'Kelas 7', 'Kelas 8']),
+    )
   })
 
   it('does not submit without the two choices', async () => {
