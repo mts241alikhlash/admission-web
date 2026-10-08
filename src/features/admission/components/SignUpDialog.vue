@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
@@ -17,6 +17,8 @@ import {
 } from '@mts241alikhlash/ui/dialog'
 import { authApi, authService } from '@/features/platform/auth'
 import { publicAdmissionService } from '../services/publicAdmissionService'
+import AdmissionPlacementFields from './AdmissionPlacementFields.vue'
+import type { AdmissionGrade } from '../types'
 
 const props = defineProps<{
   modelValue: boolean
@@ -30,6 +32,26 @@ const isSubmitting = ref(false)
 const showPassword = ref(false)
 const showPasswordConfirm = ref(false)
 const dialogError = ref<string | null>(null)
+const grades = ref<AdmissionGrade[]>([])
+const gradesError = ref(false)
+
+async function loadGrades() {
+  gradesError.value = false
+  const result = await publicAdmissionService.fetchGrades()
+  if (result === null) {
+    gradesError.value = true
+    return
+  }
+  grades.value = result
+}
+
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) void loadGrades()
+  },
+  { immediate: true },
+)
 
 const formSchema = toTypedSchema(
   z
@@ -45,6 +67,10 @@ const formSchema = toTypedSchema(
         .email('Format email tidak valid'),
       password: z.string().min(8, 'Kata sandi minimal 8 karakter'),
       passwordConfirm: z.string().min(1, 'Konfirmasi kata sandi wajib diisi'),
+      admissionType: z.enum(['NEW', 'TRANSFER'], {
+        message: 'Jenis pendaftaran wajib dipilih',
+      }),
+      targetGradeId: z.string().min(1, 'Tingkat kelas wajib dipilih'),
     })
     .refine((data) => data.password === data.passwordConfirm, {
       message: 'Konfirmasi kata sandi tidak cocok.',
@@ -57,6 +83,8 @@ interface SignUpFormValues {
   email: string
   password: string
   passwordConfirm: string
+  admissionType: string
+  targetGradeId: string
 }
 
 const { handleSubmit, setFieldError } = useForm<SignUpFormValues>({
@@ -66,10 +94,13 @@ const { handleSubmit, setFieldError } = useForm<SignUpFormValues>({
     email: '',
     password: '',
     passwordConfirm: '',
+    admissionType: '',
+    targetGradeId: '',
   },
 })
 
 const onSubmit = handleSubmit(async (formValues) => {
+  if (gradesError.value) return
   dialogError.value = null
   isSubmitting.value = true
   try {
@@ -79,6 +110,8 @@ const onSubmit = handleSubmit(async (formValues) => {
       email,
       password: formValues.password,
       passwordConfirm: formValues.passwordConfirm,
+      admissionType: formValues.admissionType as 'NEW' | 'TRANSFER',
+      targetGradeId: formValues.targetGradeId,
     })
 
     if (!result.success) {
@@ -177,6 +210,26 @@ function handleOpenChange(open: boolean) {
             />
           </FormControl>
         </FloatingField>
+
+        <AdmissionPlacementFields
+          v-if="!gradesError"
+          :grades="grades"
+          :disabled="isSubmitting"
+        />
+        <div
+          v-else
+          role="alert"
+          class="space-y-2 rounded-md border p-3 text-sm"
+        >
+          <p>Daftar tingkat kelas belum bisa dimuat.</p>
+          <Button
+            type="button"
+            variant="outline"
+            @click="loadGrades"
+          >
+            Coba lagi
+          </Button>
+        </div>
 
         <FloatingField
           v-slot="{ componentField }"

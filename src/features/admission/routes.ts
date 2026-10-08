@@ -155,6 +155,22 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/enrolments',
+    name: 'admin-enrolments',
+    component: () => import('./views/EnrolmentListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-enrolments.read',
+      title: 'Daftar Ulang',
+      description:
+        'Susun NIS dan proses pendaftar yang diterima menjadi santri.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Daftar Ulang' },
+      ],
+    },
+  },
+  {
     path: '/admin/decisions',
     name: 'admin-decisions',
     component: () => import('./views/DecisionListView.vue'),

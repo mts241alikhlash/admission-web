@@ -19,6 +19,13 @@ import type {
   AdmissionDocumentReviewQueue,
   AdmissionDocumentReviewSend,
   DecisionQueueQuery,
+  AdmissionGrade,
+  AdmissionEnrolmentQueue,
+  AdmissionNisPreview,
+  AdmissionNisCompose,
+  AdmissionEnrolmentProcess,
+  AdmissionType,
+  EnrolmentQueueQuery,
   DocumentReviewQuery,
   PaymentQueueQuery,
   AdmissionAcademicYear,
@@ -284,8 +291,8 @@ export const admissionApi = {
   enrollApplicant: (
     applicationId: string,
     payload: {
-      nis: string
-      nisn: string
+      nis?: string
+      nisn?: string
       gradeId?: string
       classroomId?: string
     },
@@ -479,4 +486,43 @@ export const admissionApi = {
       `/admissions/decisions/${applicationId}/cancel-rejection`,
       { reason },
     ),
+
+  getGrades: () =>
+    api.get<ApiSingleResponse<AdmissionGrade[]>>('/admissions/grades'),
+
+  getEnrolmentQueue: (params: EnrolmentQueueQuery) =>
+    api.get<AdmissionEnrolmentQueue>('/admissions/enrolments', { params }),
+
+  getNisPreview: (academicYearId: string) =>
+    api.get<ApiSingleResponse<AdmissionNisPreview>>(
+      '/admissions/enrolments/nis-preview',
+      { params: { academicYearId } },
+    ),
+
+  composeNis: (payload: {
+    academicYearId: string
+    expectedChanges: number
+    syncStudents?: boolean
+  }) =>
+    api.post<ApiSingleResponse<AdmissionNisCompose>>(
+      '/admissions/enrolments/nis',
+      payload,
+    ),
+
+  lockNis: (academicYearId: string) =>
+    api.post('/admissions/enrolments/nis-lock', { academicYearId }),
+
+  processEnrolments: (payload: {
+    applicationIds: string[]
+    nisn: { applicationId: string; nisn: string }[]
+  }) =>
+    api.post<ApiSingleResponse<AdmissionEnrolmentProcess>>(
+      '/admissions/enrolments/process',
+      payload,
+    ),
+
+  setPlacement: (
+    applicationId: string,
+    payload: { admissionType: AdmissionType; targetGradeId: string },
+  ) => api.patch(`/admissions/enrolments/${applicationId}/placement`, payload),
 }

@@ -5,8 +5,8 @@ import { admissionApi } from '../api/admissionApi'
 import { useApplicationDetailStore } from '../stores/applicationDetailStore'
 
 interface EnrollPayload {
-  nis: string
-  nisn: string
+  nis?: string
+  nisn?: string
   gradeId?: string
   classroomId?: string
 }

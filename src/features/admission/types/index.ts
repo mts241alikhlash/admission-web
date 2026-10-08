@@ -62,6 +62,27 @@ export interface DecisionQueueQuery {
   page: number
   limit: number
 }
+export type AdmissionGrade = Schemas['AdmissionGradeResponseDto']
+export type AdmissionEnrolmentRow = Schemas['AdmissionEnrolmentRowResponseDto']
+export type AdmissionEnrolmentQueue =
+  Schemas['AdmissionEnrolmentQueueResponseDto']
+export type AdmissionNisPreview = Schemas['AdmissionNisPreviewResponseDto']
+export type AdmissionNisCompose = Schemas['AdmissionNisComposeResponseDto']
+export type AdmissionEnrolmentProcess =
+  Schemas['AdmissionEnrolmentProcessResponseDto']
+export type AdmissionType = 'NEW' | 'TRANSFER'
+export const ADMISSION_TYPE_LABELS: Record<AdmissionType, string> = {
+  NEW: 'Siswa baru',
+  TRANSFER: 'Pindahan',
+}
+export type EnrolmentTab = 'ready' | 'held' | 'done'
+export interface EnrolmentQueueQuery {
+  tab: EnrolmentTab
+  search?: string
+  waveId?: string
+  page: number
+  limit: number
+}
 export interface AddPaymentPayload {
   applicationId: string
   bankAccountId: string
@@ -82,7 +103,7 @@ export type AdmissionApplication =
     Partial<
       Pick<
         Schemas['AdmissionApplicationReviewResponseDto'],
-        'duplicateNikCount'
+        'duplicateNikCount' | 'admissionType' | 'targetGradeLevel' | 'nis'
       >
     >
 export type AdmissionDocument = NonNullable<
@@ -163,6 +184,8 @@ export interface PublicRegisterPayload {
   phone?: string
   password: string
   passwordConfirm: string
+  admissionType?: AdmissionType
+  targetGradeId?: string
 }
 
 export interface RegisterPayload {
@@ -172,6 +195,8 @@ export interface RegisterPayload {
   password: string
   passwordConfirm: string
   waveId: string
+  admissionType?: AdmissionType
+  targetGradeId?: string
 }
 
 export type UpdateMyApplicationDto = Schemas['UpdateMyApplicationDto']

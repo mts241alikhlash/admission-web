@@ -23,12 +23,14 @@ import { FormControl } from '@mts241alikhlash/ui/form'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import FloatingField from './AdmissionField.vue'
 import { Loader2 } from '@lucide/vue'
-import type { ActiveWave } from '../types'
+import AdmissionPlacementFields from './AdmissionPlacementFields.vue'
+import type { ActiveWave, AdmissionGrade } from '../types'
 import { vDigits } from '../vDigits'
 
 const props = defineProps<{
   open: boolean
   waves: ActiveWave[]
+  grades: AdmissionGrade[]
   isSubmitting: boolean
   errorMessage: string | null
 }>()
@@ -44,6 +46,8 @@ const emit = defineEmits<{
       password: string
       passwordConfirm: string
       waveId: string
+      admissionType: 'NEW' | 'TRANSFER'
+      targetGradeId: string
     },
   ): void
 }>()
@@ -67,6 +71,10 @@ const formSchema = toTypedSchema(
       password: z.string().min(8, 'Kata sandi minimal 8 karakter'),
       passwordConfirm: z.string().min(1, 'Konfirmasi kata sandi wajib diisi'),
       waveId: z.string().min(1, 'Gelombang wajib dipilih'),
+      admissionType: z.enum(['NEW', 'TRANSFER'], {
+        message: 'Jenis pendaftaran wajib dipilih',
+      }),
+      targetGradeId: z.string().min(1, 'Tingkat kelas wajib dipilih'),
     })
     .refine((data) => data.password === data.passwordConfirm, {
       message: 'Konfirmasi kata sandi tidak cocok.',
@@ -81,6 +89,8 @@ interface AccountFormValues {
   password: string
   passwordConfirm: string
   waveId: string
+  admissionType: string
+  targetGradeId: string
 }
 
 const { handleSubmit, resetForm } = useForm<AccountFormValues>({
@@ -92,6 +102,8 @@ const { handleSubmit, resetForm } = useForm<AccountFormValues>({
     password: '',
     passwordConfirm: '',
     waveId: '',
+    admissionType: '',
+    targetGradeId: '',
   },
 })
 
@@ -103,6 +115,8 @@ const onSubmit = handleSubmit((formValues) => {
     password: formValues.password,
     passwordConfirm: formValues.passwordConfirm,
     waveId: formValues.waveId,
+    admissionType: formValues.admissionType as 'NEW' | 'TRANSFER',
+    targetGradeId: formValues.targetGradeId,
   })
 })
 
@@ -247,6 +261,11 @@ function handleOpenChange(open: boolean) {
               </SelectContent>
             </Select>
           </FloatingField>
+
+          <AdmissionPlacementFields
+            :grades="grades"
+            :disabled="isSubmitting"
+          />
 
           <div
             v-if="waves.length === 0"

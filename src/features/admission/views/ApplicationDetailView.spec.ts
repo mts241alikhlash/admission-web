@@ -206,6 +206,7 @@ describe('ApplicationDetailView', () => {
       'admission-payments.create',
       'admission-documents.verify',
       'admission-decisions.decide',
+      'admission-enrolments.process',
     ])
     acting.value = false
     error.value = null
@@ -329,7 +330,11 @@ describe('ApplicationDetailView', () => {
   })
 
   it('hides Terima and Tolak without admission-decisions.decide, and keeps the enrolment button', async () => {
-    access.granted = new Set(['admissions.read', 'admission-documents.verify'])
+    access.granted = new Set([
+      'admissions.read',
+      'admission-documents.verify',
+      'admission-enrolments.process',
+    ])
     application.value = {
       ...draft,
       status: 'VERIFIED',
@@ -485,6 +490,105 @@ describe('ApplicationDetailView', () => {
         .filter((node) => ['Batal', 'Konfirmasi'].includes(node.text()))
         .every((node) => node.attributes('disabled') !== undefined),
     ).toBe(true)
+  })
+
+  it('hides Proses Jadi Santri without admission-enrolments.process', async () => {
+    access.granted = new Set(['admissions.read'])
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+    } as unknown as AdmissionApplication
+
+    const wrapper = await mountView()
+
+    expect(wrapper.text()).not.toContain('Proses Jadi Santri')
+  })
+
+  it('asks only for the number that is still missing when enrolling', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      nis: '262707001',
+      nisn: null,
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Proses Jadi Santri')!
+      .trigger('click')
+
+    expect(wrapper.find('input[id$="-nis"]').exists()).toBe(false)
+    expect(wrapper.find('input[id$="-nisn"]').exists()).toBe(true)
+  })
+
+  it('enrols without typing anything when the NIS and NISN exist', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      nis: '262707001',
+      nisn: '0091234567',
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Proses Jadi Santri')!
+      .trigger('click')
+
+    expect(wrapper.find('input[id$="-nis"]').exists()).toBe(false)
+    expect(wrapper.find('input[id$="-nisn"]').exists()).toBe(false)
+  })
+
+  it('does not ask to type numbers in the enrol dialog when both exist', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      nis: '262707001',
+      nisn: '0091234567',
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Proses Jadi Santri')!
+      .trigger('click')
+
+    expect(wrapper.text()).not.toContain('Masukkan NIS/NISN')
+    expect(wrapper.text()).toContain('dipakai untuk membuat akun santri')
+  })
+
+  it('asks to complete the missing number in the enrol dialog', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      nis: '262707001',
+      nisn: null,
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Proses Jadi Santri')!
+      .trigger('click')
+
+    expect(wrapper.text()).toContain('Lengkapi nomor yang belum ada')
+  })
+
+  it('shows the admission type, the target grade and the NIS', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      admissionType: 'TRANSFER',
+      targetGradeLevel: 8,
+      nis: '262708002',
+    } as unknown as AdmissionApplication
+
+    const wrapper = await mountView()
+
+    expect(wrapper.text()).toContain('Pindahan')
+    expect(wrapper.text()).toContain('Kelas 8')
+    expect(wrapper.text()).toContain('262708002')
   })
 
   it('shows retry only for load failures and keeps 404 distinct', async () => {

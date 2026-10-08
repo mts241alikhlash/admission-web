@@ -17,7 +17,7 @@ vi.mock('@/features/platform/auth', () => ({
 }))
 
 vi.mock('../services/publicAdmissionService', () => ({
-  publicAdmissionService: { register: vi.fn() },
+  publicAdmissionService: { register: vi.fn(), fetchGrades: vi.fn() },
 }))
 
 import { authService, authApi } from '@/features/platform/auth'
@@ -32,6 +32,19 @@ const stubs = {
   DialogHeader: passthrough,
   DialogTitle: passthrough,
   DialogDescription: passthrough,
+  Select: {
+    props: ['modelValue', 'disabled'],
+    emits: ['update:modelValue'],
+    template:
+      '<select :value="modelValue" :disabled="disabled" @change="$emit(\'update:modelValue\', $event.target.value)"><option value="" /><slot /></select>',
+  },
+  SelectTrigger: { template: '<span />' },
+  SelectValue: { template: '<span />' },
+  SelectContent: { template: '<slot />' },
+  SelectItem: {
+    props: ['value'],
+    template: '<option :value="value"><slot /></option>',
+  },
 }
 
 function mountDialog() {
@@ -47,6 +60,9 @@ async function fillValidForm(wrapper: VueWrapper) {
   await inputs[1]?.setValue('budi@example.com')
   await inputs[2]?.setValue('password123')
   await inputs[3]?.setValue('password123')
+  const selects = wrapper.findAll('select')
+  await selects[0]?.setValue('NEW')
+  await selects[1]?.setValue('g7')
 }
 
 async function submit(wrapper: VueWrapper) {
@@ -57,13 +73,16 @@ async function submit(wrapper: VueWrapper) {
 describe('SignUpDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(publicAdmissionService.fetchGrades).mockResolvedValue([
+      { id: 'g7', level: 7, name: 'Kelas 7' },
+    ] as never)
   })
 
-  it('renders exactly the four sign-up fields, with no phone and no wave', () => {
+  it('renders the four account fields and the two placement choices, with no phone and no wave', () => {
     const wrapper = mountDialog()
 
     expect(wrapper.findAll('input')).toHaveLength(4)
-    expect(wrapper.findAll('select')).toHaveLength(0)
+    expect(wrapper.findAll('select')).toHaveLength(2)
     expect(wrapper.find('input[name="fullName"]').exists()).toBe(true)
     expect(wrapper.find('input[name="email"]').exists()).toBe(true)
     expect(wrapper.find('input[name="password"]').exists()).toBe(true)
