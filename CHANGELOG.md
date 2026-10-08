@@ -1,5 +1,11 @@
 # admission-web
 
+## 1.8.1
+
+### Patch Changes
+
+- 23f3424: Detail Pendaftar and Pembayaran use the shared underlined tab style from `@mts241alikhlash/ui`.
+
 ## 1.8.0
 
 ### Minor Changes
