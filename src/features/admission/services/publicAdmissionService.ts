@@ -8,6 +8,16 @@ function errorStatus(error: unknown): number | undefined {
 }
 
 export const publicAdmissionService = {
+  fetchGrades: async () => {
+    try {
+      const res = await admissionApi.getGrades()
+      return res.data.data
+    } catch (err) {
+      notifyIfOutage(err)
+      return null
+    }
+  },
+
   fetchActiveWaves: async () => {
     try {
       const res = await admissionApi.getActiveWaves()
