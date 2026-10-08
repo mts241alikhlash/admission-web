@@ -155,6 +155,37 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/document-reviews',
+    name: 'admin-document-reviews',
+    component: () => import('./views/DocumentReviewListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-documents.read',
+      title: 'Verifikasi Berkas',
+      description: 'Periksa berkas yang diunggah pendaftar.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Verifikasi Berkas' },
+      ],
+    },
+  },
+  {
+    path: '/admin/document-reviews/:applicationId',
+    name: 'admin-document-review',
+    component: () => import('./views/DocumentReviewView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-documents.read',
+      title: 'Periksa Berkas',
+      description: 'Setujui atau tolak berkas pendaftar, lalu kirim hasilnya.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Verifikasi Berkas', href: '/admin/document-reviews' },
+        { title: 'Periksa' },
+      ],
+    },
+  },
+  {
     path: '/admin/payments',
     name: 'admin-payments',
     component: () => import('./views/PaymentListView.vue'),

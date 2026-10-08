@@ -82,6 +82,7 @@ const {
 } = useApplicationDetail()
 
 const canVerifyPayment = computed(() => can('admission-payments.verify'))
+const canReviewDocuments = computed(() => can('admission-documents.verify'))
 const canAddPayment = computed(
   () =>
     can('admission-payments.create') &&
@@ -200,7 +201,8 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
       )
     },
   },
-  ...(documentRows.value.some(({ doc }) => needsReview(doc))
+  ...(canReviewDocuments.value &&
+  documentRows.value.some(({ doc }) => needsReview(doc))
     ? [actionColumn]
     : []),
 ])
@@ -215,7 +217,7 @@ const actionColumn: ColumnDef<DocumentRow> = {
   meta: { align: 'center' },
   cell: ({ row }) => {
     const { doc } = row.original
-    if (!needsReview(doc)) return null
+    if (!canReviewDocuments.value || !needsReview(doc)) return null
     return h('div', { class: 'flex justify-center gap-2' }, [
       h(
         Button,
@@ -462,7 +464,7 @@ useBreadcrumbs(() => {
           class="flex flex-wrap gap-2 sm:justify-end"
         >
           <Button
-            v-if="status === 'SUBMITTED'"
+            v-if="canReviewDocuments && status === 'SUBMITTED'"
             variant="outline"
             :disabled="acting"
             @click="openDialog('revision')"
@@ -478,7 +480,7 @@ useBreadcrumbs(() => {
             Tolak
           </Button>
           <Button
-            v-if="status === 'SUBMITTED'"
+            v-if="canReviewDocuments && status === 'SUBMITTED'"
             :disabled="acting"
             @click="handleVerifyApplication"
           >
@@ -1027,7 +1029,7 @@ useBreadcrumbs(() => {
                     Catatan: {{ doc.note }}
                   </p>
                   <div
-                    v-if="needsReview(doc)"
+                    v-if="canReviewDocuments && needsReview(doc)"
                     class="grid grid-cols-2 gap-2"
                   >
                     <Button

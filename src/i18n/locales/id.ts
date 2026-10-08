@@ -5,6 +5,7 @@ export default {
     bankAccount: 'Rekening Pembayaran',
     dashboard: 'Dashboard',
     documentType: 'Jenis Berkas',
+    documentReview: 'Verifikasi Berkas',
     form: 'Formulir',
     myProfile: 'Profil Saya',
     payment: 'Pembayaran',

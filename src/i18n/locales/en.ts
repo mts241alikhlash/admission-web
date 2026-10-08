@@ -5,6 +5,7 @@ export default {
     bankAccount: 'Payment Accounts',
     dashboard: 'Dashboard',
     documentType: 'Document Types',
+    documentReview: 'Document Review',
     form: 'Form',
     myProfile: 'My Profile',
     payment: 'Payments',

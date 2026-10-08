@@ -204,6 +204,7 @@ describe('ApplicationDetailView', () => {
     access.granted = new Set([
       'admission-payments.verify',
       'admission-payments.create',
+      'admission-documents.verify',
     ])
     acting.value = false
     error.value = null
@@ -292,6 +293,68 @@ describe('ApplicationDetailView', () => {
     expect(rows[2].text()).toContain('Belum diunggah')
     expect(rows[2].text()).not.toContain('Wajib')
     expect(rows[2].text()).not.toContain('Setujui')
+  })
+
+  it('hides the document and application review buttons without admission-documents.verify', async () => {
+    access.granted = new Set(['admissions.read'])
+    application.value = {
+      ...draft,
+      status: 'SUBMITTED',
+      documentTypes: [
+        { id: 'kk', code: 'KK', name: 'Kartu Keluarga', isRequired: true },
+      ],
+      documents: [
+        {
+          id: 'doc-kk',
+          documentTypeId: 'kk',
+          status: 'PENDING',
+          note: null,
+          file: {
+            id: 'file-kk',
+            originalName: 'kk.pdf',
+            mimeType: 'application/pdf',
+            storageKey: 'files/kk.pdf',
+          },
+        },
+      ],
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Berkas')
+
+    expect(wrapper.text()).not.toContain('Setujui')
+    expect(wrapper.text()).not.toContain('Minta Revisi')
+    expect(wrapper.text()).not.toContain('Verifikasi Aplikasi')
+    expect(wrapper.text()).toContain('kk.pdf')
+  })
+
+  it('shows them with admission-documents.verify', async () => {
+    application.value = {
+      ...draft,
+      status: 'SUBMITTED',
+      documentTypes: [
+        { id: 'kk', code: 'KK', name: 'Kartu Keluarga', isRequired: true },
+      ],
+      documents: [
+        {
+          id: 'doc-kk',
+          documentTypeId: 'kk',
+          status: 'PENDING',
+          note: null,
+          file: {
+            id: 'file-kk',
+            originalName: 'kk.pdf',
+            mimeType: 'application/pdf',
+            storageKey: 'files/kk.pdf',
+          },
+        },
+      ],
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Berkas')
+
+    expect(wrapper.text()).toContain('Setujui')
+    expect(wrapper.text()).toContain('Minta Revisi')
+    expect(wrapper.text()).toContain('Verifikasi Aplikasi')
   })
 
   it('marks a document of a deactivated type', async () => {
