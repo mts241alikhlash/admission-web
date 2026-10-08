@@ -13,6 +13,7 @@ it('marks full waves and does not let them be chosen', () => {
         { id: 'w1', name: 'G1', remainingQuota: 0 },
         { id: 'w2', name: 'G2', remainingQuota: 5 },
       ] as never,
+      grades: [],
       isSubmitting: false,
       errorMessage: null,
     },

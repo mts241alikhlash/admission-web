@@ -36,6 +36,7 @@ import { Filter, Plus } from '@lucide/vue'
 import { useApplicationList } from '../composables/useApplicationList'
 import { useAdminRegistration } from '../composables/useAdminRegistration'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
+import { publicAdmissionService } from '../services/publicAdmissionService'
 import { useApplicationStore } from '../stores/applicationStore'
 import { useAuthSession } from '@/features/platform/auth'
 import StatusBadge from '../components/StatusBadge.vue'
@@ -43,6 +44,7 @@ import RegisterApplicantDialog from '../components/RegisterApplicantDialog.vue'
 import ApplicantCredentialsDialog from '../components/ApplicantCredentialsDialog.vue'
 import type {
   ActiveWave,
+  AdmissionGrade,
   AdmissionApplicationListItem,
   AdmissionStatus,
 } from '../types'
@@ -219,6 +221,7 @@ const credentialsOpen = ref(false)
 const isRegistering = ref(false)
 const registerError = ref<string | null>(null)
 const activeWaves = ref<ActiveWave[]>([])
+const grades = ref<AdmissionGrade[]>([])
 
 const {
   applicationId,
@@ -313,6 +316,9 @@ async function openRegister() {
     const data = await fetchActiveWaves()
     activeWaves.value = data?.waves ?? []
   }
+  if (grades.value.length === 0) {
+    grades.value = (await publicAdmissionService.fetchGrades()) ?? []
+  }
   registerOpen.value = true
 }
 
@@ -323,6 +329,8 @@ async function handleRegister(payload: {
   password: string
   passwordConfirm: string
   waveId: string
+  admissionType: 'NEW' | 'TRANSFER'
+  targetGradeId: string
 }) {
   isRegistering.value = true
   registerError.value = null
@@ -719,6 +727,7 @@ function fillForm() {
     <RegisterApplicantDialog
       v-model:open="registerOpen"
       :waves="activeWaves"
+      :grades="grades"
       :is-submitting="isRegistering"
       :error-message="registerError"
       @submit="handleRegister"
