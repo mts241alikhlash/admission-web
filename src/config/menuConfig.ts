@@ -3,6 +3,7 @@ import {
   FileText,
   FileStack,
   FileCheck,
+  BadgeCheck,
   Banknote,
   Landmark,
   Megaphone,
@@ -81,6 +82,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/document-reviews',
         icon: FileCheck,
         requiredPermission: 'admission-documents.read',
+      },
+      {
+        title: 'menu.decision',
+        url: '/admin/decisions',
+        icon: BadgeCheck,
+        requiredPermission: 'admission-decisions.read',
       },
       {
         title: 'menu.payment',

@@ -4,6 +4,7 @@ export default {
     applicant: 'Applicants',
     bankAccount: 'Payment Accounts',
     dashboard: 'Dashboard',
+    decision: 'Decisions',
     documentType: 'Document Types',
     documentReview: 'Document Review',
     form: 'Form',

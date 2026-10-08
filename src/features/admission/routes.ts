@@ -155,6 +155,21 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/decisions',
+    name: 'admin-decisions',
+    component: () => import('./views/DecisionListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-decisions.read',
+      title: 'Keputusan',
+      description: 'Terima atau tolak pendaftar yang sudah terverifikasi.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Keputusan' },
+      ],
+    },
+  },
+  {
     path: '/admin/document-reviews',
     name: 'admin-document-reviews',
     component: () => import('./views/DocumentReviewListView.vue'),

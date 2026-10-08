@@ -12,9 +12,13 @@ import type {
   AddPaymentPayload,
   AdmissionEligibleApplication,
   AdmissionPaymentQueue,
+  AdmissionDecision,
+  AdmissionDecisionMany,
+  AdmissionDecisionQueue,
   AdmissionDocumentReview,
   AdmissionDocumentReviewQueue,
   AdmissionDocumentReviewSend,
+  DecisionQueueQuery,
   DocumentReviewQuery,
   PaymentQueueQuery,
   AdmissionAcademicYear,
@@ -448,5 +452,31 @@ export const admissionApi = {
     api.post<ApiSingleResponse<AdmissionDocumentReviewSend>>(
       `/admissions/document-reviews/${applicationId}/send`,
       payload,
+    ),
+
+  getDecisionQueue: (params: DecisionQueueQuery) =>
+    api.get<AdmissionDecisionQueue>('/admissions/decisions', { params }),
+
+  acceptDecision: (applicationId: string, note?: string) =>
+    api.post(`/admissions/decisions/${applicationId}/accept`, { note }),
+
+  rejectDecision: (applicationId: string, reason: string) =>
+    api.post(`/admissions/decisions/${applicationId}/reject`, { reason }),
+
+  acceptManyDecisions: (applicationIds: string[], note?: string) =>
+    api.post<ApiSingleResponse<AdmissionDecisionMany>>(
+      '/admissions/decisions/accept-many',
+      { applicationIds, note },
+    ),
+
+  cancelAcceptance: (applicationId: string, reason: string) =>
+    api.post(`/admissions/decisions/${applicationId}/cancel-acceptance`, {
+      reason,
+    }),
+
+  cancelRejection: (applicationId: string, reason: string) =>
+    api.post<ApiSingleResponse<AdmissionDecision>>(
+      `/admissions/decisions/${applicationId}/cancel-rejection`,
+      { reason },
     ),
 }

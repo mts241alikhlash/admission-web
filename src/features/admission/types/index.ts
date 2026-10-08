@@ -49,6 +49,19 @@ export interface DocumentReviewQuery {
   page: number
   limit: number
 }
+export type AdmissionDecisionRow = Schemas['AdmissionDecisionRowResponseDto']
+export type AdmissionDecisionQueue =
+  Schemas['AdmissionDecisionQueueResponseDto']
+export type AdmissionDecision = Schemas['AdmissionDecisionResponseDto']
+export type AdmissionDecisionMany = Schemas['AdmissionDecisionManyResponseDto']
+export type DecisionTab = 'waiting' | 'accepted' | 'rejected'
+export interface DecisionQueueQuery {
+  tab: DecisionTab
+  search?: string
+  waveId?: string
+  page: number
+  limit: number
+}
 export interface AddPaymentPayload {
   applicationId: string
   bankAccountId: string
