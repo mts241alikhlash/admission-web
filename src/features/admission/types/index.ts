@@ -31,6 +31,24 @@ export interface PaymentQueueQuery {
   page: number
   limit: number
 }
+export type AdmissionDocumentReviewRow =
+  Schemas['AdmissionDocumentReviewRowResponseDto']
+export type AdmissionDocumentReview =
+  Schemas['AdmissionDocumentReviewResponseDto']
+export type AdmissionDocumentReviewSlot =
+  Schemas['AdmissionDocumentReviewSlotDto']
+export type AdmissionDocumentReviewSend =
+  Schemas['AdmissionDocumentReviewSendResponseDto']
+export type AdmissionDocumentReviewQueue =
+  Schemas['AdmissionDocumentReviewQueueResponseDto']
+export type DocumentReviewTab = 'waiting' | 'revision' | 'done'
+export interface DocumentReviewQuery {
+  tab: DocumentReviewTab
+  search?: string
+  waveId?: string
+  page: number
+  limit: number
+}
 export interface AddPaymentPayload {
   applicationId: string
   bankAccountId: string

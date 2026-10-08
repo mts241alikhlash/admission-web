@@ -1,7 +1,8 @@
 import { AxiosError, AxiosHeaders } from 'axios'
-import { expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   admissionErrorMessage,
+  documentSummaryText,
   formatDateRange,
   isWaveClosed,
   jakartaToday,
@@ -78,4 +79,42 @@ it('shortens a date range to what actually differs', () => {
 
 it('reads today in Jakarta, not UTC', () => {
   expect(jakartaToday(new Date('2026-10-07T20:00:00Z'))).toBe('2026-10-08')
+})
+
+describe('documentSummaryText', () => {
+  it('lists only the counts that are not zero', () => {
+    expect(
+      documentSummaryText({
+        approved: 3,
+        rejected: 1,
+        pending: 0,
+        missing: 2,
+        total: 6,
+      }),
+    ).toBe('3 disetujui · 1 ditolak · 2 belum diunggah dari 6 berkas wajib')
+  })
+
+  it('says so when no document is required', () => {
+    expect(
+      documentSummaryText({
+        approved: 0,
+        rejected: 0,
+        pending: 0,
+        missing: 0,
+        total: 0,
+      }),
+    ).toBe('Tidak ada berkas wajib')
+  })
+
+  it('reads well when everything is still waiting', () => {
+    expect(
+      documentSummaryText({
+        approved: 0,
+        rejected: 0,
+        pending: 4,
+        missing: 0,
+        total: 4,
+      }),
+    ).toBe('4 menunggu dari 4 berkas wajib')
+  })
 })
