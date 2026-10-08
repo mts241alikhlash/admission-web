@@ -138,3 +138,24 @@ export function isWaveClosed(
   if (!endDate) return false
   return endDate.slice(0, 10) < jakartaToday(now)
 }
+
+export function documentSummaryText(summary: {
+  approved: number
+  rejected: number
+  pending: number
+  missing: number
+  total: number
+}) {
+  if (summary.total === 0) return 'Tidak ada berkas wajib'
+  const parts: [number, string][] = [
+    [summary.approved, 'disetujui'],
+    [summary.rejected, 'ditolak'],
+    [summary.pending, 'menunggu'],
+    [summary.missing, 'belum diunggah'],
+  ]
+  const text = parts
+    .filter(([count]) => count > 0)
+    .map(([count, label]) => `${count} ${label}`)
+    .join(' · ')
+  return `${text} dari ${summary.total} berkas wajib`
+}

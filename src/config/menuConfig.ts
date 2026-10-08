@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   FileText,
   FileStack,
+  FileCheck,
   Banknote,
   Landmark,
   Megaphone,
@@ -74,6 +75,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/document-types',
         icon: FileStack,
         requiredPermission: 'admission-document-types.read',
+      },
+      {
+        title: 'menu.documentReview',
+        url: '/admin/document-reviews',
+        icon: FileCheck,
+        requiredPermission: 'admission-documents.read',
       },
       {
         title: 'menu.payment',

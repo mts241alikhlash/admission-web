@@ -12,6 +12,10 @@ import type {
   AddPaymentPayload,
   AdmissionEligibleApplication,
   AdmissionPaymentQueue,
+  AdmissionDocumentReview,
+  AdmissionDocumentReviewQueue,
+  AdmissionDocumentReviewSend,
+  DocumentReviewQuery,
   PaymentQueueQuery,
   AdmissionAcademicYear,
   AdmissionAcceptedApplication,
@@ -419,4 +423,30 @@ export const admissionApi = {
       params: download ? { download: 1 } : undefined,
       responseType: 'blob',
     }),
+
+  getDocumentReviews: (params: DocumentReviewQuery) =>
+    api.get<AdmissionDocumentReviewQueue>('/admissions/document-reviews', {
+      params,
+    }),
+
+  getDocumentReview: (applicationId: string) =>
+    api.get<ApiSingleResponse<AdmissionDocumentReview>>(
+      `/admissions/document-reviews/${applicationId}`,
+    ),
+
+  saveDocumentDecision: (
+    applicationId: string,
+    documentId: string,
+    payload: { status: 'APPROVED' | 'REJECTED'; note?: string },
+  ) =>
+    api.patch(
+      `/admissions/document-reviews/${applicationId}/documents/${documentId}`,
+      payload,
+    ),
+
+  sendDocumentReview: (applicationId: string, payload: { dataNote?: string }) =>
+    api.post<ApiSingleResponse<AdmissionDocumentReviewSend>>(
+      `/admissions/document-reviews/${applicationId}/send`,
+      payload,
+    ),
 }
