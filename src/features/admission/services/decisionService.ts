@@ -44,7 +44,8 @@ export const decisionService = {
 
   accept: (applicationId: string, note?: string) =>
     run(
-      () => admissionApi.acceptDecision(applicationId, note?.trim() || undefined),
+      () =>
+        admissionApi.acceptDecision(applicationId, note?.trim() || undefined),
       'Pendaftar diterima.',
       'Gagal menerima pendaftar.',
     ),

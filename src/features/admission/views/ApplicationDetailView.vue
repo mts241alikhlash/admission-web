@@ -83,6 +83,7 @@ const {
 
 const canVerifyPayment = computed(() => can('admission-payments.verify'))
 const canReviewDocuments = computed(() => can('admission-documents.verify'))
+const canDecide = computed(() => can('admission-decisions.decide'))
 const canAddPayment = computed(
   () =>
     can('admission-payments.create') &&
@@ -113,8 +114,9 @@ const editable = computed(
 )
 const hasActions = computed(
   () =>
-    status.value === 'SUBMITTED' ||
-    status.value === 'VERIFIED' ||
+    (canReviewDocuments.value && status.value === 'SUBMITTED') ||
+    (canDecide.value &&
+      (status.value === 'SUBMITTED' || status.value === 'VERIFIED')) ||
     status.value === 'ACCEPTED',
 )
 
@@ -472,7 +474,9 @@ useBreadcrumbs(() => {
             Minta Revisi
           </Button>
           <Button
-            v-if="status === 'SUBMITTED' || status === 'VERIFIED'"
+            v-if="
+              canDecide && (status === 'SUBMITTED' || status === 'VERIFIED')
+            "
             variant="destructive"
             :disabled="acting"
             @click="openDialog('reject')"
@@ -487,7 +491,7 @@ useBreadcrumbs(() => {
             Verifikasi Aplikasi
           </Button>
           <Button
-            v-if="status === 'VERIFIED'"
+            v-if="canDecide && status === 'VERIFIED'"
             :disabled="acting"
             @click="openDialog('accept')"
           >

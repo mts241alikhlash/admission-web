@@ -39,11 +39,7 @@ import type {
 import { documentSummaryText, formatDate } from '../utils'
 
 type ActionKind =
-  | 'accept'
-  | 'reject'
-  | 'accept-many'
-  | 'cancel-acceptance'
-  | 'cancel-rejection'
+  'accept' | 'reject' | 'accept-many' | 'cancel-acceptance' | 'cancel-rejection'
 
 const LIMIT = 50
 
@@ -166,9 +162,10 @@ async function loadMore() {
 }
 
 function toggle(applicationId: string, checked: boolean | 'indeterminate') {
-  selected.value = checked === true
-    ? [...new Set([...selected.value, applicationId])]
-    : selected.value.filter((id) => id !== applicationId)
+  selected.value =
+    checked === true
+      ? [...new Set([...selected.value, applicationId])]
+      : selected.value.filter((id) => id !== applicationId)
 }
 
 function toggleAll(checked: boolean | 'indeterminate') {
@@ -252,7 +249,9 @@ onMounted(async () => {
         data-test="header"
         class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
       >
-        <CardTitle class="text-xl font-bold tracking-tight">Keputusan</CardTitle>
+        <CardTitle class="text-xl font-bold tracking-tight"
+          >Keputusan</CardTitle
+        >
       </CardHeader>
 
       <div class="space-y-4 p-4 sm:p-6">
@@ -407,9 +406,13 @@ onMounted(async () => {
                   :model-value="selected.includes(row.applicationId)"
                   :aria-label="`Pilih ${row.applicantName}`"
                   class="mt-1"
-                  @update:model-value="(checked) => toggle(row.applicationId, checked)"
+                  @update:model-value="
+                    (checked) => toggle(row.applicationId, checked)
+                  "
                 />
-                <div class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2">
+                <div
+                  class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
+                >
                   <div class="min-w-0">
                     <p class="break-words font-semibold">
                       {{ row.applicantName }}
@@ -442,7 +445,9 @@ onMounted(async () => {
                     variant="outline"
                     class="min-h-11 sm:min-h-0"
                     data-test="open-detail"
-                    @click="router.push(`/admin/applicants/${row.applicationId}`)"
+                    @click="
+                      router.push(`/admin/applicants/${row.applicationId}`)
+                    "
                   >
                     Lihat detail
                   </Button>
@@ -504,7 +509,9 @@ onMounted(async () => {
     >
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{{ actionKind ? DIALOG_TITLES[actionKind] : '' }}</DialogTitle>
+          <DialogTitle>{{
+            actionKind ? DIALOG_TITLES[actionKind] : ''
+          }}</DialogTitle>
           <DialogDescription>
             <template v-if="actionKind === 'accept-many'">
               {{ selected.length }} pendaftar akan diterima.

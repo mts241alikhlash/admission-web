@@ -4,6 +4,7 @@ export default {
     applicant: 'Pendaftar',
     bankAccount: 'Rekening Pembayaran',
     dashboard: 'Dashboard',
+    decision: 'Keputusan',
     documentType: 'Jenis Berkas',
     documentReview: 'Verifikasi Berkas',
     form: 'Formulir',

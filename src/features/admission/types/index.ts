@@ -50,7 +50,8 @@ export interface DocumentReviewQuery {
   limit: number
 }
 export type AdmissionDecisionRow = Schemas['AdmissionDecisionRowResponseDto']
-export type AdmissionDecisionQueue = Schemas['AdmissionDecisionQueueResponseDto']
+export type AdmissionDecisionQueue =
+  Schemas['AdmissionDecisionQueueResponseDto']
 export type AdmissionDecision = Schemas['AdmissionDecisionResponseDto']
 export type AdmissionDecisionMany = Schemas['AdmissionDecisionManyResponseDto']
 export type DecisionTab = 'waiting' | 'accepted' | 'rejected'

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import DecisionListView from './DecisionListView.vue'
 
@@ -69,13 +69,16 @@ const tab = (wrapper: ReturnType<typeof mountView>, label: string) =>
   wrapper.findAll('[role="tab"]').find((t) => t.text().includes(label))!
 const rowOf = (wrapper: ReturnType<typeof mountView>, index = 0) =>
   wrapper.findAll('[data-test="decision-row"]')[index]
-const buttonOf = (parent: { findAll: (s: string) => any[] }, text: string) =>
+const buttonOf = (parent: Pick<VueWrapper, 'findAll'>, text: string) =>
   parent.findAll('button').find((b) => b.text() === text)!
 
 beforeEach(() => {
   vi.clearAllMocks()
   setActivePinia(createPinia())
-  access.granted = new Set(['admission-decisions.read', 'admission-decisions.decide'])
+  access.granted = new Set([
+    'admission-decisions.read',
+    'admission-decisions.decide',
+  ])
   service.fetchQueue.mockResolvedValue(
     page([row('a1', 'Ahmad Fauzi'), row('a2', 'Siti Aminah')]),
   )
@@ -83,7 +86,11 @@ beforeEach(() => {
   service.reject.mockResolvedValue({ success: true })
   service.cancelAcceptance.mockResolvedValue({ success: true })
   service.cancelRejection.mockResolvedValue({ success: true })
-  service.acceptMany.mockResolvedValue({ success: true, accepted: 2, skipped: [] })
+  service.acceptMany.mockResolvedValue({
+    success: true,
+    accepted: 2,
+    skipped: [],
+  })
 })
 
 it('shows Menunggu keputusan first with the counts of every tab and each summary', async () => {
@@ -122,7 +129,9 @@ it('accepts one applicant with an optional note', async () => {
   await flushPromises()
 
   await buttonOf(rowOf(wrapper), 'Terima').trigger('click')
-  await wrapper.get('[data-test="action-form"] textarea').setValue('Selamat bergabung')
+  await wrapper
+    .get('[data-test="action-form"] textarea')
+    .setValue('Selamat bergabung')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -151,7 +160,9 @@ it('rejects only with a reason', async () => {
   expect(service.reject).not.toHaveBeenCalled()
   expect(wrapper.text()).toContain('Alasan wajib diisi')
 
-  await wrapper.get('[data-test="action-form"] textarea').setValue('Kuota penuh')
+  await wrapper
+    .get('[data-test="action-form"] textarea')
+    .setValue('Kuota penuh')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -178,9 +189,14 @@ it('accepts the selected applicants after a confirmation with the count', async 
 
   await rowOf(wrapper, 0).get('[role="checkbox"]').trigger('click')
   await rowOf(wrapper, 1).get('[role="checkbox"]').trigger('click')
-  expect(wrapper.get('[data-test="selection-bar"]').text()).toContain('2 dipilih')
+  expect(wrapper.get('[data-test="selection-bar"]').text()).toContain(
+    '2 dipilih',
+  )
 
-  await buttonOf(wrapper.get('[data-test="selection-bar"]'), 'Terima terpilih').trigger('click')
+  await buttonOf(
+    wrapper.get('[data-test="selection-bar"]'),
+    'Terima terpilih',
+  ).trigger('click')
   expect(wrapper.text()).toContain('2 pendaftar')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
@@ -194,21 +210,32 @@ it('selects every loaded row at once', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper.get('[data-test="select-all"] [role="checkbox"]').trigger('click')
+  await wrapper
+    .get('[data-test="select-all"] [role="checkbox"]')
+    .trigger('click')
 
-  expect(wrapper.get('[data-test="selection-bar"]').text()).toContain('2 dipilih')
+  expect(wrapper.get('[data-test="selection-bar"]').text()).toContain(
+    '2 dipilih',
+  )
 })
 
 it('lists the skipped applicants with their reason after a mass accept', async () => {
   service.acceptMany.mockResolvedValue({
     success: true,
     accepted: 1,
-    skipped: [{ applicationId: 'a2', reason: 'Status pendaftar sudah berubah' }],
+    skipped: [
+      { applicationId: 'a2', reason: 'Status pendaftar sudah berubah' },
+    ],
   })
   const wrapper = mountView()
   await flushPromises()
-  await wrapper.get('[data-test="select-all"] [role="checkbox"]').trigger('click')
-  await buttonOf(wrapper.get('[data-test="selection-bar"]'), 'Terima terpilih').trigger('click')
+  await wrapper
+    .get('[data-test="select-all"] [role="checkbox"]')
+    .trigger('click')
+  await buttonOf(
+    wrapper.get('[data-test="selection-bar"]'),
+    'Terima terpilih',
+  ).trigger('click')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -233,7 +260,11 @@ it('forgets selected applicants that are no longer in the tab', async () => {
 
 it('cancels an acceptance with a reason, except once enrolment started', async () => {
   service.fetchQueue.mockResolvedValue(
-    page([row('a3', 'Budi', 'ACCEPTED'), row('a4', 'Dewi', 'ENROLLING'), row('a5', 'Eko', 'ENROLLED')]),
+    page([
+      row('a3', 'Budi', 'ACCEPTED'),
+      row('a4', 'Dewi', 'ENROLLING'),
+      row('a5', 'Eko', 'ENROLLED'),
+    ]),
   )
   const wrapper = mountView()
   await flushPromises()
@@ -265,7 +296,9 @@ it('cancels a rejection with a reason from the Ditolak tab', async () => {
   await flushPromises()
 
   await buttonOf(rowOf(wrapper), 'Batalkan penolakan').trigger('click')
-  await wrapper.get('[data-test="action-form"] textarea').setValue('Banding diterima')
+  await wrapper
+    .get('[data-test="action-form"] textarea')
+    .setValue('Banding diterima')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -279,19 +312,29 @@ it('hides every action without the decide permission', async () => {
 
   expect(wrapper.findAll('[role="checkbox"]')).toHaveLength(0)
   expect(wrapper.find('[data-test="selection-bar"]').exists()).toBe(false)
-  expect(rowOf(wrapper).findAll('button').map((b) => b.text())).toEqual(['Lihat detail'])
+  expect(
+    rowOf(wrapper)
+      .findAll('button')
+      .map((b) => b.text()),
+  ).toEqual(['Lihat detail'])
 })
 
 it('says what an empty tab means', async () => {
-  service.fetchQueue.mockResolvedValue(page([], { waiting: 0, accepted: 0, rejected: 0 }))
+  service.fetchQueue.mockResolvedValue(
+    page([], { waiting: 0, accepted: 0, rejected: 0 }),
+  )
   const wrapper = mountView()
   await flushPromises()
 
-  expect(wrapper.text()).toContain('Tidak ada pendaftar yang menunggu keputusan.')
+  expect(wrapper.text()).toContain(
+    'Tidak ada pendaftar yang menunggu keputusan.',
+  )
 })
 
 it('shows the load error with a retry', async () => {
-  service.fetchQueue.mockResolvedValue({ error: 'Gagal memuat antrean keputusan.' })
+  service.fetchQueue.mockResolvedValue({
+    error: 'Gagal memuat antrean keputusan.',
+  })
   const wrapper = mountView()
   await flushPromises()
 
@@ -305,11 +348,15 @@ it('shows the load error with a retry', async () => {
 
 it('ignores a slow response from a tab that is no longer shown', async () => {
   let release: (value: unknown) => void = () => undefined
-  service.fetchQueue.mockReturnValueOnce(new Promise((resolve) => (release = resolve)))
+  service.fetchQueue.mockReturnValueOnce(
+    new Promise((resolve) => (release = resolve)),
+  )
   const wrapper = mountView()
   await flushPromises()
 
-  service.fetchQueue.mockResolvedValue(page([row('a9', 'Siti Aminah', 'REJECTED')]))
+  service.fetchQueue.mockResolvedValue(
+    page([row('a9', 'Siti Aminah', 'REJECTED')]),
+  )
   await tab(wrapper, 'Ditolak').trigger('mousedown')
   await flushPromises()
   release(page([row('a1', 'Ahmad Fauzi')]))

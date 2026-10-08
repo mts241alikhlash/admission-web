@@ -72,23 +72,41 @@ describe('decisionService', () => {
       success: true,
     })
     await decisionService.accept('app2')
-    await expect(decisionService.reject('app1', 'Kuota penuh')).resolves.toEqual({
+    await expect(
+      decisionService.reject('app1', 'Kuota penuh'),
+    ).resolves.toEqual({
       success: true,
     })
 
-    expect(admissionApi.acceptDecision).toHaveBeenNthCalledWith(1, 'app1', 'Selamat')
-    expect(admissionApi.acceptDecision).toHaveBeenNthCalledWith(2, 'app2', undefined)
-    expect(admissionApi.rejectDecision).toHaveBeenCalledWith('app1', 'Kuota penuh')
+    expect(admissionApi.acceptDecision).toHaveBeenNthCalledWith(
+      1,
+      'app1',
+      'Selamat',
+    )
+    expect(admissionApi.acceptDecision).toHaveBeenNthCalledWith(
+      2,
+      'app2',
+      undefined,
+    )
+    expect(admissionApi.rejectDecision).toHaveBeenCalledWith(
+      'app1',
+      'Kuota penuh',
+    )
     expect(toast.success).toHaveBeenCalledWith('Pendaftar diterima.')
     expect(toast.success).toHaveBeenCalledWith('Pendaftar ditolak.')
   })
 
   it('shows the server message when a decision is refused', async () => {
     vi.mocked(admissionApi.acceptDecision).mockRejectedValue(
-      failure(409, 'Pendaftaran berubah saat Anda bekerja, muat ulang dan coba lagi'),
+      failure(
+        409,
+        'Pendaftaran berubah saat Anda bekerja, muat ulang dan coba lagi',
+      ),
     )
 
-    await expect(decisionService.accept('app1')).resolves.toEqual({ success: false })
+    await expect(decisionService.accept('app1')).resolves.toEqual({
+      success: false,
+    })
     expect(toast.error).toHaveBeenCalledWith(
       'Pendaftaran berubah saat Anda bekerja, muat ulang dan coba lagi',
     )
@@ -100,7 +118,11 @@ describe('decisionService', () => {
         data: {
           results: [
             { applicationId: 'a', outcome: 'ACCEPTED' },
-            { applicationId: 'b', outcome: 'SKIPPED', reason: 'Status pendaftar sudah berubah' },
+            {
+              applicationId: 'b',
+              outcome: 'SKIPPED',
+              reason: 'Status pendaftar sudah berubah',
+            },
           ],
         },
       },
@@ -108,11 +130,16 @@ describe('decisionService', () => {
 
     const result = await decisionService.acceptMany(['a', 'b'], 'Selamat')
 
-    expect(admissionApi.acceptManyDecisions).toHaveBeenCalledWith(['a', 'b'], 'Selamat')
+    expect(admissionApi.acceptManyDecisions).toHaveBeenCalledWith(
+      ['a', 'b'],
+      'Selamat',
+    )
     expect(result).toEqual({
       success: true,
       accepted: 1,
-      skipped: [{ applicationId: 'b', reason: 'Status pendaftar sudah berubah' }],
+      skipped: [
+        { applicationId: 'b', reason: 'Status pendaftar sudah berubah' },
+      ],
     })
     expect(toast.success).toHaveBeenCalledWith('1 diterima, 1 dilewati.')
   })
@@ -120,25 +147,43 @@ describe('decisionService', () => {
   it('cancels an acceptance and a rejection with a reason and says where the applicant went', async () => {
     vi.mocked(admissionApi.cancelAcceptance).mockResolvedValue({} as never)
     vi.mocked(admissionApi.cancelRejection)
-      .mockResolvedValueOnce({ data: { data: { status: 'VERIFIED', verified: true } } } as never)
-      .mockResolvedValueOnce({ data: { data: { status: 'SUBMITTED', verified: false } } } as never)
+      .mockResolvedValueOnce({
+        data: { data: { status: 'VERIFIED', verified: true } },
+      } as never)
+      .mockResolvedValueOnce({
+        data: { data: { status: 'SUBMITTED', verified: false } },
+      } as never)
 
     await decisionService.cancelAcceptance('app1', 'Salah klik')
     await decisionService.cancelRejection('app1', 'Banding diterima')
     await decisionService.cancelRejection('app2', 'Banding diterima')
 
-    expect(admissionApi.cancelAcceptance).toHaveBeenCalledWith('app1', 'Salah klik')
-    expect(toast.success).toHaveBeenCalledWith('Penerimaan dibatalkan. Pendaftar kembali menunggu keputusan.')
-    expect(toast.success).toHaveBeenCalledWith('Penolakan dibatalkan. Pendaftar kembali menunggu keputusan.')
-    expect(toast.success).toHaveBeenCalledWith('Penolakan dibatalkan. Pendaftar kembali diperiksa.')
+    expect(admissionApi.cancelAcceptance).toHaveBeenCalledWith(
+      'app1',
+      'Salah klik',
+    )
+    expect(toast.success).toHaveBeenCalledWith(
+      'Penerimaan dibatalkan. Pendaftar kembali menunggu keputusan.',
+    )
+    expect(toast.success).toHaveBeenCalledWith(
+      'Penolakan dibatalkan. Pendaftar kembali menunggu keputusan.',
+    )
+    expect(toast.success).toHaveBeenCalledWith(
+      'Penolakan dibatalkan. Pendaftar kembali diperiksa.',
+    )
   })
 
   it('shows the 409 message when enrolment has started', async () => {
     vi.mocked(admissionApi.cancelAcceptance).mockRejectedValue(
-      failure(409, 'Penerimaan tidak bisa dibatalkan setelah proses daftar ulang dimulai'),
+      failure(
+        409,
+        'Penerimaan tidak bisa dibatalkan setelah proses daftar ulang dimulai',
+      ),
     )
 
-    await expect(decisionService.cancelAcceptance('app1', 'x')).resolves.toEqual({
+    await expect(
+      decisionService.cancelAcceptance('app1', 'x'),
+    ).resolves.toEqual({
       success: false,
     })
     expect(toast.error).toHaveBeenCalledWith(

@@ -205,6 +205,7 @@ describe('ApplicationDetailView', () => {
       'admission-payments.verify',
       'admission-payments.create',
       'admission-documents.verify',
+      'admission-decisions.decide',
     ])
     acting.value = false
     error.value = null
@@ -325,6 +326,38 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.text()).not.toContain('Minta Revisi')
     expect(wrapper.text()).not.toContain('Verifikasi Aplikasi')
     expect(wrapper.text()).toContain('kk.pdf')
+  })
+
+  it('hides Terima and Tolak without admission-decisions.decide, and keeps the enrolment button', async () => {
+    access.granted = new Set(['admissions.read', 'admission-documents.verify'])
+    application.value = {
+      ...draft,
+      status: 'VERIFIED',
+    } as unknown as AdmissionApplication
+    const verified = await mountView()
+    expect(verified.text()).not.toContain('Terima')
+    expect(verified.findAll('button').map((b) => b.text())).not.toContain(
+      'Tolak',
+    )
+
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+    } as unknown as AdmissionApplication
+    const accepted = await mountView()
+    expect(accepted.text()).toContain('Proses Jadi Santri')
+  })
+
+  it('shows Terima and Tolak with admission-decisions.decide', async () => {
+    application.value = {
+      ...draft,
+      status: 'VERIFIED',
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    expect(wrapper.findAll('button').map((b) => b.text())).toEqual(
+      expect.arrayContaining(['Terima', 'Tolak']),
+    )
   })
 
   it('shows them with admission-documents.verify', async () => {
