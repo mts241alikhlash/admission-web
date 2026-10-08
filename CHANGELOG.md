@@ -1,5 +1,11 @@
 # admission-web
 
+## 1.12.0
+
+### Minor Changes
+
+- 2d3290d: The profile address editor now selects official administrative regions and saves their codes.
+
 ## 1.11.0
 
 ### Minor Changes
