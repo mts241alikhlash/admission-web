@@ -91,6 +91,9 @@ const nisError = ref('')
 const nisLoading = ref(false)
 const lockOpen = ref(false)
 const syncPending = ref(0)
+const MAX_PROCESS = 50
+const nisnError = ref('')
+const NISN_PATTERN = /^\d{10}$/
 
 const TABS: {
   value: EnrolmentTab
@@ -191,6 +194,11 @@ function toggleAll(checked: boolean | 'indeterminate') {
 }
 
 async function submitProcess() {
+  nisnError.value = ''
+  if (typedNisn.value.some((item) => !NISN_PATTERN.test(item.nisn))) {
+    nisnError.value = 'NISN harus 10 digit angka'
+    return
+  }
   acting.value = true
   const names = new Map(
     rows.value.map((row) => [row.applicationId, row.applicantName]),
@@ -375,7 +383,6 @@ onMounted(async () => {
               Susun NIS
             </Button>
             <Button
-              v-if="syncPending > 0"
               variant="outline"
               class="min-h-11 sm:min-h-0"
               :disabled="acting"
@@ -493,9 +500,15 @@ onMounted(async () => {
             class="flex flex-wrap items-center gap-2"
           >
             <span class="text-sm">{{ selected.length }} dipilih</span>
+            <span
+              v-if="selected.length > MAX_PROCESS"
+              class="text-sm text-destructive"
+            >
+              Maksimal {{ MAX_PROCESS }} pendaftar sekali proses
+            </span>
             <Button
               class="min-h-11 sm:min-h-0"
-              :disabled="acting"
+              :disabled="acting || selected.length > MAX_PROCESS"
               @click="processOpen = true"
             >
               Proses terpilih
@@ -596,7 +609,7 @@ onMounted(async () => {
                 </div>
               </dl>
               <div
-                v-if="canProcess && selectable"
+                v-if="canProcess && row.status === 'ACCEPTED'"
                 class="flex flex-wrap justify-end gap-2"
               >
                 <Button
@@ -640,6 +653,13 @@ onMounted(async () => {
               akunnya menjadi akun santri.
             </DialogDescription>
           </DialogHeader>
+          <p
+            v-if="nisnError"
+            role="alert"
+            class="text-sm text-destructive"
+          >
+            {{ nisnError }}
+          </p>
           <DialogFooter class="sm:justify-between">
             <Button
               type="button"
@@ -768,14 +788,18 @@ onMounted(async () => {
             {{ nisPreview.created }} NIS baru.
           </p>
           <ul
-            v-if="nisPreview.rows.some((item) => item.changed)"
+            v-if="nisPreview.rows.length"
             class="max-h-48 list-disc space-y-1 overflow-y-auto pl-5"
           >
             <li
-              v-for="item in nisPreview.rows.filter((entry) => entry.changed)"
+              v-for="item in nisPreview.rows"
               :key="item.applicationId"
             >
-              {{ item.applicantName }}: {{ item.previous }} → {{ item.nis }}
+              {{ item.applicantName }}:
+              <template v-if="item.previous">
+                {{ item.previous }} → {{ item.nis }}
+              </template>
+              <template v-else>{{ item.nis }} (baru)</template>
             </li>
           </ul>
           <div v-if="nisPreview.skipped.length">

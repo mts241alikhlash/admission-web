@@ -476,3 +476,94 @@ it('shows the load error with a retry', async () => {
 
   expect(wrapper.find('[role="alert"]').exists()).toBe(false)
 })
+
+it('does not let more than 50 applicants be processed in one run', async () => {
+  const many = Array.from({ length: 51 }, (_, index) =>
+    row(`m${index}`, `Santri ${index}`),
+  )
+  service.fetchQueue.mockResolvedValue(page(many))
+  const wrapper = mountView()
+  await flushPromises()
+
+  await wrapper
+    .get('[data-test="select-all"] [role="checkbox"]')
+    .trigger('click')
+
+  const bar = wrapper.get('[data-test="selection-bar"]')
+  expect(bar.text()).toContain('Maksimal 50 pendaftar sekali proses')
+  expect(buttonOf(bar, 'Proses terpilih').attributes('disabled')).toBeDefined()
+})
+
+it('rejects a typed NISN that is not 10 digits', async () => {
+  service.fetchQueue.mockResolvedValue(
+    page([row('a1', 'Ahmad Fauzi', { nisn: null })]),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+
+  await rowOf(wrapper).get('input[data-test="nisn-input"]').setValue('12345')
+  await rowOf(wrapper).get('[role="checkbox"]').trigger('click')
+  await buttonOf(
+    wrapper.get('[data-test="selection-bar"]'),
+    'Proses terpilih',
+  ).trigger('click')
+  await wrapper.get('[data-test="process-form"]').trigger('submit')
+  await flushPromises()
+
+  expect(service.process).not.toHaveBeenCalled()
+  expect(wrapper.get('[data-test="process-form"]').text()).toContain(
+    'NISN harus 10 digit angka',
+  )
+})
+
+it('lists every number in the NIS preview, new ones included', async () => {
+  service.previewNis.mockResolvedValue({
+    preview: {
+      ...PREVIEW,
+      rows: [
+        {
+          applicationId: 'n1',
+          applicantName: 'Budi Baru',
+          registrationNumber: 'PSB-n1',
+          gradeLevel: 7,
+          previous: null,
+          nis: '262707002',
+          changed: false,
+        },
+      ],
+    },
+  })
+  const wrapper = mountView()
+  await flushPromises()
+  await buttonOf(wrapper.get('[data-test="nis-panel"]'), 'Susun NIS').trigger(
+    'click',
+  )
+  await flushPromises()
+
+  const dialog = wrapper.get('[data-test="nis-dialog"]')
+  expect(dialog.text()).toContain('Budi Baru')
+  expect(dialog.text()).toContain('262707002')
+})
+
+it('keeps the sync button available after a reload', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  await buttonOf(
+    wrapper.get('[data-test="nis-panel"]'),
+    'Sinkronkan ulang',
+  ).trigger('click')
+  await flushPromises()
+
+  expect(service.composeNis).toHaveBeenLastCalledWith('y1', 0, true)
+})
+
+it('offers no placement button on a held applicant', async () => {
+  service.fetchQueue.mockResolvedValue(
+    page([row('a5', 'Eko', { status: 'ENROLLING' })]),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+
+  expect(rowOf(wrapper).text()).not.toContain('Atur jenis dan kelas')
+})
