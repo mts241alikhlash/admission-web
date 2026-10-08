@@ -540,6 +540,41 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.find('input[id$="-nisn"]').exists()).toBe(false)
   })
 
+  it('does not ask to type numbers in the enrol dialog when both exist', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      nis: '262707001',
+      nisn: '0091234567',
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Proses Jadi Santri')!
+      .trigger('click')
+
+    expect(wrapper.text()).not.toContain('Masukkan NIS/NISN')
+    expect(wrapper.text()).toContain('dipakai untuk membuat akun santri')
+  })
+
+  it('asks to complete the missing number in the enrol dialog', async () => {
+    application.value = {
+      ...draft,
+      status: 'ACCEPTED',
+      nis: '262707001',
+      nisn: null,
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Proses Jadi Santri')!
+      .trigger('click')
+
+    expect(wrapper.text()).toContain('Lengkapi nomor yang belum ada')
+  })
+
   it('shows the admission type, the target grade and the NIS', async () => {
     application.value = {
       ...draft,

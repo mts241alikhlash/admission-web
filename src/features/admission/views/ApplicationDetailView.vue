@@ -1206,8 +1206,13 @@ useBreadcrumbs(() => {
             {{ dialogKind ? dialogTitles[dialogKind] : '' }}
           </DialogTitle>
           <DialogDescription v-if="dialogKind === 'enroll'">
-            Masukkan NIS/NISN untuk memproses pendaftar menjadi santri. Akun
-            pendaftar akan otomatis menjadi akun santri.
+            <template v-if="application?.nis && application?.nisn">
+              Akun pendaftar akan otomatis menjadi akun santri.
+            </template>
+            <template v-else>
+              Lengkapi nomor yang belum ada untuk memproses pendaftar menjadi
+              santri. Akun pendaftar akan otomatis menjadi akun santri.
+            </template>
           </DialogDescription>
         </DialogHeader>
 

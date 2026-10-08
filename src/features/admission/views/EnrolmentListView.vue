@@ -383,6 +383,7 @@ onMounted(async () => {
               Susun NIS
             </Button>
             <Button
+              v-if="counts.done > 0 || syncPending > 0"
               variant="outline"
               class="min-h-11 sm:min-h-0"
               :disabled="acting"
@@ -554,15 +555,19 @@ onMounted(async () => {
               class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
             >
               <div class="flex items-start gap-3">
-                <Checkbox
+                <label
                   v-if="canProcess && selectable"
-                  :model-value="selected.includes(row.applicationId)"
-                  :aria-label="`Pilih ${row.applicantName}`"
-                  class="mt-1"
-                  @update:model-value="
-                    (checked) => toggle(row.applicationId, checked)
-                  "
-                />
+                  data-test="row-select"
+                  class="-m-2.5 flex size-11 shrink-0 items-center justify-center sm:m-0 sm:mt-1 sm:size-auto"
+                >
+                  <Checkbox
+                    :model-value="selected.includes(row.applicationId)"
+                    :aria-label="`Pilih ${row.applicantName}`"
+                    @update:model-value="
+                      (checked) => toggle(row.applicationId, checked)
+                    "
+                  />
+                </label>
                 <div
                   class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
                 >

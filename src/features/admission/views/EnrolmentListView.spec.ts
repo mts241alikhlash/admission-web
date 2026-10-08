@@ -558,6 +558,29 @@ it('keeps the sync button available after a reload', async () => {
   expect(service.composeNis).toHaveBeenLastCalledWith('y1', 0, true)
 })
 
+it('offers no sync while nobody has been enrolled yet', async () => {
+  service.fetchQueue.mockResolvedValue(
+    page([row('a1', 'Ahmad Fauzi')], YEARS, { ready: 1, held: 0, done: 0 }),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+
+  expect(
+    buttonOf(wrapper.get('[data-test="nis-panel"]'), 'Sinkronkan ulang'),
+  ).toBeUndefined()
+})
+
+it('puts each row checkbox in a touch target of at least 44 px', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  const target = rowOf(wrapper).get('label[data-test="row-select"]')
+  expect(target.classes()).toEqual(
+    expect.arrayContaining(['size-11', 'sm:size-auto']),
+  )
+  expect(target.find('[role="checkbox"]').exists()).toBe(true)
+})
+
 it('offers no placement button on a held applicant', async () => {
   service.fetchQueue.mockResolvedValue(
     page([row('a5', 'Eko', { status: 'ENROLLING' })]),
