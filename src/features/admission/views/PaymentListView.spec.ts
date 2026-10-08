@@ -347,3 +347,12 @@ it('ignores a slow response from a tab that is no longer shown', async () => {
   expect(rows).toHaveLength(1)
   expect(rows[0].text()).toContain('Terverifikasi')
 })
+
+it('uses the underlined tab style', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  const list = wrapper.get('[data-slot="tabs-list"]')
+  expect(list.classes()).toContain('border-b')
+  expect(list.classes()).not.toContain('bg-muted')
+})
