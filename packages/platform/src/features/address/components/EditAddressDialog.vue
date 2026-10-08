@@ -13,6 +13,7 @@ import { FloatingField, FormControl } from '@mts241alikhlash/ui/form'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import { Loader2 } from '@lucide/vue'
+import RegionSelect from './RegionSelect.vue'
 import { useAddress } from '../composables/useAddress'
 import type { EditAddressProps } from '../types'
 
@@ -25,7 +26,15 @@ const emit = defineEmits<{
 
 const { isSaving, saveAddress } = useAddress()
 
-const { open, existingAddress, onSubmit } = useAddressForm({
+const {
+  open,
+  existingAddress,
+  onSubmit,
+  regionCodes,
+  regionErrors,
+  setRegionCodes,
+  setRegionNames,
+} = useAddressForm({
   props,
   emit,
   saveAddress,
@@ -94,49 +103,14 @@ const { open, existingAddress, onSubmit } = useAddressForm({
               </FormControl>
             </FloatingField>
 
-            <FloatingField
-              v-slot="{ componentField }"
-              name="village"
-              label="Desa / Kelurahan"
-              required
-            >
-              <FormControl>
-                <Input v-bind="componentField" />
-              </FormControl>
-            </FloatingField>
-
-            <FloatingField
-              v-slot="{ componentField }"
-              name="district"
-              label="Kecamatan"
-              required
-            >
-              <FormControl>
-                <Input v-bind="componentField" />
-              </FormControl>
-            </FloatingField>
-
-            <FloatingField
-              v-slot="{ componentField }"
-              name="city"
-              label="Kabupaten / Kota"
-              required
-            >
-              <FormControl>
-                <Input v-bind="componentField" />
-              </FormControl>
-            </FloatingField>
-
-            <FloatingField
-              v-slot="{ componentField }"
-              name="province"
-              label="Provinsi"
-              required
-            >
-              <FormControl>
-                <Input v-bind="componentField" />
-              </FormControl>
-            </FloatingField>
+            <div class="sm:col-span-2">
+              <RegionSelect
+                :model-value="regionCodes"
+                :errors="regionErrors"
+                @update:model-value="setRegionCodes"
+                @update:names="setRegionNames"
+              />
+            </div>
 
             <FloatingField
               v-slot="{ componentField }"
