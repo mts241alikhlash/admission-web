@@ -7,6 +7,7 @@ export default {
     decision: 'Decisions',
     documentType: 'Document Types',
     documentReview: 'Document Review',
+    enrolment: 'Re-registration',
     form: 'Form',
     myProfile: 'My Profile',
     payment: 'Payments',

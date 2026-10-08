@@ -103,7 +103,7 @@ export type AdmissionApplication =
     Partial<
       Pick<
         Schemas['AdmissionApplicationReviewResponseDto'],
-        'duplicateNikCount'
+        'duplicateNikCount' | 'admissionType' | 'targetGradeLevel' | 'nis'
       >
     >
 export type AdmissionDocument = NonNullable<

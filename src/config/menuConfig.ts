@@ -4,6 +4,7 @@ import {
   FileStack,
   FileCheck,
   BadgeCheck,
+  GraduationCap,
   Banknote,
   Landmark,
   Megaphone,
@@ -88,6 +89,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/decisions',
         icon: BadgeCheck,
         requiredPermission: 'admission-decisions.read',
+      },
+      {
+        title: 'menu.enrolment',
+        url: '/admin/enrolments',
+        icon: GraduationCap,
+        requiredPermission: 'admission-enrolments.read',
       },
       {
         title: 'menu.payment',

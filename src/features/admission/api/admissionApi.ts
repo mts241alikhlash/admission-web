@@ -291,8 +291,8 @@ export const admissionApi = {
   enrollApplicant: (
     applicationId: string,
     payload: {
-      nis: string
-      nisn: string
+      nis?: string
+      nisn?: string
       gradeId?: string
       classroomId?: string
     },

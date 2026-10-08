@@ -2,6 +2,7 @@ import { toast } from 'vue-sonner'
 import { admissionApi } from '../api/admissionApi'
 import type {
   AdmissionEnrolmentRow,
+  AdmissionNisPreview,
   AdmissionType,
   EnrolmentQueueQuery,
 } from '../types'
@@ -45,7 +46,9 @@ export const enrolmentService = {
     }
   },
 
-  previewNis: async (academicYearId: string) => {
+  previewNis: async (
+    academicYearId: string,
+  ): Promise<{ preview: AdmissionNisPreview } | { error: string }> => {
     try {
       return {
         preview: (await admissionApi.getNisPreview(academicYearId)).data.data,

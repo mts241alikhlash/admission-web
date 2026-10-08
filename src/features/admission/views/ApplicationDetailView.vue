@@ -40,6 +40,7 @@ import FilePreviewDialog from '../components/FilePreviewDialog.vue'
 import DetailItem from '../components/DetailItem.vue'
 import { addressOwnerOf } from '../schemas/applicationFormSchemas'
 import {
+  ADMISSION_TYPE_LABELS,
   DOCUMENT_STATUS_LABELS,
   PAYMENT_STATUS_LABELS,
   RELATION_LABELS,
@@ -84,6 +85,7 @@ const {
 const canVerifyPayment = computed(() => can('admission-payments.verify'))
 const canReviewDocuments = computed(() => can('admission-documents.verify'))
 const canDecide = computed(() => can('admission-decisions.decide'))
+const canProcessEnrolment = computed(() => can('admission-enrolments.process'))
 const canAddPayment = computed(
   () =>
     can('admission-payments.create') &&
@@ -117,7 +119,7 @@ const hasActions = computed(
     (canReviewDocuments.value && status.value === 'SUBMITTED') ||
     (canDecide.value &&
       (status.value === 'SUBMITTED' || status.value === 'VERIFIED')) ||
-    status.value === 'ACCEPTED',
+    (canProcessEnrolment.value && status.value === 'ACCEPTED'),
 )
 
 const documentRows = computed(() =>
@@ -338,13 +340,18 @@ async function confirmDialog() {
     const r = await accept(applicationId.value, dialogNote.value || undefined)
     if (r.success) dialogKind.value = null
   } else if (dialogKind.value === 'enroll') {
-    if (!enrollForm.value.nis.trim() || !enrollForm.value.nisn.trim()) {
-      toast.error('NIS dan NISN wajib diisi.')
+    const needsNis = !application.value?.nis
+    const needsNisn = !application.value?.nisn
+    if (
+      (needsNis && !enrollForm.value.nis.trim()) ||
+      (needsNisn && !enrollForm.value.nisn.trim())
+    ) {
+      toast.error(needsNis ? 'NIS dan NISN wajib diisi.' : 'NISN wajib diisi.')
       return
     }
     const r = await enroll(applicationId.value, {
-      nis: enrollForm.value.nis.trim(),
-      nisn: enrollForm.value.nisn.trim(),
+      ...(needsNis && { nis: enrollForm.value.nis.trim() }),
+      ...(needsNisn && { nisn: enrollForm.value.nisn.trim() }),
     })
     if (r.success) dialogKind.value = null
   } else if (dialogKind.value === 'reject-doc' && dialogDocId.value) {
@@ -498,7 +505,7 @@ useBreadcrumbs(() => {
             Terima
           </Button>
           <Button
-            v-if="status === 'ACCEPTED'"
+            v-if="canProcessEnrolment && status === 'ACCEPTED'"
             :disabled="acting"
             @click="openDialog('enroll')"
           >
@@ -612,6 +619,26 @@ useBreadcrumbs(() => {
                 <DetailItem
                   label="NISN"
                   :value="application.nisn"
+                />
+                <DetailItem
+                  label="Jenis Pendaftaran"
+                  :value="
+                    application.admissionType
+                      ? ADMISSION_TYPE_LABELS[application.admissionType]
+                      : null
+                  "
+                />
+                <DetailItem
+                  label="Tingkat Kelas Tujuan"
+                  :value="
+                    application.targetGradeLevel
+                      ? `Kelas ${application.targetGradeLevel}`
+                      : null
+                  "
+                />
+                <DetailItem
+                  label="NIS"
+                  :value="application.nis"
                 />
                 <DetailItem
                   label="Agama"
@@ -1188,20 +1215,33 @@ useBreadcrumbs(() => {
           v-if="dialogKind === 'enroll'"
           class="space-y-4"
         >
-          <div class="space-y-2">
+          <div
+            v-if="!application?.nis"
+            class="space-y-2"
+          >
             <Label :for="`${dialogId}-nis`">NIS</Label>
             <Input
               :id="`${dialogId}-nis`"
               v-model="enrollForm.nis"
             />
           </div>
-          <div class="space-y-2">
+          <div
+            v-if="!application?.nisn"
+            class="space-y-2"
+          >
             <Label :for="`${dialogId}-nisn`">NISN</Label>
             <Input
               :id="`${dialogId}-nisn`"
               v-model="enrollForm.nisn"
             />
           </div>
+          <p
+            v-if="application?.nis && application?.nisn"
+            class="text-sm"
+          >
+            NIS {{ application.nis }} dan NISN {{ application.nisn }} dipakai
+            untuk membuat akun santri.
+          </p>
         </div>
         <div
           v-else

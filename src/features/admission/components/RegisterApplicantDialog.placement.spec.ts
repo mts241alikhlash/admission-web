@@ -30,7 +30,7 @@ function mountDialog() {
   return mount(RegisterApplicantDialog, {
     props: {
       open: true,
-      waves,
+      waves: waves as never,
       grades,
       isSubmitting: false,
       errorMessage: null,

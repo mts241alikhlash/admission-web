@@ -7,6 +7,7 @@ export default {
     decision: 'Keputusan',
     documentType: 'Jenis Berkas',
     documentReview: 'Verifikasi Berkas',
+    enrolment: 'Daftar Ulang',
     form: 'Formulir',
     myProfile: 'Profil Saya',
     payment: 'Pembayaran',

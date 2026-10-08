@@ -66,7 +66,12 @@ const row = (
   ...overrides,
 })
 
-const YEARS = [
+const YEARS: {
+  academicYearId: string
+  academicYearName: string | null
+  locked: boolean
+  lockedAt: string | null
+}[] = [
   {
     academicYearId: 'y1',
     academicYearName: '2026/2027',
