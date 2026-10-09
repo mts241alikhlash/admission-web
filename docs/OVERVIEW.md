@@ -287,6 +287,15 @@ after it appeared. Images are references, `{ imageId }` for an upload (served fr
 (`LandingInfo`) and the stories section render nothing when their list is empty. The published response
 is cached for a minute, so a publish can take that long to appear for a visitor who has the page cached.
 
+Admins with `admission-landing.read|update|publish` edit it at `/admin/landing` ("Halaman Depan"). Every
+section is described once in `data/landingFormConfig.ts` (fields, limits, labels, list shapes); a pure
+module (`landingForm.ts`) builds the zod validation and the list operations from it and
+`LandingFieldTree` draws any section, so a new field means the configuration, `types/landing.ts`,
+`landingDefaults`, the component and the zod schema in admission-service. Saving writes a draft per
+section; "Terbitkan" publishes every draft at once; "Buang perubahan" drops them. "Pratinjau" goes to
+`/admin/landing/preview`, the real `LandingView` in `draft` mode, in the same tab (a new tab is a full
+page load and a full page load returns to the login page).
+
 ## Commands
 
 ```bash

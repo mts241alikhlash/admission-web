@@ -11,6 +11,16 @@ export const admissionPublicRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/landing/preview',
+    name: 'admin-landing-preview',
+    component: () => import('./views/LandingPreviewView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-landing.read',
+      title: 'Pratinjau Halaman Depan',
+    },
+  },
+  {
     path: '/register',
     redirect: { name: 'login', query: { signup: '1' } },
     meta: {
@@ -167,6 +177,21 @@ export const admissionRoutes: RouteRecordRaw[] = [
       breadcrumbs: [
         { title: 'Admin PSB', href: '/admin' },
         { title: 'Unduhan' },
+      ],
+    },
+  },
+  {
+    path: '/admin/landing',
+    name: 'admin-landing',
+    component: () => import('./views/LandingSettingsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-landing.read',
+      title: 'Halaman Depan',
+      description: 'Atur teks dan foto halaman depan pendaftaran.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Halaman Depan' },
       ],
     },
   },

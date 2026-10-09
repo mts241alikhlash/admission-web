@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Banknote,
   Download,
+  PanelsTopLeft,
   Landmark,
   Megaphone,
   Users,
@@ -84,6 +85,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/downloads',
         icon: Download,
         requiredPermission: 'admission-downloads.read',
+      },
+      {
+        title: 'menu.landing',
+        url: '/admin/landing',
+        icon: PanelsTopLeft,
+        requiredPermission: 'admission-landing.read',
       },
       {
         title: 'menu.documentReview',

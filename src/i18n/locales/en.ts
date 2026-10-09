@@ -9,6 +9,7 @@ export default {
     documentReview: 'Document Review',
     download: 'Downloads',
     enrolment: 'Re-registration',
+    landing: 'Landing Page',
     form: 'Form',
     myProfile: 'My Profile',
     payment: 'Payments',

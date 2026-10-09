@@ -33,10 +33,7 @@ describe('LANDING_SECTIONS', () => {
     'accepts the built-in content of %s',
     (key) => {
       expect(
-        validateSection(
-          section(key).fields,
-          landingDefaults[key],
-        ),
+        validateSection(section(key).fields, landingDefaults[key]),
       ).toEqual({})
     },
   )
