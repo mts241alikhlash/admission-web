@@ -1,3 +1,5 @@
+export type LandingImagePurpose = 'poster' | 'photo'
+
 export type LandingImageRef = { imageId: string } | { src: string }
 
 export const LANDING_SECTION_KEYS = [

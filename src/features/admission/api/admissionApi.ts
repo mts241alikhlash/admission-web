@@ -419,6 +419,29 @@ export const admissionApi = {
   getLandingDraft: () =>
     api.get<{ data: LandingDraftOverview }>('/admissions/landing/draft'),
 
+  saveLandingSection: (key: LandingSectionKey, content: unknown) =>
+    api.put<{ data: LandingDraftOverview }>(
+      `/admissions/landing/sections/${key}`,
+      { content },
+    ),
+
+  uploadLandingImage: (file: File, purpose: LandingImagePurpose) => {
+    const formData = new FormData()
+    formData.append('purpose', purpose)
+    formData.append('file', file)
+    return api.post<{
+      data: { id: string; width: number; height: number; sizeBytes: number }
+    }>('/admissions/landing/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  publishLanding: () =>
+    api.post<{ data: LandingDraftOverview }>('/admissions/landing/publish'),
+
+  discardLanding: () =>
+    api.post<{ data: LandingDraftOverview }>('/admissions/landing/discard'),
+
   landingImageUrl: (id: string) =>
     `${api.defaults.baseURL ?? ''}/admissions/landing/images/${id}`,
 
