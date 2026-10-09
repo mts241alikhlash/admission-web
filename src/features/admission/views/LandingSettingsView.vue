@@ -1,0 +1,245 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { Button } from '@mts241alikhlash/ui/button'
+import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Badge } from '@mts241alikhlash/ui/badge'
+import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@mts241alikhlash/ui/alert-dialog'
+import { useRoleGuard } from '@/features/platform/auth'
+import LandingSectionForm from '../components/landing-admin/LandingSectionForm.vue'
+import { landingDefaults } from '../data/landingDefaults'
+import { LANDING_SECTIONS } from '../data/landingFormConfig'
+import { landingService } from '../services/landingService'
+import type { LandingDraftOverview, LandingSectionKey } from '../types/landing'
+import { formatDate } from '../utils'
+
+const router = useRouter()
+const { can } = useRoleGuard()
+const canUpdate = computed(() => can('admission-landing.update'))
+const canPublish = computed(() => can('admission-landing.publish'))
+
+const overview = ref<LandingDraftOverview | null>(null)
+const loadError = ref<string | null>(null)
+const loading = ref(false)
+const active = ref<LandingSectionKey>('hero')
+const dirtyKeys = ref(new Set<LandingSectionKey>())
+const confirming = ref<'publish' | 'discard' | null>(null)
+const busy = ref(false)
+const formsVersion = ref(0)
+
+const activeConfig = computed(() =>
+  LANDING_SECTIONS.find((section) => section.key === active.value)!,
+)
+const sectionContent = computed(
+  () => overview.value?.sections[active.value] ?? landingDefaults[active.value],
+)
+const anyDirty = computed(() => dirtyKeys.value.size > 0)
+
+async function load() {
+  loading.value = true
+  const result = await landingService.fetchDraft()
+  loadError.value = 'error' in result ? result.error : null
+  if ('overview' in result) overview.value = result.overview
+  loading.value = false
+}
+
+function onSaved(next: LandingDraftOverview) {
+  overview.value = next
+  dirtyKeys.value.delete(active.value)
+}
+
+function onDirty(value: boolean) {
+  if (value) dirtyKeys.value.add(active.value)
+  else dirtyKeys.value.delete(active.value)
+  dirtyKeys.value = new Set(dirtyKeys.value)
+}
+
+async function run(action: 'publish' | 'discard') {
+  busy.value = true
+  const result =
+    action === 'publish'
+      ? await landingService.publish()
+      : await landingService.discard()
+  busy.value = false
+  confirming.value = null
+  if ('error' in result) return
+  overview.value = result.overview
+  dirtyKeys.value = new Set()
+  formsVersion.value += 1
+}
+
+function confirmLeave() {
+  return (
+    !anyDirty.value ||
+    window.confirm('Ada perubahan yang belum disimpan. Tinggalkan halaman ini?')
+  )
+}
+
+onBeforeRouteLeave(() => confirmLeave())
+onMounted(load)
+
+const publishedLabel = computed(() =>
+  overview.value?.publishedAt
+    ? `Terakhir terbit ${formatDate(overview.value.publishedAt)}`
+    : 'Belum pernah diterbitkan',
+)
+</script>
+
+<template>
+  <div class="p-4 sm:p-6">
+    <Card
+      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+    >
+      <CardHeader
+        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
+      >
+        <CardTitle class="text-xl font-bold tracking-tight">
+          Halaman Depan
+        </CardTitle>
+        <Button
+          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          variant="outline"
+          @click="router.push('/admin/landing/preview')"
+        >
+          Pratinjau
+        </Button>
+      </CardHeader>
+
+      <div class="space-y-5 p-4 sm:p-6">
+        <div
+          v-if="loadError"
+          class="space-y-3 rounded-md border p-4"
+          role="alert"
+        >
+          <p class="text-sm">{{ loadError }}</p>
+          <Button
+            variant="outline"
+            class="min-h-11"
+            @click="load()"
+          >
+            Coba lagi
+          </Button>
+        </div>
+
+        <template v-else-if="overview">
+          <div
+            data-test="landing-status"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-4"
+          >
+            <div class="space-y-1">
+              <Badge
+                :variant="
+                  overview.hasUnpublishedChanges ? 'default' : 'secondary'
+                "
+              >
+                {{
+                  overview.hasUnpublishedChanges
+                    ? 'Ada perubahan belum diterbitkan'
+                    : 'Sudah terbit'
+                }}
+              </Badge>
+              <p class="text-xs text-muted-foreground">{{ publishedLabel }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <Button
+                v-if="canUpdate"
+                variant="outline"
+                class="min-h-11"
+                :disabled="!overview.hasUnpublishedChanges || busy"
+                @click="confirming = 'discard'"
+              >
+                Buang perubahan
+              </Button>
+              <Button
+                v-if="canPublish"
+                class="min-h-11"
+                :disabled="!overview.hasUnpublishedChanges || busy"
+                @click="confirming = 'publish'"
+              >
+                Terbitkan
+              </Button>
+            </div>
+          </div>
+
+          <Tabs
+            v-model="active"
+            variant="line"
+          >
+            <TabsList class="flex-wrap">
+              <TabsTrigger
+                v-for="section in LANDING_SECTIONS"
+                :key="section.key"
+                :value="section.key"
+              >
+                {{ section.label
+                }}<span
+                  v-if="dirtyKeys.has(section.key)"
+                  class="ml-1.5 text-xs text-amber-700"
+                  >(belum disimpan)</span
+                >
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <LandingSectionForm
+            :key="`${active}-${formsVersion}`"
+            :config="activeConfig"
+            :initial="sectionContent"
+            :disabled="!canUpdate"
+            @saved="onSaved"
+            @dirty="onDirty"
+          />
+        </template>
+      </div>
+    </Card>
+
+    <AlertDialog
+      :open="confirming !== null"
+      @update:open="
+        (open) => {
+          if (!open) confirming = null
+        }
+      "
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {{
+              confirming === 'publish'
+                ? 'Terbitkan halaman depan?'
+                : 'Buang semua perubahan?'
+            }}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {{
+              confirming === 'publish'
+                ? 'Semua bagian yang sudah disimpan sebagai draf langsung tampil di halaman depan untuk pengunjung.'
+                : 'Draf semua bagian dihapus dan halaman kembali ke isi yang sudah terbit. Perubahan yang belum disimpan di layar ini ikut hilang.'
+            }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction
+            :disabled="busy"
+            @click="run(confirming === 'publish' ? 'publish' : 'discard')"
+          >
+            {{
+              confirming === 'publish' ? 'Terbitkan sekarang' : 'Buang sekarang'
+            }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
+</template>
