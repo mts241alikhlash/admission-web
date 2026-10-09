@@ -1,5 +1,12 @@
 # admission-web
 
+## 1.14.0
+
+### Minor Changes
+
+- 66adca7: Admins with `admission-landing.*` edit the landing page from a new "Halaman Depan" screen: texts and photos of the hero, the photo carousel, the information posters, the steps, the FAQ, the family stories and the closing block, with draft saving per section, a preview on the real landing page, and one publish for every section. Publishing needs `admission-landing.publish`.
+- 66adca7: The landing page reads its texts and photos from the published landing content and falls back to the built-in content, so it looks exactly the same until an admin publishes a change. Adds the "Informasi PPDB" poster section (portrait posters in a horizontal scroller with a full-screen viewer) and a footer link to it; both stay hidden while there is no poster. The photo and story carousels now re-centre on their first slide while the layout settles, so they start on the first slide however late the section mounts.
+
 ## 1.13.0
 
 ### Minor Changes
