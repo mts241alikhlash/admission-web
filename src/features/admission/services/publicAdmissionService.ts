@@ -28,6 +28,16 @@ export const publicAdmissionService = {
     }
   },
 
+  fetchActiveDownloads: async () => {
+    try {
+      const res = await admissionApi.getActiveDownloads()
+      return res.data.data ?? []
+    } catch (err) {
+      notifyIfOutage(err)
+      return []
+    }
+  },
+
   register: async (payload: PublicRegisterPayload) => {
     try {
       const res = await admissionApi.register(payload)

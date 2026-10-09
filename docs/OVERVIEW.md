@@ -263,6 +263,17 @@ the landing page's sign-up dialog (`/?signup=1`) from the dashboard or to
 `/registration` from the form. Neither empty state renders an applicant-only
 write control.
 
+## Download files
+
+Admins with `admission-downloads.read|create|update|delete` manage `/admin/downloads` ("Unduhan"):
+PDF files (brosur, blank forms) of at most 5 MB, each with a title, an optional description, an
+active switch and a manual order (up and down buttons send the full id list to `PUT order`). The
+file field is a native input checked by `pdfFileError` before any request; editing without
+choosing a file keeps the stored PDF, and an emptied description is sent as an empty string.
+`LandingDownloads` shows the active files after "Persyaratan" and `LandingFooter` links to it
+through `showDownloads`; both stay hidden while the list is empty or fails to load. The download
+link is a plain `<a download>` to `/admissions/downloads/:id/file`, which is public.
+
 ## Commands
 
 ```bash

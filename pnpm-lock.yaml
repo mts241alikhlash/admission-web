@@ -101,11 +101,11 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.10.0(jiti@2.7.0))
       '@mts241alikhlash/academic-api':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.1.0
+        version: 1.1.0
       '@mts241alikhlash/admission-api':
-        specifier: ^2.7.0
-        version: 2.7.0
+        specifier: ^2.8.0
+        version: 2.8.0
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3
@@ -480,11 +480,11 @@ packages:
   '@maplibre/vt-pbf@4.3.2':
     resolution: {integrity: sha512-j6p0AdjvAR19Z3XaCysle7A4ZSo08tYOzxD0Y9NQylwPAkwJJeYub5b2eVucdeDh7erhv69DahoLOevDRERRUw==}
 
-  '@mts241alikhlash/academic-api@1.0.0':
-    resolution: {integrity: sha512-WpX26etF8/YGGN6HE+rdgGuURL/BY3HQPagv53uuKvx/A+R5gq3LVUEBQLFzJTVJODXLu64TL4Z9HGfIJA2Hlg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/academic-api/1.0.0/136726dce45d78a4f694c59497eb206120aba9a7}
+  '@mts241alikhlash/academic-api@1.1.0':
+    resolution: {integrity: sha512-tl7LQ4kiNcYfmvjEvuS80H5FrVamdZSq4kas6Vfr+/jcAdYhIiCOa/naj1oK0+Vv2fWQX1h5fdfQimpxqUTCcQ==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/academic-api/1.1.0/1d34c08bd9598812d0d5bebe7ce783c2dd63c4e8}
 
-  '@mts241alikhlash/admission-api@2.7.0':
-    resolution: {integrity: sha512-7BDbTjDBEJzqlz+wQWFw1TFNYgynMZ3megtyrAC8Pt89xzgeLJPxALAF8ThVNdZJxF5DK08ilOnYMLbrY6SvoQ==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/2.7.0/6f6d78dee5689d841a4f9efbeb5b3573cf74c71f}
+  '@mts241alikhlash/admission-api@2.8.0':
+    resolution: {integrity: sha512-mYR6etCI7OOH0m5jUKUcPNykXqmqrBH//ShCsqzNrWwSPrXRh0NR4OkaHK+5YBVFIjnB1UuMmZ+KBOnFdKEoQg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/2.8.0/e91f9809528d0d7f74c4674eecf54096ffd2285c}
 
   '@mts241alikhlash/ui@1.4.0':
     resolution: {integrity: sha512-q56EiEmz+1NGhYcmw9JNE/YCv3fRGkN2NbSAG0ug7n1DO+Ozeg4UPOS6sw5M27iuN9g9JduvDr+WfzQfkAWlqw==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.4.0/039e34ac49227f3eb68e962be504c819c9538646}
@@ -3163,11 +3163,11 @@ snapshots:
       '@types/geojson': 7946.0.16
       pbf: 5.1.2
 
-  '@mts241alikhlash/academic-api@1.0.0':
+  '@mts241alikhlash/academic-api@1.1.0':
     dependencies:
       openapi-fetch: 0.17.0
 
-  '@mts241alikhlash/admission-api@2.7.0':
+  '@mts241alikhlash/admission-api@2.8.0':
     dependencies:
       openapi-fetch: 0.17.0
 

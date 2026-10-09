@@ -1,16 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+
+const props = defineProps<{ showDownloads?: boolean }>()
 
 const currentYear = new Date().getFullYear()
 
-const navigationItems = [
+const navigationItems = computed(() => [
   { label: 'Mengenal', id: 'kehidupan' },
   { label: 'Gelombang', id: 'gelombang' },
   { label: 'Alur Daftar', id: 'alur' },
   { label: 'Persyaratan', id: 'persyaratan' },
+  ...(props.showDownloads ? [{ label: 'Unduhan', id: 'unduhan' }] : []),
   { label: 'Cerita', id: 'cerita' },
   { label: 'FAQ', id: 'faq' },
-]
+])
 
 const linkClass =
   'inline-flex min-h-9 items-center text-sm font-medium text-[#203f73] decoration-[#836d29] decoration-2 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#203f73]'
