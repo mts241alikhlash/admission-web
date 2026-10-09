@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
   NavigationMenuItem,
@@ -19,14 +19,19 @@ import {
 
 const isMenuOpen = ref(false)
 
-const navigationItems = [
+const props = withDefaults(
+  defineProps<{ ready?: boolean; showStories?: boolean }>(),
+  { ready: true, showStories: true },
+)
+
+const navigationItems = computed(() => [
   { label: 'Mengenal', id: 'kehidupan' },
   { label: 'Gelombang', id: 'gelombang' },
   { label: 'Alur Daftar', id: 'alur' },
   { label: 'Persyaratan', id: 'persyaratan' },
-  { label: 'Cerita', id: 'cerita' },
+  ...(props.showStories ? [{ label: 'Cerita', id: 'cerita' }] : []),
   { label: 'FAQ', id: 'faq' },
-]
+])
 
 const activeId = ref<string | null>(null)
 let observer: IntersectionObserver | null = null
@@ -35,7 +40,10 @@ function closeMenu() {
   isMenuOpen.value = false
 }
 
-onMounted(() => {
+function observeSections() {
+  observer?.disconnect()
+  observer = null
+  activeId.value = null
   if (typeof IntersectionObserver === 'undefined') return
   observer = new IntersectionObserver(
     (entries) => {
@@ -46,11 +54,23 @@ onMounted(() => {
     },
     { rootMargin: '-50% 0px -50% 0px' },
   )
-  for (const item of navigationItems) {
+  for (const item of navigationItems.value) {
     const section = document.getElementById(item.id)
     if (section) observer.observe(section)
   }
+}
+
+onMounted(() => {
+  if (props.ready) observeSections()
 })
+
+watch(
+  () => [props.ready, props.showStories],
+  () => {
+    if (props.ready) observeSections()
+  },
+  { flush: 'post' },
+)
 
 onBeforeUnmount(() => observer?.disconnect())
 </script>

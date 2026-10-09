@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import LandingNavbar from './LandingNavbar.vue'
 
-async function mountNavbar() {
+async function mountNavbar(
+  props: { ready?: boolean; showStories?: boolean } = {},
+) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -16,6 +18,7 @@ async function mountNavbar() {
   await router.isReady()
   return mount(LandingNavbar, {
     attachTo: document.body,
+    props,
     global: { plugins: [router] },
   })
 }
@@ -86,6 +89,69 @@ describe('LandingNavbar', () => {
     await flushPromises()
 
     expect(document.body.querySelector('[role="dialog"]')).toBeNull()
+    wrapper.unmount()
+  })
+
+  describe('active section tracking', () => {
+    const observed: string[] = []
+
+    beforeEach(() => {
+      observed.length = 0
+      class FakeObserver {
+        observe(target: Element) {
+          observed.push(target.id)
+        }
+
+        disconnect() {
+          observed.length = 0
+        }
+      }
+      vi.stubGlobal('IntersectionObserver', FakeObserver)
+    })
+
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('observes the sections that exist when it mounts', async () => {
+      for (const id of ['kehidupan', 'faq']) {
+        const section = document.createElement('section')
+        section.id = id
+        document.body.appendChild(section)
+      }
+      const wrapper = await mountNavbar()
+      expect(observed.sort()).toEqual(['faq', 'kehidupan'])
+      wrapper.unmount()
+    })
+
+    it('waits for the content, then observes the sections that appeared', async () => {
+      const wrapper = await mountNavbar({ ready: false })
+      expect(observed).toEqual([])
+
+      for (const id of ['kehidupan', 'alur', 'faq']) {
+        const section = document.createElement('section')
+        section.id = id
+        document.body.appendChild(section)
+      }
+      await wrapper.setProps({ ready: true })
+      await flushPromises()
+
+      expect(observed.sort()).toEqual(['alur', 'faq', 'kehidupan'])
+      wrapper.unmount()
+    })
+  })
+
+  it('hides the stories link, on desktop and in the menu, when there is no story', async () => {
+    const wrapper = await mountNavbar({ showStories: false })
+    const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
+    expect(hrefs).not.toContain('#cerita')
+    expect(hrefs).toContain('#faq')
+    wrapper.unmount()
+  })
+
+  it('shows the stories link by default', async () => {
+    const wrapper = await mountNavbar()
+    expect(
+      wrapper.findAll('a').map((link) => link.attributes('href')),
+    ).toContain('#cerita')
     wrapper.unmount()
   })
 })

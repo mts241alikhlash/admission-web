@@ -86,7 +86,10 @@ onMounted(() => {
       class="landing-skip-link"
       >Langsung ke isi halaman</a
     >
-    <LandingNavbar />
+    <LandingNavbar
+      :ready="landing.ready.value"
+      :show-stories="content.stories.items.length > 0"
+    />
 
     <main
       id="landing-main"
@@ -144,6 +147,7 @@ onMounted(() => {
     <LandingFooter
       :show-downloads="downloads.length > 0"
       :show-info="content.info.posters.length > 0"
+      :show-stories="content.stories.items.length > 0"
     />
   </div>
 </template>
