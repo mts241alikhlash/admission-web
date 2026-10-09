@@ -176,3 +176,13 @@ export function pdfFileError(file: File) {
   if (file.size > MAX_DOWNLOAD_BYTES) return 'Ukuran berkas maksimal 5 MB.'
   return null
 }
+
+export function imageFileError(file: File) {
+  const accepted =
+    ['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+    /\.(jpe?g|png|webp)$/i.test(file.name)
+  if (!accepted) return 'Gambar harus JPG, PNG, atau WebP.'
+  if (file.size === 0) return 'Berkas kosong.'
+  if (file.size > MAX_DOWNLOAD_BYTES) return 'Ukuran gambar maksimal 5 MB.'
+  return null
+}

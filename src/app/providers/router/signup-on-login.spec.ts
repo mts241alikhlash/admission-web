@@ -6,6 +6,7 @@ import { defineComponent, h } from 'vue'
 import { RouterView } from 'vue-router'
 import { authConfig, configureAuth } from '@/features/platform/auth'
 import SignUpDialog from '@/features/admission/components/SignUpDialog.vue'
+import { admissionApi } from '@/features/admission/api/admissionApi'
 import { publicAdmissionService } from '@/features/admission/services/publicAdmissionService'
 import router from './index'
 
@@ -30,6 +31,19 @@ async function mountLanding(path = '/') {
     ],
     documentTypes: [],
   })
+  vi.spyOn(admissionApi, 'getLandingPublished').mockResolvedValue({
+    data: {
+      data: {
+        hero: null,
+        life: null,
+        info: null,
+        steps: null,
+        faq: null,
+        stories: null,
+        closing: null,
+      },
+    },
+  } as Awaited<ReturnType<typeof admissionApi.getLandingPublished>>)
   const pinia = createPinia()
   setActivePinia(pinia)
   await router.push(path)

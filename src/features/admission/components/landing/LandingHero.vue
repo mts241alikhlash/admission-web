@@ -3,12 +3,20 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Button } from '@mts241alikhlash/ui/button'
 import type { ActiveWave } from '../../types'
+import type { LandingHeroContent } from '../../types/landing'
+import { landingDefaults } from '../../data/landingDefaults'
+import { imageUrl } from '../../composables/useLandingContent'
+import LandingLines from './LandingLines.vue'
 
-const props = defineProps<{
-  wave: ActiveWave | null
-  loading: boolean
-  error: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    wave: ActiveWave | null
+    loading: boolean
+    error: boolean
+    content?: LandingHeroContent
+  }>(),
+  { content: () => landingDefaults.hero },
+)
 
 const waveDetails = computed(() => {
   if (!props.wave) return null
@@ -25,12 +33,11 @@ const waveDetails = computed(() => {
     <div class="hero-spread">
       <div class="hero-copy">
         <p class="hero-school">
-          Penerimaan Santri Baru · MTs Persis 241 Al-Ikhlash
+          {{ content.eyebrow }}
         </p>
-        <h1>Di sini, cerita<br />barumu dimulai.</h1>
+        <h1><LandingLines :lines="content.titleLines" /></h1>
         <p class="hero-description">
-          Kenali lingkungan belajarmu, siapkan langkah berikutnya. Pendaftaran
-          santri baru MTs Persis 241 Al-Ikhlash dimulai dari sini.
+          {{ content.description }}
         </p>
         <div class="hero-actions">
           <Button
@@ -38,12 +45,12 @@ const waveDetails = computed(() => {
             size="lg"
             class="hero-register"
           >
-            <RouterLink to="/login">Mulai pendaftaran</RouterLink>
+            <RouterLink to="/login">{{ content.registerLabel }}</RouterLink>
           </Button>
           <a
             href="#alur"
             class="hero-guide"
-            >Lihat cara mendaftar</a
+            >{{ content.guideLabel }}</a
           >
         </div>
         <a
@@ -54,35 +61,38 @@ const waveDetails = computed(() => {
             class="explore-line"
             aria-hidden="true"
           />
-          Mengenal MTs Persis 241 Al-Ikhlash lebih dekat
+          {{ content.exploreLabel }}
         </a>
       </div>
 
       <div class="hero-photographs">
         <figure class="hero-school-photo">
           <img
-            src="/hero/baiat.webp"
-            alt="Santri berbaris khidmat dalam upacara bai'at di MTs Persis 241 Al-Ikhlash"
+            :src="imageUrl(content.schoolPhoto.image)"
+            :alt="content.schoolPhoto.alt"
             width="1600"
             height="1066"
             fetchpriority="high"
           />
           <figcaption>
-            Bai'at santri, upacara rutin di MTs Persis 241 Al-Ikhlash
+            {{ content.schoolPhoto.caption }}
           </figcaption>
         </figure>
         <figure class="hero-study-photo">
           <img
-            src="/hero/tahfidz.webp"
-            alt="Santri menghafal Al-Qur'an bersama pembimbing"
+            :src="imageUrl(content.studyPhoto.image)"
+            :alt="content.studyPhoto.alt"
             width="1600"
             height="1066"
           />
           <figcaption>
-            Tahfidz Al-Qur'an <span>Program unggulan</span>
+            {{ content.studyPhoto.title }}
+            <span>{{ content.studyPhoto.tag }}</span>
           </figcaption>
         </figure>
-        <p class="hero-photo-note">Awal langkah.<br />Banyak cerita.</p>
+        <p class="hero-photo-note">
+          <LandingLines :lines="content.photoNoteLines" />
+        </p>
       </div>
     </div>
 

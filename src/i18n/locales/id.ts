@@ -9,6 +9,7 @@ export default {
     documentReview: 'Verifikasi Berkas',
     download: 'Unduhan',
     enrolment: 'Daftar Ulang',
+    landing: 'Halaman Depan',
     form: 'Formulir',
     myProfile: 'Profil Saya',
     payment: 'Pembayaran',

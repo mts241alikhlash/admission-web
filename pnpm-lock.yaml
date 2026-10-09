@@ -104,8 +104,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       '@mts241alikhlash/admission-api':
-        specifier: ^2.8.0
-        version: 2.8.0
+        specifier: ^2.9.0
+        version: 2.9.0
       '@types/node':
         specifier: ^24.10.0
         version: 24.13.3
@@ -483,8 +483,8 @@ packages:
   '@mts241alikhlash/academic-api@1.1.0':
     resolution: {integrity: sha512-tl7LQ4kiNcYfmvjEvuS80H5FrVamdZSq4kas6Vfr+/jcAdYhIiCOa/naj1oK0+Vv2fWQX1h5fdfQimpxqUTCcQ==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/academic-api/1.1.0/1d34c08bd9598812d0d5bebe7ce783c2dd63c4e8}
 
-  '@mts241alikhlash/admission-api@2.8.0':
-    resolution: {integrity: sha512-mYR6etCI7OOH0m5jUKUcPNykXqmqrBH//ShCsqzNrWwSPrXRh0NR4OkaHK+5YBVFIjnB1UuMmZ+KBOnFdKEoQg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/2.8.0/e91f9809528d0d7f74c4674eecf54096ffd2285c}
+  '@mts241alikhlash/admission-api@2.9.0':
+    resolution: {integrity: sha512-fL8+VSPtNJMczYl4pDOUu4dWbBVSyY6EARKSDadtV8ZLDFYP8aCM5v3DfcxHuFvwNterCIT5wVGf7xhIc1eVBg==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/2.9.0/359b59e28181a5aea9661c459445b11e3fe6d275}
 
   '@mts241alikhlash/ui@1.4.0':
     resolution: {integrity: sha512-q56EiEmz+1NGhYcmw9JNE/YCv3fRGkN2NbSAG0ug7n1DO+Ozeg4UPOS6sw5M27iuN9g9JduvDr+WfzQfkAWlqw==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.4.0/039e34ac49227f3eb68e962be504c819c9538646}
@@ -3167,7 +3167,7 @@ snapshots:
     dependencies:
       openapi-fetch: 0.17.0
 
-  '@mts241alikhlash/admission-api@2.8.0':
+  '@mts241alikhlash/admission-api@2.9.0':
     dependencies:
       openapi-fetch: 0.17.0
 

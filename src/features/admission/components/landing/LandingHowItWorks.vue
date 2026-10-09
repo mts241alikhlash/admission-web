@@ -1,31 +1,16 @@
 <script setup lang="ts">
-const steps = [
-  {
-    title: 'Buat akun',
-    description:
-      'Daftar dengan email aktif, lalu masuk untuk memulai pendaftaran.',
-  },
-  {
-    title: 'Isi formulir',
-    description:
-      'Lengkapi data diri, orang tua atau wali, alamat, sekolah asal, dan prestasi. Bisa dilanjutkan kapan saja sebelum dikirim.',
-  },
-  {
-    title: 'Unggah berkas',
-    description:
-      'Foto atau pindai dokumen persyaratan, lalu unggah dari akunmu.',
-  },
-  {
-    title: 'Bayar biaya pendaftaran',
-    description:
-      'Unggah bukti pembayaran. Kursimu terjamin setelah panitia mengonfirmasinya.',
-  },
-  {
-    title: 'Kirim dan pantau',
-    description:
-      'Kirim pendaftaran, lalu pantau status dan pengumuman. Jika ada yang perlu diperbaiki, panitia akan memberi catatan.',
-  },
-]
+import { landingDefaults } from '../../data/landingDefaults'
+import type { LandingStepsContent } from '../../types/landing'
+
+withDefaults(defineProps<{ content?: LandingStepsContent }>(), {
+  content: () => landingDefaults.steps,
+})
+
+const COLUMNS = {
+  3: 'lg:grid-cols-3',
+  4: 'lg:grid-cols-4',
+  5: 'lg:grid-cols-5',
+} as const
 </script>
 
 <template>
@@ -37,19 +22,19 @@ const steps = [
         <h2
           class="font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight sm:text-5xl"
         >
-          Tahapan pendaftaran
+          {{ content.title }}
         </h2>
         <p class="max-w-md text-sm leading-7 text-slate-200">
-          Lima langkah dari membuat akun sampai pengumuman hasil, semuanya bisa
-          diselesaikan dari rumah.
+          {{ content.description }}
         </p>
       </div>
 
       <ol
-        class="mt-10 grid border-t border-white/30 sm:grid-cols-2 lg:grid-cols-5"
+        class="mt-10 grid border-t border-white/30 sm:grid-cols-2"
+        :class="COLUMNS[content.items.length as 3 | 4 | 5]"
       >
         <li
-          v-for="(step, index) in steps"
+          v-for="(step, index) in content.items"
           :key="step.title"
           class="grid grid-cols-[2.5rem_1fr] gap-x-4 border-b border-white/30 py-6 sm:block sm:pr-8 lg:border-r lg:pl-5 lg:first:pl-0 lg:last:border-r-0"
         >
