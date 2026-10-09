@@ -1,55 +1,19 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import { useLoopCarousel } from '../../composables/useLoopCarousel'
+import { imageUrl } from '../../composables/useLandingContent'
+import { landingDefaults } from '../../data/landingDefaults'
+import type { LandingLifeContent } from '../../types/landing'
+import LandingLines from './LandingLines.vue'
 
-const photos = [
-  {
-    src: '/hero/baiat.webp',
-    alt: "Santri berbaris khidmat dalam upacara bai'at",
-    title: "Bai'at Santri",
-    caption:
-      'Upacara rutin tempat santri berikrar dan menumbuhkan kedisiplinan.',
-  },
-  {
-    src: '/hero/tahfidz.webp',
-    alt: "Santri menghafal Al-Qur'an bersama pembimbing",
-    title: "Tahfidz Al-Qur'an",
-    caption:
-      "Program unggulan madrasah untuk mencetak generasi penghafal Al-Qur'an.",
-  },
-  {
-    src: '/hero/mabit-rg.webp',
-    alt: 'Santri mengikuti mabit Rijaalul Ghad',
-    title: 'Mabit Rijaalul Ghad',
-    caption:
-      'Program pembentukan iman, takwa, dan karakter santri melalui bina malam.',
-  },
-  {
-    src: '/hero/mabit-ug.webp',
-    alt: 'Santri mengikuti mabit Ummahatul Ghad',
-    title: 'Mabit Ummahatul Ghad',
-    caption:
-      'Program pembentukan iman, takwa, dan karakter santri melalui bina malam.',
-  },
-  {
-    src: '/hero/rapat-orangtua.webp',
-    alt: 'Orang tua santri menghadiri pertemuan di madrasah',
-    title: 'Rapat Orang Tua',
-    caption: 'Madrasah dan orang tua berjalan bersama.',
-  },
-  {
-    src: '/hero/inhouse-training.webp',
-    alt: 'Guru mengikuti in-house training',
-    title: 'In-House Training Guru',
-    caption: 'Guru terus belajar demi mutu pendidikan yang lebih baik.',
-  },
-  {
-    src: '/hero/rapat-evaluasi.webp',
-    alt: 'Guru dan staf dalam rapat evaluasi',
-    title: 'Rapat Evaluasi',
-    caption: 'Evaluasi bersama agar pembelajaran terus membaik.',
-  },
-]
+const props = withDefaults(defineProps<{ content?: LandingLifeContent }>(), {
+  content: () => landingDefaults.life,
+})
+
+const photos = props.content.photos.map((photo) => ({
+  ...photo,
+  src: imageUrl(photo.image),
+}))
 
 const { bindTrack, current, onScroll, go, loop } = useLoopCarousel(
   photos.length,
@@ -65,11 +29,12 @@ const loopedPhotos = loop(photos)
   >
     <div class="life-text">
       <div class="life-intro">
-        <p class="life-label">Mengenal MTs Persis 241 Al-Ikhlash</p>
-        <h2 id="school-life-title">Ada cerita<br />di setiap sudutnya.</h2>
+        <p class="life-label">{{ content.label }}</p>
+        <h2 id="school-life-title">
+          <LandingLines :lines="content.titleLines" />
+        </h2>
         <p class="life-description">
-          Sebelum menjadi bagian dari MTs Persis 241 Al-Ikhlash, lihat lebih
-          dekat suasana yang akan menjadi bagian dari cerita sekolahmu.
+          {{ content.description }}
         </p>
       </div>
 
@@ -82,8 +47,8 @@ const loopedPhotos = loop(photos)
       </div>
 
       <div class="life-footnote">
-        <p>Setiap perjalanan dimulai dengan mengenal.</p>
-        <a href="#gelombang">Lihat jadwal pendaftaran</a>
+        <p>{{ content.footnote }}</p>
+        <a href="#gelombang">{{ content.linkLabel }}</a>
       </div>
     </div>
 
