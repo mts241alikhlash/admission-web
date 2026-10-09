@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import { Button } from '@mts241alikhlash/ui/button'
+import { landingDefaults } from '../../data/landingDefaults'
+import { imageUrl } from '../../composables/useLandingContent'
+import type { LandingClosingContent } from '../../types/landing'
+
+withDefaults(defineProps<{ content?: LandingClosingContent }>(), {
+  content: () => landingDefaults.closing,
+})
 </script>
 
 <template>
@@ -10,30 +17,29 @@ import { Button } from '@mts241alikhlash/ui/button'
   >
     <div class="closing-photo landing-photo-reveal">
       <img
-        src="/hero/rapat-orangtua.webp"
-        alt="Orang tua santri menghadiri pertemuan di MTs Persis 241 Al-Ikhlash"
+        :src="imageUrl(content.photo.image)"
+        :alt="content.photo.alt"
         width="1600"
         height="1066"
         loading="lazy"
       />
     </div>
     <div class="closing-copy">
-      <h2 id="closing-title">Sampai bertemu di MTs Persis 241 Al-Ikhlash.</h2>
+      <h2 id="closing-title">{{ content.title }}</h2>
       <p class="closing-description">
-        Mulai dengan satu akun. Lengkapi formulir, kirim berkas, dan ikuti
-        perkembangan pendaftaran dari rumah.
+        {{ content.description }}
       </p>
       <Button
         as-child
         size="lg"
         class="closing-button"
       >
-        <RouterLink to="/login">Mulai pendaftaran</RouterLink>
+        <RouterLink to="/login">{{ content.registerLabel }}</RouterLink>
       </Button>
       <a
         href="#persyaratan"
         class="closing-requirements"
-        >Periksa persyaratan terlebih dahulu</a
+        >{{ content.requirementsLabel }}</a
       >
     </div>
   </section>

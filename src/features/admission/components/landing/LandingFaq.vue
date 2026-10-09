@@ -2,49 +2,14 @@
 import { computed } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { useInView } from '../../composables/useInView'
+import { landingDefaults } from '../../data/landingDefaults'
+import type { LandingFaqContent } from '../../types/landing'
 
-const questions = [
-  {
-    question: 'Bagaimana cara memulai pendaftaran?',
-    answer:
-      'Pilih Mulai pendaftaran, lalu masuk dengan akunmu. Belum punya akun? Daftar dulu dengan email aktif.',
-  },
-  {
-    question: 'Apakah formulir bisa diisi sedikit demi sedikit?',
-    answer:
-      'Bisa. Isi sebisanya, simpan, dan lanjutkan kapan saja dari akunmu. Pendaftaran baru diproses setelah kamu menekan kirim.',
-  },
-  {
-    question: 'Berkas apa yang harus disiapkan?',
-    answer:
-      'Daftar lengkapnya ada di bagian Persyaratan di atas. Siapkan dalam bentuk JPG, PNG, atau PDF dengan ukuran di bawah 5 MB per berkas.',
-  },
-  {
-    question: 'Bagaimana cara membayar biaya pendaftaran?',
-    answer:
-      'Transfer ke salah satu rekening yang tampil di langkah Pembayaran pada akunmu, lalu unggah bukti transfernya. Panitia akan memeriksanya.',
-  },
-  {
-    question: 'Kapan kursiku dipastikan aman?',
-    answer:
-      'Setelah panitia mengonfirmasi pembayaranmu. Kursi setiap gelombang terbatas, jadi sebaiknya bayar lebih awal.',
-  },
-  {
-    question: 'Bisakah data diubah setelah dikirim?',
-    answer:
-      'Data terkunci setelah dikirim. Kamu bisa mengubahnya lagi hanya jika panitia meminta perbaikan.',
-  },
-  {
-    question: 'Bagaimana kalau ada berkas yang perlu diperbaiki?',
-    answer:
-      'Panitia akan menulis catatannya di akunmu. Baca catatannya, lalu unggah ulang berkas yang diminta.',
-  },
-  {
-    question: 'Bagaimana cara mengetahui status pendaftaran?',
-    answer:
-      'Masuk ke akunmu. Status formulir, berkas, pembayaran, dan pengumuman dari panitia ada di sana.',
-  },
-]
+const props = withDefaults(defineProps<{ content?: LandingFaqContent }>(), {
+  content: () => landingDefaults.faq,
+})
+
+const questions = props.content.items
 
 const columns = computed(() => {
   const half = Math.ceil(questions.length / 2)
@@ -64,11 +29,10 @@ const { target, visible } = useInView()
         <h2
           class="max-w-xl font-[Georgia,serif] text-4xl font-normal leading-[1.1] tracking-tight text-[#203f73] sm:text-5xl"
         >
-          Pertanyaan seputar pendaftaran
+          {{ content.title }}
         </h2>
         <p class="max-w-md text-sm leading-7 text-slate-600">
-          Jawaban singkat untuk hal yang sering ditanyakan calon santri dan
-          orang tua.
+          {{ content.description }}
         </p>
       </div>
 
