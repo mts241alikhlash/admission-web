@@ -107,7 +107,7 @@ describe('useLoopCarousel start position', () => {
   it('stops re-centring once the arrows or dots moved the track', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: false }))
     const { track, api } = mountCarousel(7, 608)
-    track.scrollTo = vi.fn() as unknown as typeof track.scrollTo
+    track.scrollTo = vi.fn()
     observers[0].callback()
 
     api.go(1)

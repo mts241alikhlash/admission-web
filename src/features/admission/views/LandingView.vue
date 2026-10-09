@@ -95,7 +95,15 @@ onMounted(() => {
       id="landing-main"
       tabindex="-1"
     >
-      <template v-if="landing.ready.value">
+      <p
+        v-if="landing.ready.value && landing.error.value"
+        data-test="draft-error"
+        role="alert"
+        class="mx-auto max-w-xl p-8 text-center text-sm"
+      >
+        Pratinjau draf gagal dimuat. Kembali ke pengaturan, lalu coba lagi.
+      </p>
+      <template v-else-if="landing.ready.value">
         <LandingHero
           :content="content.hero"
           :error="hasError"

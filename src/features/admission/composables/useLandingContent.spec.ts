@@ -92,6 +92,51 @@ describe('useLandingContent', () => {
     expect(landing.ready.value).toBe(true)
   })
 
+  it('reports an error instead of the built-in content when the draft cannot be loaded', async () => {
+    api.getLandingDraft.mockRejectedValue(new Error('down'))
+    const landing = useLandingContent('draft')
+
+    await landing.load()
+
+    expect(landing.error.value).toBe(true)
+    expect(landing.ready.value).toBe(true)
+  })
+
+  it('waits for a slow draft instead of falling back after the timeout', async () => {
+    vi.useFakeTimers()
+    let answer: (value: unknown) => void = () => undefined
+    api.getLandingDraft.mockReturnValue(
+      new Promise((resolve) => (answer = resolve)),
+    )
+    const landing = useLandingContent('draft')
+
+    const loading = landing.load()
+    await vi.advanceTimersByTimeAsync(LANDING_CONTENT_TIMEOUT_MS + 1000)
+    expect(landing.ready.value).toBe(false)
+
+    answer({
+      data: {
+        data: {
+          sections: { ...none, closing },
+          hasUnpublishedChanges: true,
+          publishedAt: null,
+        },
+      },
+    })
+    await loading
+
+    expect(landing.ready.value).toBe(true)
+    expect(landing.error.value).toBe(false)
+    expect(landing.content.value.closing.title).toBe('Judul baru')
+  })
+
+  it('does not report an error for the public page, which falls back silently', async () => {
+    api.getLandingPublished.mockRejectedValue(new Error('down'))
+    const landing = useLandingContent('published')
+    await landing.load()
+    expect(landing.error.value).toBe(false)
+  })
+
   it('falls back after the timeout and ignores a late answer', async () => {
     vi.useFakeTimers()
     let answer: (value: unknown) => void = () => undefined

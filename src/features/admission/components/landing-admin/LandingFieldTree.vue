@@ -82,6 +82,10 @@ function itemTitle(
           :model-value="text(field.name)"
           :maxlength="field.max"
           :disabled="disabled"
+          :aria-invalid="errors[at(field.name)] ? 'true' : undefined"
+          :aria-describedby="
+            errors[at(field.name)] ? `e-${at(field.name)}` : undefined
+          "
           rows="3"
           @update:model-value="emit('change', at(field.name), $event)"
         />
@@ -92,10 +96,15 @@ function itemTitle(
           :model-value="text(field.name)"
           :maxlength="field.max"
           :disabled="disabled"
+          :aria-invalid="errors[at(field.name)] ? 'true' : undefined"
+          :aria-describedby="
+            errors[at(field.name)] ? `e-${at(field.name)}` : undefined
+          "
           @update:model-value="emit('change', at(field.name), $event)"
         />
         <p
           v-if="errors[at(field.name)]"
+          :id="`e-${at(field.name)}`"
           role="alert"
           class="text-xs text-destructive"
         >

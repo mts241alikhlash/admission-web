@@ -134,4 +134,28 @@ describe('LandingImageField', () => {
     ).toBeDefined()
     expect(wrapper.text()).toContain('Pilih foto.')
   })
+
+  it('names every button after the image it belongs to and keeps the hidden file input out of the tab order', () => {
+    const wrapper = mountField({
+      label: 'Poster (potret 9:16)',
+      modelValue: { imageId: 'abc' },
+      builtIn: '/hero/baiat.webp',
+      optional: true,
+    })
+    expect(
+      wrapper.findAll('button').map((b) => b.attributes('aria-label')),
+    ).toEqual([
+      'Ganti foto: Poster (potret 9:16)',
+      'Pakai foto bawaan: Poster (potret 9:16)',
+      'Hapus foto: Poster (potret 9:16)',
+    ])
+    expect(wrapper.get('input[type="file"]').attributes('tabindex')).toBe('-1')
+  })
+
+  it('names the upload button after the image when empty', () => {
+    const wrapper = mountField({ label: 'Foto besar' })
+    expect(wrapper.get('button').attributes('aria-label')).toBe(
+      'Unggah foto: Foto besar',
+    )
+  })
 })

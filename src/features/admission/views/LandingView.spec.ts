@@ -128,6 +128,18 @@ describe('LandingView', () => {
     )
   })
 
+  it('shows an error, not the built-in page, when the draft cannot be loaded', async () => {
+    landingApi.getLandingDraft.mockRejectedValue(new Error('down'))
+    const wrapper = mountView({ mode: 'draft' })
+    await flushPromises()
+
+    expect(wrapper.find('h1').exists()).toBe(false)
+    expect(wrapper.get('[data-test="draft-error"]').text()).toContain(
+      'Pratinjau draf gagal dimuat',
+    )
+    expect(wrapper.find('[data-test="draft-banner"]').exists()).toBe(true)
+  })
+
   it('shows no banner for visitors', async () => {
     const wrapper = mountView()
     await flushPromises()

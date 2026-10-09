@@ -166,4 +166,17 @@ describe('LandingFieldTree', () => {
         .every((el) => el.attributes('disabled') !== undefined),
     ).toBe(true)
   })
+
+  it('marks a field with an error as invalid and ties the message to it', () => {
+    const wrapper = mountTree('faq', landingDefaults.faq, {
+      errors: { title: 'Wajib diisi.' },
+    })
+    const input = wrapper.get('input[name="title"]')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    const message = wrapper.get(`#${input.attributes('aria-describedby')}`)
+    expect(message.text()).toBe('Wajib diisi.')
+    expect(
+      wrapper.get('input[name="items.0.question"]').attributes('aria-invalid'),
+    ).toBeUndefined()
+  })
 })

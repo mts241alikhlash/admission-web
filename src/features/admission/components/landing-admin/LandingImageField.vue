@@ -85,6 +85,7 @@ async function onPick(event: Event) {
           type="file"
           accept="image/jpeg,image/png,image/webp"
           class="sr-only"
+          tabindex="-1"
           :disabled="disabled || uploading"
           @change="onPick"
         />
@@ -92,6 +93,7 @@ async function onPick(event: Event) {
           type="button"
           variant="outline"
           class="min-h-11"
+          :aria-label="`${uploading ? 'Mengunggah' : preview ? 'Ganti foto' : 'Unggah foto'}: ${label}`"
           :disabled="disabled || uploading"
           @click="input?.click()"
         >
@@ -104,6 +106,7 @@ async function onPick(event: Event) {
           type="button"
           variant="ghost"
           class="min-h-11"
+          :aria-label="`Pakai foto bawaan: ${label}`"
           :disabled="disabled || uploading"
           @click="emit('update:modelValue', { src: builtIn })"
         >
@@ -114,6 +117,7 @@ async function onPick(event: Event) {
           type="button"
           variant="ghost"
           class="min-h-11"
+          :aria-label="`Hapus foto: ${label}`"
           :disabled="disabled || uploading"
           @click="emit('update:modelValue', null)"
         >

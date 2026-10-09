@@ -29,6 +29,7 @@ export function mergeLandingContent(
 export function useLandingContent(mode: 'published' | 'draft') {
   const content = ref<LandingContent>(landingDefaults)
   const ready = ref(false)
+  const error = ref(false)
 
   async function fetchSections() {
     if (mode === 'draft') {
@@ -38,6 +39,15 @@ export function useLandingContent(mode: 'published' | 'draft') {
   }
 
   async function load() {
+    if (mode === 'draft') {
+      try {
+        content.value = mergeLandingContent(await fetchSections())
+      } catch {
+        error.value = true
+      }
+      ready.value = true
+      return
+    }
     const timeout = new Promise<null>((resolve) =>
       setTimeout(() => resolve(null), LANDING_CONTENT_TIMEOUT_MS),
     )
@@ -49,5 +59,5 @@ export function useLandingContent(mode: 'published' | 'draft') {
     ready.value = true
   }
 
-  return { content, ready, load }
+  return { content, ready, error, load }
 }
