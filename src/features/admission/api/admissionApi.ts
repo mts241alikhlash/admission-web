@@ -3,6 +3,7 @@ import type {
   ApiPaginatedResponse,
   ApiSingleResponse,
 } from '@mts241alikhlash/web-shared/types/api'
+import type { LandingDraftOverview, LandingPublished } from '../types/landing'
 import type {
   ActiveWaves,
   AdmissionActiveDownload,
@@ -411,6 +412,15 @@ export const admissionApi = {
 
   downloadFileUrl: (id: string) =>
     `${api.defaults.baseURL ?? ''}/admissions/downloads/${id}/file`,
+
+  getLandingPublished: () =>
+    api.get<{ data: LandingPublished }>('/admissions/landing'),
+
+  getLandingDraft: () =>
+    api.get<{ data: LandingDraftOverview }>('/admissions/landing/draft'),
+
+  landingImageUrl: (id: string) =>
+    `${api.defaults.baseURL ?? ''}/admissions/landing/images/${id}`,
 
   getPaymentQueue: (params: PaymentQueueQuery) =>
     api.get<AdmissionPaymentQueue>('/admissions/payments', { params }),
