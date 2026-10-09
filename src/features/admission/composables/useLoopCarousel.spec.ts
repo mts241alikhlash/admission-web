@@ -1,111 +1,149 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import { useLoopCarousel } from './useLoopCarousel'
 
-type Resize = () => void
+const STEP = 100
 
-const observers: { callback: Resize; target: Element | null }[] = []
-
-class FakeResizeObserver {
-  private entry: { callback: Resize; target: Element | null }
-
-  constructor(callback: Resize) {
-    this.entry = { callback, target: null }
-    observers.push(this.entry)
-  }
-
-  observe(target: Element) {
-    this.entry.target = target
-  }
-
-  unobserve() {
-    this.entry.target = null
-  }
-
-  disconnect() {
-    this.entry.target = null
-  }
-}
-
-function layout(track: HTMLElement, count: number, step: number) {
-  Array.from(track.children).forEach((child, index) => {
-    Object.defineProperty(child, 'offsetLeft', {
-      value: index * step,
-      configurable: true,
-    })
-    Object.defineProperty(child, 'offsetWidth', {
-      value: step - 16,
-      configurable: true,
-    })
-  })
-  void count
-}
-
-function mountCarousel(count: number, firstStep: number) {
+function mountCarousel(count: number) {
   let api!: ReturnType<typeof useLoopCarousel>
-  const Harness = defineComponent({
-    setup() {
-      api = useLoopCarousel(count)
-      return () =>
-        h(
-          'div',
-          { ref: api.bindTrack, class: 'track' },
-          Array.from({ length: count * 3 }, (_, index) =>
-            h('div', { key: index }),
-          ),
-        )
-    },
-  })
-  const wrapper = mount(Harness, { attachTo: document.body })
-  const track = wrapper.get('.track').element as HTMLElement
-  layout(track, count, firstStep)
-  return { wrapper, track, api }
+  let track!: HTMLElement
+  const wrapper = mount(
+    defineComponent({
+      setup() {
+        api = useLoopCarousel(count)
+        return () =>
+          h(
+            'div',
+            {
+              ref: (node: unknown) => {
+                api.bindTrack(node)
+                track = node as HTMLElement
+              },
+            },
+            Array.from({ length: count * api.copies }, (_, index) =>
+              h('div', { 'data-left': String(index * STEP) }),
+            ),
+          )
+      },
+    }),
+  )
+  return { wrapper, api, track: () => track }
 }
 
-beforeEach(() => {
-  observers.length = 0
-  vi.stubGlobal('ResizeObserver', FakeResizeObserver)
-})
+describe('useLoopCarousel', () => {
+  let reducedMotion = false
 
-afterEach(() => {
-  vi.unstubAllGlobals()
-  document.body.innerHTML = ''
-})
-
-describe('useLoopCarousel start position', () => {
-  it('starts on the first slide of the middle copy', () => {
-    const { track } = mountCarousel(7, 608)
-    layout(track, 7, 608)
-    observers[0].callback()
-    expect(track.scrollLeft).toBe(7 * 608)
+  beforeEach(() => {
+    vi.useFakeTimers()
+    reducedMotion = false
+    Object.defineProperty(HTMLElement.prototype, 'offsetLeft', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return Number(this.dataset.left ?? 0)
+      },
+    })
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get: () => STEP,
+    })
+    vi.stubGlobal('matchMedia', () => ({ matches: reducedMotion }))
   })
 
-  it('re-centres when the track is resized before the visitor touches it', () => {
-    const { track } = mountCarousel(7, 695)
-    track.scrollLeft = 7 * 695
-
-    layout(track, 7, 608)
-    observers[0].callback()
-
-    expect(track.scrollLeft).toBe(7 * 608)
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
-  it('stops re-centring once the visitor has interacted with the track', () => {
-    const { track } = mountCarousel(7, 608)
-    observers[0].callback()
-    track.dispatchEvent(new Event('pointerdown'))
-    track.scrollLeft = 7 * 608 + 300
+  it('repeats the items three times, tagged by copy, so the track can wrap', () => {
+    const { api } = mountCarousel(2)
 
-    layout(track, 7, 700)
-    observers[0].callback()
-
-    expect(track.scrollLeft).toBe(7 * 608 + 300)
+    expect(api.copies).toBe(3)
+    expect(api.middleCopy).toBe(1)
+    expect(api.loop([{ id: 'a' }, { id: 'b' }])).toEqual([
+      { id: 'a', copy: 0 },
+      { id: 'b', copy: 0 },
+      { id: 'a', copy: 1 },
+      { id: 'b', copy: 1 },
+      { id: 'a', copy: 2 },
+      { id: 'b', copy: 2 },
+    ])
   })
 
-  it('does not observe a single slide', () => {
-    mountCarousel(1, 608)
-    expect(observers.every((entry) => entry.target === null)).toBe(true)
+  it('does not repeat a single item', () => {
+    const { api } = mountCarousel(1)
+
+    expect(api.copies).toBe(1)
+    expect(api.middleCopy).toBe(0)
+    expect(api.loop([{ id: 'a' }])).toEqual([{ id: 'a', copy: 0 }])
+  })
+
+  it('starts on the middle copy', () => {
+    const { track } = mountCarousel(3)
+
+    expect(track().scrollLeft).toBe(3 * STEP)
+  })
+
+  it('reports the item in view, wrapping around the copies', () => {
+    const { api, track } = mountCarousel(3)
+
+    track().scrollLeft = 4 * STEP
+    api.onScroll()
+
+    expect(api.current.value).toBe(1)
+  })
+
+  it('jumps back to the middle copy once scrolling settles outside it', () => {
+    const { api, track } = mountCarousel(3)
+
+    track().scrollLeft = 1 * STEP
+    api.onScroll()
+    expect(api.current.value).toBe(1)
+    vi.advanceTimersByTime(120)
+
+    expect(track().scrollLeft).toBe(4 * STEP)
+  })
+
+  it('leaves the position alone while it is already on the middle copy', () => {
+    const { api, track } = mountCarousel(3)
+
+    track().scrollLeft = 4 * STEP
+    api.onScroll()
+    vi.advanceTimersByTime(120)
+
+    expect(track().scrollLeft).toBe(4 * STEP)
+  })
+
+  it('moves one item per step and smooth-scrolls unless motion is reduced', () => {
+    const { api, track } = mountCarousel(3)
+    const scrollTo = vi.fn()
+    track().scrollTo = scrollTo
+
+    api.go(1)
+    expect(scrollTo).toHaveBeenLastCalledWith({
+      left: 4 * STEP,
+      behavior: 'smooth',
+    })
+
+    reducedMotion = true
+    api.go(-1)
+    expect(scrollTo).toHaveBeenLastCalledWith({
+      left: 2 * STEP,
+      behavior: 'auto',
+    })
+  })
+
+  it('goes to a given item relative to the one in view', () => {
+    const { api, track } = mountCarousel(3)
+    const scrollTo = vi.fn()
+    track().scrollTo = scrollTo
+
+    api.goTo(2)
+
+    expect(scrollTo).toHaveBeenLastCalledWith({
+      left: 5 * STEP,
+      behavior: 'smooth',
+    })
   })
 })
