@@ -3,7 +3,12 @@ import type {
   ApiPaginatedResponse,
   ApiSingleResponse,
 } from '@mts241alikhlash/web-shared/types/api'
-import type { LandingDraftOverview, LandingPublished } from '../types/landing'
+import type {
+  LandingDraftOverview,
+  LandingImagePurpose,
+  LandingPublished,
+  LandingSectionKey,
+} from '../types/landing'
 import type {
   ActiveWaves,
   AdmissionActiveDownload,

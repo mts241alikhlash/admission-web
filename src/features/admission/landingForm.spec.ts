@@ -35,7 +35,7 @@ describe('LANDING_SECTIONS', () => {
       expect(
         validateSection(
           section(key).fields,
-          landingDefaults[key as keyof typeof landingDefaults],
+          landingDefaults[key],
         ),
       ).toEqual({})
     },

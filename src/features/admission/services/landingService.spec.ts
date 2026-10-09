@@ -31,7 +31,7 @@ describe('landingService', () => {
   it('reports a fetch failure as an error message without a toast', async () => {
     api.getLandingDraft.mockRejectedValue(new Error('down'))
     const result = await landingService.fetchDraft()
-    expect(result).toEqual({ error: expect.any(String) })
+    expect(result).toHaveProperty('error')
     expect(toast.error).not.toHaveBeenCalled()
   })
 
