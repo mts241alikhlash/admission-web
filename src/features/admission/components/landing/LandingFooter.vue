@@ -2,13 +2,14 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
-const props = defineProps<{ showDownloads?: boolean }>()
+const props = defineProps<{ showDownloads?: boolean; showInfo?: boolean }>()
 
 const currentYear = new Date().getFullYear()
 
 const navigationItems = computed(() => [
   { label: 'Mengenal', id: 'kehidupan' },
   { label: 'Gelombang', id: 'gelombang' },
+  ...(props.showInfo ? [{ label: 'Informasi PPDB', id: 'informasi' }] : []),
   { label: 'Alur Daftar', id: 'alur' },
   { label: 'Persyaratan', id: 'persyaratan' },
   ...(props.showDownloads ? [{ label: 'Unduhan', id: 'unduhan' }] : []),

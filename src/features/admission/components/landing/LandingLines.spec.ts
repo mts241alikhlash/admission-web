@@ -1,14 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
+import { h } from 'vue'
 import { mount } from '@vue/test-utils'
 import LandingLines from './LandingLines.vue'
 
 const rendered = (lines: string[]) =>
-  mount({
-    components: { LandingLines },
-    setup: () => ({ lines }),
-    template: '<p><LandingLines :lines="lines" /></p>',
-  }).get('p').element.innerHTML
+  mount({ render: () => h('p', [h(LandingLines, { lines })]) }).get('p').element
+    .innerHTML
 
 describe('LandingLines', () => {
   it('puts a line break between lines and none after the last', () => {

@@ -5,6 +5,7 @@ import LandingFaq from '../components/landing/LandingFaq.vue'
 import LandingFooter from '../components/landing/LandingFooter.vue'
 import LandingHero from '../components/landing/LandingHero.vue'
 import LandingHowItWorks from '../components/landing/LandingHowItWorks.vue'
+import LandingInfo from '../components/landing/LandingInfo.vue'
 import LandingNavbar from '../components/landing/LandingNavbar.vue'
 import LandingRequirements from '../components/landing/LandingRequirements.vue'
 import LandingWaveSection from '../components/landing/LandingWaveSection.vue'
@@ -12,7 +13,7 @@ import LandingLife from '../components/landing/LandingLife.vue'
 import LandingStories from '../components/landing/LandingStories.vue'
 import LandingCta from '../components/landing/LandingCta.vue'
 import LandingDownloads from '../components/landing/LandingDownloads.vue'
-import { landingStories } from '../data/landingStories'
+import { useLandingContent } from '../composables/useLandingContent'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
 import type {
   ActiveWave,
@@ -20,10 +21,16 @@ import type {
   AdmissionDocumentType,
 } from '../types'
 
+const props = withDefaults(defineProps<{ mode?: 'published' | 'draft' }>(), {
+  mode: 'published',
+})
+
 const route = useRoute()
 const router = useRouter()
 
 const { fetchActiveWaves, fetchActiveDownloads } = usePublicAdmission()
+const landing = useLandingContent(props.mode)
+const content = landing.content
 
 const waves = ref<ActiveWave[]>([])
 const documentTypes = ref<AdmissionDocumentType[]>([])
@@ -57,6 +64,7 @@ onMounted(() => {
     void router.replace({ name: 'login', query: route.query })
     return
   }
+  void landing.load()
   void loadAdmission()
   void loadDownloads()
 })
@@ -64,6 +72,15 @@ onMounted(() => {
 
 <template>
   <div class="admission-landing min-h-screen bg-[#f5f2e9] text-slate-950">
+    <div
+      v-if="mode === 'draft'"
+      data-test="draft-banner"
+      class="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-950"
+      role="status"
+    >
+      <span>Pratinjau draf — belum terbit</span>
+      <slot name="banner-action" />
+    </div>
     <a
       href="#landing-main"
       class="landing-skip-link"
@@ -75,49 +92,59 @@ onMounted(() => {
       id="landing-main"
       tabindex="-1"
     >
-      <LandingHero
-        :error="hasError"
-        :wave="primaryWave"
-        :loading="isLoading"
-      />
-      <LandingLife />
-      <div
-        v-if="hasError"
-        id="gelombang"
-        role="alert"
-        class="scroll-mt-14 border-b border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-950"
-      >
-        Informasi pendaftaran belum dapat dimuat. Silakan coba kembali.
-        <button
-          type="button"
-          class="ml-3 inline-flex min-h-11 items-center font-bold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-950"
-          @click="loadAdmission"
+      <template v-if="landing.ready.value">
+        <LandingHero
+          :content="content.hero"
+          :error="hasError"
+          :wave="primaryWave"
+          :loading="isLoading"
+        />
+        <LandingLife :content="content.life" />
+        <div
+          v-if="hasError"
+          id="gelombang"
+          role="alert"
+          class="scroll-mt-14 border-b border-amber-200 bg-amber-50 p-5 text-center text-sm text-amber-950"
         >
-          Coba lagi
-        </button>
-      </div>
-      <LandingWaveSection
-        v-if="!hasError"
-        id="gelombang"
-        :waves="waves"
-        :loading="isLoading"
-      />
-      <LandingHowItWorks id="alur" />
-      <LandingRequirements
-        id="persyaratan"
-        :document-types="documentTypes"
-        :loading="isLoading"
-      />
-      <LandingDownloads :downloads="downloads" />
-      <LandingStories
-        v-if="landingStories.length"
-        :stories="landingStories"
-      />
-      <LandingFaq id="faq" />
-      <LandingCta />
+          Informasi pendaftaran belum dapat dimuat. Silakan coba kembali.
+          <button
+            type="button"
+            class="ml-3 inline-flex min-h-11 items-center font-bold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-950"
+            @click="loadAdmission"
+          >
+            Coba lagi
+          </button>
+        </div>
+        <LandingWaveSection
+          v-if="!hasError"
+          id="gelombang"
+          :waves="waves"
+          :loading="isLoading"
+        />
+        <LandingInfo :content="content.info" />
+        <LandingHowItWorks
+          id="alur"
+          :content="content.steps"
+        />
+        <LandingRequirements
+          id="persyaratan"
+          :document-types="documentTypes"
+          :loading="isLoading"
+        />
+        <LandingDownloads :downloads="downloads" />
+        <LandingStories :content="content.stories" />
+        <LandingFaq
+          id="faq"
+          :content="content.faq"
+        />
+        <LandingCta :content="content.closing" />
+      </template>
     </main>
 
-    <LandingFooter :show-downloads="downloads.length > 0" />
+    <LandingFooter
+      :show-downloads="downloads.length > 0"
+      :show-info="content.info.posters.length > 0"
+    />
   </div>
 </template>
 

@@ -38,7 +38,6 @@ export function useLandingContent(mode: 'published' | 'draft') {
   }
 
   async function load() {
-    let settled = false
     const timeout = new Promise<null>((resolve) =>
       setTimeout(() => resolve(null), LANDING_CONTENT_TIMEOUT_MS),
     )
@@ -46,11 +45,8 @@ export function useLandingContent(mode: 'published' | 'draft') {
       fetchSections().catch(() => null),
       timeout,
     ])
-    if (!settled) {
-      settled = true
-      content.value = mergeLandingContent(sections)
-      ready.value = true
-    }
+    content.value = mergeLandingContent(sections)
+    ready.value = true
   }
 
   return { content, ready, load }

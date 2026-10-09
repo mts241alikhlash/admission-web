@@ -26,4 +26,20 @@ describe('LandingFooter', () => {
     const labels = links.map(([label]) => label)
     expect(labels.indexOf('Unduhan')).toBe(labels.indexOf('Persyaratan') + 1)
   })
+
+  it('links to the information posters, after Gelombang, only when they exist', () => {
+    const without = mountFooter({})
+      .findAll('a')
+      .map((link) => link.attributes('href'))
+    expect(without).not.toContain('#informasi')
+
+    const links = mountFooter({ showInfo: true })
+      .findAll('a')
+      .map((link) => [link.text(), link.attributes('href')])
+    expect(links).toContainEqual(['Informasi PPDB', '#informasi'])
+    const labels = links.map(([label]) => label)
+    expect(labels.indexOf('Informasi PPDB')).toBe(
+      labels.indexOf('Gelombang') + 1,
+    )
+  })
 })
