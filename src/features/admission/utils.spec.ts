@@ -6,6 +6,7 @@ import {
   documentSummaryText,
   formatDateRange,
   formatFileSize,
+  imageFileError,
   isWaveClosed,
   jakartaToday,
   pdfFileError,
@@ -164,5 +165,32 @@ describe('pdfFileError', () => {
     expect(
       pdfFileError(file('a.pdf', 'application/pdf', MAX_DOWNLOAD_BYTES + 1)),
     ).toBe('Ukuran berkas maksimal 5 MB.')
+  })
+})
+
+describe('imageFileError', () => {
+  const file = (name: string, type: string, size: number) => {
+    const picked = new File(['x'], name, { type })
+    Object.defineProperty(picked, 'size', { value: size })
+    return picked
+  }
+
+  it('accepts JPG, PNG and WebP up to the limit', () => {
+    expect(imageFileError(file('a.jpg', 'image/jpeg', 10))).toBeNull()
+    expect(imageFileError(file('a.png', 'image/png', 10))).toBeNull()
+    expect(imageFileError(file('A.WEBP', '', MAX_DOWNLOAD_BYTES))).toBeNull()
+  })
+
+  it('refuses other types, empty files and files over the limit', () => {
+    expect(imageFileError(file('a.gif', 'image/gif', 10))).toBe(
+      'Gambar harus JPG, PNG, atau WebP.',
+    )
+    expect(imageFileError(file('a.pdf', 'application/pdf', 10))).toBe(
+      'Gambar harus JPG, PNG, atau WebP.',
+    )
+    expect(imageFileError(file('a.png', 'image/png', 0))).toBe('Berkas kosong.')
+    expect(
+      imageFileError(file('a.png', 'image/png', MAX_DOWNLOAD_BYTES + 1)),
+    ).toBe('Ukuran gambar maksimal 5 MB.')
   })
 })

@@ -46,7 +46,12 @@ export const landingService = {
       'Gagal menyimpan draf.',
     ),
 
-  uploadImage: async (file: File, purpose: LandingImagePurpose) => {
+  uploadImage: async (
+    file: File,
+    purpose: LandingImagePurpose,
+  ): Promise<
+    { id: string; width: number; height: number } | { error: string }
+  > => {
     try {
       const { id, width, height } = (
         await admissionApi.uploadLandingImage(file, purpose)
