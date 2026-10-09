@@ -48,17 +48,44 @@ export function buildSectionSchema(fields: LandingField[]) {
   )
 }
 
+function itemChecks(
+  fields: LandingField[],
+  values: unknown,
+  prefix: string,
+  errors: Record<string, string>,
+) {
+  const node = (values ?? {}) as Record<string, unknown>
+  for (const field of fields) {
+    const at = prefix ? `${prefix}.${field.name}` : field.name
+    if (field.kind === 'group') {
+      itemChecks(field.fields, node[field.name], at, errors)
+    } else if (field.kind === 'list') {
+      const items = (node[field.name] as Record<string, unknown>[]) ?? []
+      items.forEach((item, index) => {
+        const found = field.itemCheck?.(item)
+        const itemPath = `${at}.${index}`
+        if (found && !(`${itemPath}.${found.path}` in errors)) {
+          errors[`${itemPath}.${found.path}`] = found.message
+        }
+        itemChecks(field.fields, item, itemPath, errors)
+      })
+    }
+  }
+}
+
 export function validateSection(
   fields: LandingField[],
   values: unknown,
 ): Record<string, string> {
-  const result = buildSectionSchema(fields).safeParse(values)
-  if (result.success) return {}
   const errors: Record<string, string> = {}
-  for (const issue of result.error.issues) {
-    const path = issue.path.join('.')
-    if (!(path in errors)) errors[path] = issue.message
+  const result = buildSectionSchema(fields).safeParse(values)
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const path = issue.path.join('.')
+      if (!(path in errors)) errors[path] = issue.message
+    }
   }
+  itemChecks(fields, values, '', errors)
   return errors
 }
 

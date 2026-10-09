@@ -1,4 +1,5 @@
 import type { LandingImagePurpose, LandingSectionKey } from '../types/landing'
+import { landingDefaults } from './landingDefaults'
 
 export type LandingField =
   | {
@@ -37,6 +38,9 @@ export type LandingField =
       titleField: string
       fields: LandingField[]
       blank: () => Record<string, unknown>
+      itemCheck?: (
+        item: Record<string, unknown>,
+      ) => { path: string; message: string } | null
     }
 
 export interface LandingSectionConfig {
@@ -64,6 +68,12 @@ const image = (
   purpose: LandingImagePurpose,
   extra: { optional?: boolean; builtIn?: string } = {},
 ): LandingField => ({ kind: 'image', name, label, purpose, ...extra })
+
+const SAMPLE_STORY_TEXTS = new Set(
+  landingDefaults.stories.items
+    .filter((story) => story.placeholder)
+    .flatMap((story) => [story.name, story.quote]),
+)
 
 export const LANDING_SECTIONS: LandingSectionConfig[] = [
   {
@@ -230,6 +240,15 @@ export const LANDING_SECTIONS: LandingSectionConfig[] = [
           { kind: 'tags', name: 'tags', label: 'Label', maxItems: 3, max: 60 },
           image('photo', 'Foto (opsional)', 'photo', { optional: true }),
         ],
+        itemCheck: (item) =>
+          SAMPLE_STORY_TEXTS.has(String(item.name)) ||
+          SAMPLE_STORY_TEXTS.has(String(item.quote))
+            ? {
+                path: 'name',
+                message:
+                  'Ini masih cerita contoh. Ganti dengan cerita nyata atau hapus.',
+              }
+            : null,
         blank: () => ({
           kind: '',
           quote: '',

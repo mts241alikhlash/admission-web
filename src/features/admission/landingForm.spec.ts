@@ -29,14 +29,47 @@ describe('LANDING_SECTIONS', () => {
     ])
   })
 
-  it.each(LANDING_SECTIONS.map((item) => item.key))(
-    'accepts the built-in content of %s',
-    (key) => {
-      expect(
-        validateSection(section(key).fields, landingDefaults[key]),
-      ).toEqual({})
-    },
-  )
+  it.each(
+    LANDING_SECTIONS.map((item) => item.key).filter((key) => key !== 'stories'),
+  )('accepts the built-in content of %s', (key) => {
+    expect(validateSection(section(key).fields, landingDefaults[key])).toEqual(
+      {},
+    )
+  })
+
+  it('refuses the sample stories so they cannot go live as real testimonials', () => {
+    const errors = validateSection(
+      section('stories').fields,
+      landingDefaults.stories,
+    )
+    expect(errors['items.0.name']).toBe(
+      'Ini masih cerita contoh. Ganti dengan cerita nyata atau hapus.',
+    )
+    expect(Object.keys(errors).sort()).toEqual([
+      'items.0.name',
+      'items.1.name',
+      'items.2.name',
+    ])
+  })
+
+  it('accepts a real story, and a sample that was rewritten', () => {
+    const stories = cloneContent(landingDefaults.stories)
+    stories.items[0] = {
+      ...stories.items[0],
+      name: 'Ani Wulandari',
+      quote: 'Terima kasih guru-guruku.',
+    }
+    stories.items = [stories.items[0]]
+    expect(validateSection(section('stories').fields, stories)).toEqual({})
+  })
+
+  it('refuses a story that keeps the sample quote under a new name', () => {
+    const stories = cloneContent(landingDefaults.stories)
+    stories.items = [{ ...stories.items[0], name: 'Ani Wulandari' }]
+    expect(
+      validateSection(section('stories').fields, stories)['items.0.name'],
+    ).toBe('Ini masih cerita contoh. Ganti dengan cerita nyata atau hapus.')
+  })
 })
 
 describe('validateSection', () => {
@@ -127,8 +160,15 @@ describe('validateSection', () => {
     info.posters = [{ image: { imageId: 'abc' }, alt: 'Poster', caption: '' }]
     expect(validateSection(section('info').fields, info)).toEqual({})
     const stories = cloneContent(landingDefaults.stories)
-    stories.items[0].photo = null
-    stories.items[0].position = ''
+    stories.items = [
+      {
+        ...stories.items[0],
+        name: 'Ani Wulandari',
+        quote: 'Terima kasih guru-guruku.',
+        photo: null,
+        position: '',
+      },
+    ]
     expect(validateSection(section('stories').fields, stories)).toEqual({})
   })
 

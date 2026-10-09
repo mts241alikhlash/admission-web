@@ -38,12 +38,10 @@ const action = ref<'publish' | 'discard'>('publish')
 const busy = ref(false)
 const formsVersion = ref(0)
 
-const activeConfig = computed(() =>
-  LANDING_SECTIONS.find((section) => section.key === active.value)!,
-)
-const sectionContent = computed(
-  () => overview.value?.sections[active.value] ?? landingDefaults[active.value],
-)
+function sectionContent(key: LandingSectionKey) {
+  return overview.value?.sections[key] ?? landingDefaults[key]
+}
+
 const anyDirty = computed(() => dirtyKeys.value.size > 0)
 
 function ask(next: 'publish' | 'discard') {
@@ -59,14 +57,14 @@ async function load() {
   loading.value = false
 }
 
-function onSaved(next: LandingDraftOverview) {
+function onSaved(key: LandingSectionKey, next: LandingDraftOverview) {
   overview.value = next
-  dirtyKeys.value.delete(active.value)
+  dirtyKeys.value.delete(key)
 }
 
-function onDirty(value: boolean) {
-  if (value) dirtyKeys.value.add(active.value)
-  else dirtyKeys.value.delete(active.value)
+function onDirty(key: LandingSectionKey, value: boolean) {
+  if (value) dirtyKeys.value.add(key)
+  else dirtyKeys.value.delete(key)
   dirtyKeys.value = new Set(dirtyKeys.value)
 }
 
@@ -80,8 +78,10 @@ async function run(chosen: 'publish' | 'discard') {
   confirmOpen.value = false
   if ('error' in result) return
   overview.value = result.overview
-  dirtyKeys.value = new Set()
-  formsVersion.value += 1
+  if (chosen === 'discard') {
+    dirtyKeys.value = new Set()
+    formsVersion.value += 1
+  }
 }
 
 function confirmLeave() {
@@ -151,7 +151,9 @@ const publishedLabel = computed(() =>
                 {{
                   overview.hasUnpublishedChanges
                     ? 'Ada perubahan belum diterbitkan'
-                    : 'Sudah terbit'
+                    : overview.publishedAt
+                      ? 'Sudah terbit'
+                      : 'Isi bawaan'
                 }}
               </Badge>
               <p class="text-xs text-muted-foreground">{{ publishedLabel }}</p>
@@ -198,12 +200,14 @@ const publishedLabel = computed(() =>
           </Tabs>
 
           <LandingSectionForm
-            :key="`${active}-${formsVersion}`"
-            :config="activeConfig"
-            :initial="sectionContent"
+            v-for="section in LANDING_SECTIONS"
+            v-show="active === section.key"
+            :key="`${section.key}-${formsVersion}`"
+            :config="section"
+            :initial="sectionContent(section.key)"
             :disabled="!canUpdate"
-            @saved="onSaved"
-            @dirty="onDirty"
+            @saved="onSaved(section.key, $event)"
+            @dirty="onDirty(section.key, $event)"
           />
         </template>
       </div>

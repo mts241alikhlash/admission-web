@@ -113,6 +113,18 @@ describe('LandingSettingsView', () => {
   })
 
   it('shows the state: published or pending changes', async () => {
+    const builtIn = mountView()
+    await flushPromises()
+    expect(builtIn.get('[data-test="landing-status"]').text()).toContain(
+      'Isi bawaan',
+    )
+    expect(builtIn.get('[data-test="landing-status"]').text()).not.toContain(
+      'Sudah terbit',
+    )
+
+    service.fetchDraft.mockResolvedValue({
+      overview: overview({ publishedAt: '2026-10-09T10:00:00.000Z' }),
+    })
     const clean = mountView()
     await flushPromises()
     expect(clean.get('[data-test="landing-status"]').text()).toContain(
@@ -127,6 +139,62 @@ describe('LandingSettingsView', () => {
     expect(pending.get('[data-test="landing-status"]').text()).toContain(
       'Ada perubahan belum diterbitkan',
     )
+  })
+
+  it('keeps the unsaved edits of a tab while another tab is open', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.get('input[name="eyebrow"]').setValue('Belum disimpan')
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((tab) => tab.text().startsWith('Tanya jawab'))!
+      .trigger('mousedown')
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((tab) => tab.text().startsWith('Tanya jawab'))!
+      .trigger('click')
+    await flushPromises()
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((tab) => tab.text().startsWith('Bagian atas'))!
+      .trigger('mousedown')
+    await wrapper
+      .findAll('[role="tab"]')
+      .find((tab) => tab.text().startsWith('Bagian atas'))!
+      .trigger('click')
+    await flushPromises()
+
+    expect(
+      (wrapper.get('input[name="eyebrow"]').element as HTMLInputElement).value,
+    ).toBe('Belum disimpan')
+    expect(wrapper.findAll('[role="tab"]')[0].text()).toContain(
+      'belum disimpan',
+    )
+    expect(
+      button(wrapper, 'Simpan draf')!.attributes('disabled'),
+    ).toBeUndefined()
+  })
+
+  it('keeps unsaved edits when the saved drafts are published', async () => {
+    service.fetchDraft.mockResolvedValue({
+      overview: overview({ hasUnpublishedChanges: true }),
+    })
+    service.publish.mockResolvedValue({
+      overview: overview({ publishedAt: '2026-10-09T10:00:00.000Z' }),
+    })
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper.get('input[name="eyebrow"]').setValue('Belum disimpan')
+
+    await button(wrapper, 'Terbitkan')!.trigger('click')
+    await button(wrapper, 'Terbitkan sekarang')!.trigger('click')
+    await flushPromises()
+
+    expect(service.publish).toHaveBeenCalledTimes(1)
+    expect(
+      (wrapper.get('input[name="eyebrow"]').element as HTMLInputElement).value,
+    ).toBe('Belum disimpan')
   })
 
   it('saves the draft of the open section and updates the state', async () => {
