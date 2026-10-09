@@ -274,6 +274,19 @@ choosing a file keeps the stored PDF, and an emptied description is sent as an e
 through `showDownloads`; both stay hidden while the list is empty or fails to load. The download
 link is a plain `<a download>` to `/admissions/downloads/:id/file`, which is public.
 
+## Landing content
+
+The landing components take their texts and photos through an optional `content` prop whose default is
+the matching section of `data/landingDefaults.ts`, which holds the content that used to be written in the
+components. `composables/useLandingContent.ts` merges `published ?? defaults` per section from
+`GET /admissions/landing` (or `draft ?? published ?? defaults` from `GET /admissions/landing/draft` in
+draft mode); `LandingView` renders the content sections after that request settles, a failed or slow
+request (two seconds) falls back to the defaults, so the page never waits on it and never swaps text
+after it appeared. Images are references, `{ imageId }` for an upload (served from
+`/admissions/landing/images/:id`) or `{ src }` for a built-in `/hero/*.webp`. "Informasi PPDB"
+(`LandingInfo`) and the stories section render nothing when their list is empty. The published response
+is cached for a minute, so a publish can take that long to appear for a visitor who has the page cached.
+
 ## Commands
 
 ```bash

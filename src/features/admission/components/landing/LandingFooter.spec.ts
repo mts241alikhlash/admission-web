@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import LandingFooter from './LandingFooter.vue'
 
-const mountFooter = (props: { showDownloads?: boolean }) =>
+const mountFooter = (props: { showDownloads?: boolean; showInfo?: boolean }) =>
   mount(LandingFooter, {
     props,
     global: { stubs: { RouterLink: RouterLinkStub } },

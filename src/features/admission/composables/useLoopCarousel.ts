@@ -64,12 +64,44 @@ export function useLoopCarousel(count: number) {
     ).flat()
   }
 
-  onMounted(() => {
+  let observer: ResizeObserver | undefined
+  let interacted = false
+  const INTERACTION_EVENTS = ['pointerdown', 'wheel', 'touchstart', 'keydown']
+
+  function markInteracted() {
+    interacted = true
+  }
+
+  function center() {
     const el = track.value
     if (el && copies > 1) el.scrollLeft = count * step(el)
+  }
+
+  onMounted(() => {
+    const el = track.value
+    if (!el || copies === 1) return
+    center()
+    for (const type of INTERACTION_EVENTS) {
+      el.addEventListener(type, markInteracted, { passive: true })
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => {
+        if (!interacted) center()
+      })
+      observer.observe(el)
+    }
   })
 
-  onBeforeUnmount(() => clearTimeout(settleTimer))
+  onBeforeUnmount(() => {
+    clearTimeout(settleTimer)
+    observer?.disconnect()
+    const el = track.value
+    if (el) {
+      for (const type of INTERACTION_EVENTS) {
+        el.removeEventListener(type, markInteracted)
+      }
+    }
+  })
 
   function bindTrack(node: unknown) {
     track.value = node instanceof HTMLElement ? node : null
