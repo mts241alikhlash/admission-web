@@ -1,11 +1,14 @@
 import { AxiosError, AxiosHeaders } from 'axios'
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_DOWNLOAD_BYTES,
   admissionErrorMessage,
   documentSummaryText,
   formatDateRange,
+  formatFileSize,
   isWaveClosed,
   jakartaToday,
+  pdfFileError,
   presentValue,
 } from './utils'
 
@@ -116,5 +119,50 @@ describe('documentSummaryText', () => {
         total: 4,
       }),
     ).toBe('4 menunggu dari 4 berkas wajib')
+  })
+})
+
+describe('formatFileSize', () => {
+  it.each([
+    [0, '0 B'],
+    [900, '900 B'],
+    [1024, '1 KB'],
+    [204800, '200 KB'],
+    [1048576, '1 MB'],
+    [1572864, '1,5 MB'],
+    [5242880, '5 MB'],
+  ])('formats %i bytes as %s', (bytes, text) => {
+    expect(formatFileSize(bytes)).toBe(text)
+  })
+})
+
+describe('pdfFileError', () => {
+  const file = (name: string, type: string, size: number) => {
+    const picked = new File(['x'], name, { type })
+    Object.defineProperty(picked, 'size', { value: size })
+    return picked
+  }
+
+  it('accepts a PDF up to the limit', () => {
+    expect(pdfFileError(file('a.pdf', 'application/pdf', 10))).toBeNull()
+    expect(
+      pdfFileError(file('a.pdf', 'application/pdf', MAX_DOWNLOAD_BYTES)),
+    ).toBeNull()
+  })
+
+  it('accepts a PDF whose browser type is empty', () => {
+    expect(pdfFileError(file('A.PDF', '', 10))).toBeNull()
+  })
+
+  it('refuses other types, empty files and files over the limit', () => {
+    expect(pdfFileError(file('a.docx', 'application/msword', 10))).toBe(
+      'Berkas harus PDF.',
+    )
+    expect(pdfFileError(file('a.pdf', 'application/pdf', 0))).toBe(
+      'Berkas kosong.',
+    )
+    expect(
+      pdfFileError(file('a.pdf', 'application/pdf', MAX_DOWNLOAD_BYTES + 1)),
+    ).toBe('Ukuran berkas maksimal 5 MB.')
   })
 })

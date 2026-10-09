@@ -397,3 +397,9 @@ export const documentTypeSchema = z.object({
   isRequired: z.boolean(),
   isActive: z.boolean(),
 })
+
+export const downloadSchema = z.object({
+  title: z.string().trim().min(1, 'Judul berkas wajib diisi').max(100),
+  description: z.string().trim().max(255, 'Keterangan maksimal 255 karakter'),
+  isActive: z.boolean(),
+})

@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   GraduationCap,
   Banknote,
+  Download,
   Landmark,
   Megaphone,
   Users,
@@ -77,6 +78,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/document-types',
         icon: FileStack,
         requiredPermission: 'admission-document-types.read',
+      },
+      {
+        title: 'menu.download',
+        url: '/admin/downloads',
+        icon: Download,
+        requiredPermission: 'admission-downloads.read',
       },
       {
         title: 'menu.documentReview',

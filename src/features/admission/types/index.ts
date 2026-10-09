@@ -95,6 +95,15 @@ export interface DocumentTypeSavePayload {
   isRequired: boolean
   isActive: boolean
 }
+export type AdmissionDownloadAdmin = Schemas['AdmissionDownloadResponseDto']
+export type AdmissionActiveDownload =
+  Schemas['AdmissionActiveDownloadResponseDto']
+export interface DownloadSavePayload {
+  title: string
+  description: string
+  isActive: boolean
+  file: File | null
+}
 export type AdmissionWave = Schemas['AdmissionWaveResponseDto']
 export type ActiveWave = Schemas['AdmissionActiveWavesResponseWavesDto']
 export type ActiveWaves = Schemas['AdmissionActiveWavesResponseDto']

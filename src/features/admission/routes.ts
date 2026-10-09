@@ -155,6 +155,22 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/downloads',
+    name: 'admin-downloads',
+    component: () => import('./views/DownloadListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-downloads.read',
+      title: 'Unduhan',
+      description:
+        'Kelola brosur dan formulir yang bisa diunduh calon pendaftar.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Unduhan' },
+      ],
+    },
+  },
+  {
     path: '/admin/enrolments',
     name: 'admin-enrolments',
     component: () => import('./views/EnrolmentListView.vue'),

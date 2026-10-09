@@ -159,3 +159,20 @@ export function documentSummaryText(summary: {
     .join(' · ')
   return `${text} dari ${summary.total} berkas wajib`
 }
+
+export const MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024
+
+export function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  const format = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 })
+  if (bytes < 1024 * 1024) return `${format.format(bytes / 1024)} KB`
+  return `${format.format(bytes / (1024 * 1024))} MB`
+}
+
+export function pdfFileError(file: File) {
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+  if (!isPdf) return 'Berkas harus PDF.'
+  if (file.size === 0) return 'Berkas kosong.'
+  if (file.size > MAX_DOWNLOAD_BYTES) return 'Ukuran berkas maksimal 5 MB.'
+  return null
+}

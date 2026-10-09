@@ -5,10 +5,13 @@ import type {
 } from '@mts241alikhlash/web-shared/types/api'
 import type {
   ActiveWaves,
+  AdmissionActiveDownload,
   AdmissionBankAccount,
   AdmissionDocumentTypeAdmin,
+  AdmissionDownloadAdmin,
   BankAccountSavePayload,
   DocumentTypeSavePayload,
+  DownloadSavePayload,
   AddPaymentPayload,
   AdmissionEligibleApplication,
   AdmissionPaymentQueue,
@@ -55,6 +58,15 @@ import type {
   UpdateApplicationPayload,
   WaveSavePayload,
 } from '../types'
+
+function downloadForm(payload: DownloadSavePayload) {
+  const formData = new FormData()
+  formData.append('title', payload.title)
+  formData.append('description', payload.description)
+  formData.append('isActive', String(payload.isActive))
+  if (payload.file) formData.append('file', payload.file)
+  return formData
+}
 
 export const admissionApi = {
   getActiveWaves: () =>
@@ -366,6 +378,39 @@ export const admissionApi = {
 
   deleteDocumentType: (id: string) =>
     api.delete<void>(`/admissions/document-types/${id}`),
+
+  getDownloads: () =>
+    api.get<{ data: AdmissionDownloadAdmin[] }>('/admissions/downloads'),
+
+  createDownload: (payload: DownloadSavePayload) =>
+    api.post<ApiSingleResponse<AdmissionDownloadAdmin>>(
+      '/admissions/downloads',
+      downloadForm(payload),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ),
+
+  updateDownload: (id: string, payload: DownloadSavePayload) =>
+    api.patch<ApiSingleResponse<AdmissionDownloadAdmin>>(
+      `/admissions/downloads/${id}`,
+      downloadForm(payload),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    ),
+
+  reorderDownloads: (ids: string[]) =>
+    api.put<{ data: AdmissionDownloadAdmin[] }>('/admissions/downloads/order', {
+      ids,
+    }),
+
+  deleteDownload: (id: string) =>
+    api.delete<void>(`/admissions/downloads/${id}`),
+
+  getActiveDownloads: () =>
+    api.get<{ data: AdmissionActiveDownload[] }>(
+      '/admissions/downloads/active',
+    ),
+
+  downloadFileUrl: (id: string) =>
+    `${api.defaults.baseURL ?? ''}/admissions/downloads/${id}/file`,
 
   getPaymentQueue: (params: PaymentQueueQuery) =>
     api.get<AdmissionPaymentQueue>('/admissions/payments', { params }),

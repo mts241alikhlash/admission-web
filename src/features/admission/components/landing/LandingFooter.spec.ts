@@ -1,0 +1,29 @@
+// @vitest-environment happy-dom
+import { describe, expect, it } from 'vitest'
+import { mount, RouterLinkStub } from '@vue/test-utils'
+import LandingFooter from './LandingFooter.vue'
+
+const mountFooter = (props: { showDownloads?: boolean }) =>
+  mount(LandingFooter, {
+    props,
+    global: { stubs: { RouterLink: RouterLinkStub } },
+  })
+
+describe('LandingFooter', () => {
+  it('has no downloads link by default', () => {
+    const links = mountFooter({}).findAll('a')
+    expect(links.map((link) => link.attributes('href'))).not.toContain(
+      '#unduhan',
+    )
+  })
+
+  it('links to the downloads section, after Persyaratan, when files exist', () => {
+    const links = mountFooter({ showDownloads: true })
+      .findAll('a')
+      .map((link) => [link.text(), link.attributes('href')])
+
+    expect(links).toContainEqual(['Unduhan', '#unduhan'])
+    const labels = links.map(([label]) => label)
+    expect(labels.indexOf('Unduhan')).toBe(labels.indexOf('Persyaratan') + 1)
+  })
+})

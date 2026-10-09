@@ -11,17 +11,23 @@ import LandingWaveSection from '../components/landing/LandingWaveSection.vue'
 import LandingLife from '../components/landing/LandingLife.vue'
 import LandingStories from '../components/landing/LandingStories.vue'
 import LandingCta from '../components/landing/LandingCta.vue'
+import LandingDownloads from '../components/landing/LandingDownloads.vue'
 import { landingStories } from '../data/landingStories'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
-import type { ActiveWave, AdmissionDocumentType } from '../types'
+import type {
+  ActiveWave,
+  AdmissionActiveDownload,
+  AdmissionDocumentType,
+} from '../types'
 
 const route = useRoute()
 const router = useRouter()
 
-const { fetchActiveWaves } = usePublicAdmission()
+const { fetchActiveWaves, fetchActiveDownloads } = usePublicAdmission()
 
 const waves = ref<ActiveWave[]>([])
 const documentTypes = ref<AdmissionDocumentType[]>([])
+const downloads = ref<AdmissionActiveDownload[]>([])
 const isLoading = ref(true)
 const hasError = ref(false)
 
@@ -42,12 +48,17 @@ async function loadAdmission() {
   isLoading.value = false
 }
 
+async function loadDownloads() {
+  downloads.value = await fetchActiveDownloads()
+}
+
 onMounted(() => {
   if (route.query.signup === '1') {
     void router.replace({ name: 'login', query: route.query })
     return
   }
   void loadAdmission()
+  void loadDownloads()
 })
 </script>
 
@@ -97,6 +108,7 @@ onMounted(() => {
         :document-types="documentTypes"
         :loading="isLoading"
       />
+      <LandingDownloads :downloads="downloads" />
       <LandingStories
         v-if="landingStories.length"
         :stories="landingStories"
@@ -105,7 +117,7 @@ onMounted(() => {
       <LandingCta />
     </main>
 
-    <LandingFooter />
+    <LandingFooter :show-downloads="downloads.length > 0" />
   </div>
 </template>
 
