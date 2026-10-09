@@ -174,7 +174,7 @@ function onViewerKey(event: KeyboardEvent) {
           <img
             :src="active.src"
             :alt="active.alt"
-            class="mx-auto max-h-[78dvh] w-auto max-w-full rounded-lg object-contain"
+            class="mx-auto max-h-[70dvh] w-auto max-w-full rounded-lg object-contain"
           />
           <p
             v-if="active.caption"

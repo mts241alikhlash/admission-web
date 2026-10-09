@@ -75,7 +75,7 @@ onMounted(() => {
     <div
       v-if="mode === 'draft'"
       data-test="draft-banner"
-      class="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-950"
+      class="fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center justify-between gap-2 border-t border-amber-300 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-950 shadow-lg"
       role="status"
     >
       <span>Pratinjau draf — belum terbit</span>

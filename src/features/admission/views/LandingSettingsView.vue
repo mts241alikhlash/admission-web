@@ -33,7 +33,8 @@ const loadError = ref<string | null>(null)
 const loading = ref(false)
 const active = ref<LandingSectionKey>('hero')
 const dirtyKeys = ref(new Set<LandingSectionKey>())
-const confirming = ref<'publish' | 'discard' | null>(null)
+const confirmOpen = ref(false)
+const action = ref<'publish' | 'discard'>('publish')
 const busy = ref(false)
 const formsVersion = ref(0)
 
@@ -44,6 +45,11 @@ const sectionContent = computed(
   () => overview.value?.sections[active.value] ?? landingDefaults[active.value],
 )
 const anyDirty = computed(() => dirtyKeys.value.size > 0)
+
+function ask(next: 'publish' | 'discard') {
+  action.value = next
+  confirmOpen.value = true
+}
 
 async function load() {
   loading.value = true
@@ -64,14 +70,14 @@ function onDirty(value: boolean) {
   dirtyKeys.value = new Set(dirtyKeys.value)
 }
 
-async function run(action: 'publish' | 'discard') {
+async function run(chosen: 'publish' | 'discard') {
   busy.value = true
   const result =
-    action === 'publish'
+    chosen === 'publish'
       ? await landingService.publish()
       : await landingService.discard()
   busy.value = false
-  confirming.value = null
+  confirmOpen.value = false
   if ('error' in result) return
   overview.value = result.overview
   dirtyKeys.value = new Set()
@@ -156,7 +162,7 @@ const publishedLabel = computed(() =>
                 variant="outline"
                 class="min-h-11"
                 :disabled="!overview.hasUnpublishedChanges || busy"
-                @click="confirming = 'discard'"
+                @click="ask('discard')"
               >
                 Buang perubahan
               </Button>
@@ -164,7 +170,7 @@ const publishedLabel = computed(() =>
                 v-if="canPublish"
                 class="min-h-11"
                 :disabled="!overview.hasUnpublishedChanges || busy"
-                @click="confirming = 'publish'"
+                @click="ask('publish')"
               >
                 Terbitkan
               </Button>
@@ -204,10 +210,10 @@ const publishedLabel = computed(() =>
     </Card>
 
     <AlertDialog
-      :open="confirming !== null"
+      :open="confirmOpen"
       @update:open="
         (open) => {
-          if (!open) confirming = null
+          if (!open) confirmOpen = false
         }
       "
     >
@@ -215,14 +221,14 @@ const publishedLabel = computed(() =>
         <AlertDialogHeader>
           <AlertDialogTitle>
             {{
-              confirming === 'publish'
+              action === 'publish'
                 ? 'Terbitkan halaman depan?'
                 : 'Buang semua perubahan?'
             }}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {{
-              confirming === 'publish'
+              action === 'publish'
                 ? 'Semua bagian yang sudah disimpan sebagai draf langsung tampil di halaman depan untuk pengunjung.'
                 : 'Draf semua bagian dihapus dan halaman kembali ke isi yang sudah terbit. Perubahan yang belum disimpan di layar ini ikut hilang.'
             }}
@@ -232,11 +238,9 @@ const publishedLabel = computed(() =>
           <AlertDialogCancel>Batal</AlertDialogCancel>
           <AlertDialogAction
             :disabled="busy"
-            @click="run(confirming === 'publish' ? 'publish' : 'discard')"
+            @click="run(action)"
           >
-            {{
-              confirming === 'publish' ? 'Terbitkan sekarang' : 'Buang sekarang'
-            }}
+            {{ action === 'publish' ? 'Terbitkan sekarang' : 'Buang sekarang' }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

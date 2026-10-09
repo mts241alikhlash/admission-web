@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as VueRouter from 'vue-router'
+import { defineComponent, h, inject, provide } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { landingDefaults } from '../data/landingDefaults'
 import LandingSettingsView from './LandingSettingsView.vue'
@@ -210,6 +211,45 @@ describe('LandingSettingsView', () => {
     expect(wrapper.get('[data-test="landing-status"]').text()).toContain(
       'Sudah terbit',
     )
+  })
+
+  it('publishes even when the dialog closes itself before the confirm handler runs', async () => {
+    service.fetchDraft.mockResolvedValue({
+      overview: overview({ hasUnpublishedChanges: true }),
+    })
+    service.publish.mockResolvedValue({ overview: overview() })
+    const SelfClosingDialog = defineComponent({
+      props: { open: Boolean },
+      emits: ['update:open'],
+      setup(_, { emit, slots }) {
+        provide('closeDialog', () => emit('update:open', false))
+        return () => h('div', slots.default?.())
+      },
+    })
+    const ClosingAction = defineComponent({
+      setup(_, { slots }) {
+        const close = inject<() => void>('closeDialog')
+        return () =>
+          h('button', { onClick: () => close?.() }, slots.default?.())
+      },
+    })
+    const wrapper = mount(LandingSettingsView, {
+      global: {
+        stubs: {
+          ...stubs,
+          AlertDialog: SelfClosingDialog,
+          AlertDialogAction: ClosingAction,
+        },
+      },
+    })
+    await flushPromises()
+
+    await button(wrapper, 'Terbitkan')!.trigger('click')
+    await button(wrapper, 'Terbitkan sekarang')!.trigger('click')
+    await flushPromises()
+
+    expect(service.publish).toHaveBeenCalledTimes(1)
+    expect(service.discard).not.toHaveBeenCalled()
   })
 
   it('discards after confirmation and reloads the content from the answer', async () => {
