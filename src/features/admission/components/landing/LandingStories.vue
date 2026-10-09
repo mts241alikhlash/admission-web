@@ -2,17 +2,30 @@
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import { useInView } from '../../composables/useInView'
 import { useLoopCarousel } from '../../composables/useLoopCarousel'
-import type { LandingStory } from '../../types'
+import { imageUrl } from '../../composables/useLandingContent'
+import { landingDefaults } from '../../data/landingDefaults'
+import type { LandingStoriesContent } from '../../types/landing'
 
-const props = defineProps<{
-  stories: LandingStory[]
-}>()
+const props = withDefaults(defineProps<{ content?: LandingStoriesContent }>(), {
+  content: () => landingDefaults.stories,
+})
 
-const canScroll = props.stories.length > 1
+const stories = props.content.items.map((story, index) => ({
+  id: `story-${index}`,
+  kind: story.kind,
+  quote: story.quote,
+  name: story.name,
+  position: story.position,
+  tags: story.tags,
+  photoUrl: story.photo ? imageUrl(story.photo) : null,
+  placeholder: story.placeholder ?? false,
+}))
+
+const canScroll = stories.length > 1
 
 const { bindTrack, current, middleCopy, onScroll, go, goTo, loop } =
-  useLoopCarousel(props.stories.length)
-const slides = loop(props.stories)
+  useLoopCarousel(stories.length)
+const slides = loop(stories)
 
 function initials(name: string) {
   return name
@@ -28,6 +41,7 @@ const { target, visible } = useInView()
 
 <template>
   <section
+    v-if="stories.length"
     id="cerita"
     :ref="target"
     class="school-stories scroll-mt-14"
@@ -36,14 +50,13 @@ const { target, visible } = useInView()
     <div class="stories-inner">
       <div class="stories-heading">
         <div>
-          <p class="stories-label">Cerita keluarga MTs Persis 241 Al-Ikhlash</p>
+          <p class="stories-label">{{ content.label }}</p>
           <h2 id="stories-title">
-            Dengar langsung dari mereka yang menjalaninya.
+            {{ content.title }}
           </h2>
         </div>
         <p class="stories-note">
-          Kisah alumni dan orang tua tentang belajar, tumbuh, dan berproses
-          bersama MTs Persis 241 Al-Ikhlash.
+          {{ content.description }}
         </p>
       </div>
 
