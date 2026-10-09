@@ -104,6 +104,20 @@ describe('useLoopCarousel start position', () => {
     expect(track.scrollLeft).toBe(7 * 608 + 300)
   })
 
+  it('stops re-centring once the arrows or dots moved the track', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }))
+    const { track, api } = mountCarousel(7, 608)
+    track.scrollTo = vi.fn() as unknown as typeof track.scrollTo
+    observers[0].callback()
+
+    api.go(1)
+    track.scrollLeft = 7 * 608 + 608
+    layout(track, 7, 700)
+    observers[0].callback()
+
+    expect(track.scrollLeft).toBe(7 * 608 + 608)
+  })
+
   it('does not observe a single slide', () => {
     mountCarousel(1, 608)
     expect(observers.every((entry) => entry.target === null)).toBe(true)

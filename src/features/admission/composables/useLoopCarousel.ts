@@ -38,6 +38,7 @@ export function useLoopCarousel(count: number) {
   function scrollToIndex(index: number) {
     const el = track.value
     if (!el) return
+    interacted = true
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)')
       .matches
     el.scrollTo({
