@@ -8,7 +8,7 @@ export default {
     documentType: 'Document Types',
     documentReview: 'Document Review',
     download: 'Downloads',
-    enrolment: 'Re-registration',
+    enrollment: 'Re-registration',
     landing: 'Landing Page',
     form: 'Form',
     myProfile: 'My Profile',

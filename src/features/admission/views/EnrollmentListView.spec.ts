@@ -4,7 +4,7 @@ import { defineComponent, h } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
-import EnrolmentListView from './EnrolmentListView.vue'
+import EnrollmentListView from './EnrollmentListView.vue'
 
 const service = vi.hoisted(() => ({
   fetchQueue: vi.fn(),
@@ -14,7 +14,7 @@ const service = vi.hoisted(() => ({
   process: vi.fn(),
   setPlacement: vi.fn(),
 }))
-vi.mock('../services/enrolmentService', () => ({ enrolmentService: service }))
+vi.mock('../services/enrollmentService', () => ({ enrollmentService: service }))
 const publicService = vi.hoisted(() => ({ fetchGrades: vi.fn() }))
 vi.mock('../services/publicAdmissionService', () => ({
   publicAdmissionService: publicService,
@@ -90,7 +90,7 @@ function page(rows: unknown[], years = YEARS, counts = COUNTS) {
 function mountView() {
   return mount(
     defineComponent({
-      render: () => h(TooltipProvider, null, () => h(EnrolmentListView)),
+      render: () => h(TooltipProvider, null, () => h(EnrollmentListView)),
     }),
     {
       attachTo: document.body,
@@ -106,13 +106,13 @@ function mountView() {
         },
       },
     },
-  ).findComponent(EnrolmentListView)
+  ).findComponent(EnrollmentListView)
 }
 
 const tab = (wrapper: ReturnType<typeof mountView>, label: string) =>
   wrapper.findAll('[role="tab"]').find((t) => t.text().includes(label))!
 const rowOf = (wrapper: ReturnType<typeof mountView>, index = 0) =>
-  wrapper.findAll('[data-test="enrolment-row"]')[index]
+  wrapper.findAll('[data-test="enrollment-row"]')[index]
 const buttonOf = (parent: Pick<VueWrapper, 'findAll'>, text: string) =>
   parent.findAll('button').find((b) => b.text() === text)!
 
@@ -147,9 +147,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   setActivePinia(createPinia())
   access.granted = new Set([
-    'admission-enrolments.read',
-    'admission-enrolments.process',
-    'admission-enrolments.nis',
+    'admission-enrollments.read',
+    'admission-enrollments.process',
+    'admission-enrollments.nis',
   ])
   service.fetchQueue.mockResolvedValue(
     page([row('a1', 'Ahmad Fauzi'), row('a2', 'Siti Aminah')]),
@@ -433,7 +433,7 @@ it('locks a year after a confirmation and then hides the compose controls', asyn
 })
 
 it('shows the queue and nothing else without process and nis permissions', async () => {
-  access.granted = new Set(['admission-enrolments.read'])
+  access.granted = new Set(['admission-enrollments.read'])
   const wrapper = mountView()
   await flushPromises()
 

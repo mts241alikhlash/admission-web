@@ -1,7 +1,7 @@
 # 241 Admission Web
 
 The Vue 3 + Vite frontend for **241 Admission** — admission waves,
-applications, documents, payments, and enrolment (PPDB). Part of the 241 Apps
+applications, documents, payments, and enrollment (PPDB). Part of the 241 Apps
 school platform.
 
 Shared UI and utilities come from the published `@mts241alikhlash/ui` and

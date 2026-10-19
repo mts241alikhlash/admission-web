@@ -184,7 +184,7 @@ describe('decisionService', () => {
     })
   })
 
-  it('shows the 409 message when enrolment has started', async () => {
+  it('shows the 409 message when enrollment has started', async () => {
     vi.mocked(admissionApi.cancelAcceptance).mockRejectedValue(
       failure(
         409,

@@ -105,10 +105,10 @@ export const menuSections: MenuSection[] = [
         requiredPermission: 'admission-decisions.read',
       },
       {
-        title: 'menu.enrolment',
-        url: '/admin/enrolments',
+        title: 'menu.enrollment',
+        url: '/admin/enrollments',
         icon: GraduationCap,
-        requiredPermission: 'admission-enrolments.read',
+        requiredPermission: 'admission-enrollments.read',
       },
       {
         title: 'menu.payment',

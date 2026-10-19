@@ -65,21 +65,22 @@ export interface DecisionQueueQuery {
   limit: number
 }
 export type AdmissionGrade = Schemas['AdmissionGradeResponseDto']
-export type AdmissionEnrolmentRow = Schemas['AdmissionEnrolmentRowResponseDto']
-export type AdmissionEnrolmentQueue =
-  Schemas['AdmissionEnrolmentQueueResponseDto']
+export type AdmissionEnrollmentRow =
+  Schemas['AdmissionEnrollmentRowResponseDto']
+export type AdmissionEnrollmentQueue =
+  Schemas['AdmissionEnrollmentQueueResponseDto']
 export type AdmissionNisPreview = Schemas['AdmissionNisPreviewResponseDto']
 export type AdmissionNisCompose = Schemas['AdmissionNisComposeResponseDto']
-export type AdmissionEnrolmentProcess =
-  Schemas['AdmissionEnrolmentProcessResponseDto']
+export type AdmissionEnrollmentProcess =
+  Schemas['AdmissionEnrollmentProcessResponseDto']
 export type AdmissionType = 'NEW' | 'TRANSFER'
 export const ADMISSION_TYPE_LABELS: Record<AdmissionType, string> = {
   NEW: 'Siswa baru',
   TRANSFER: 'Pindahan',
 }
-export type EnrolmentTab = 'ready' | 'held' | 'done'
-export interface EnrolmentQueueQuery {
-  tab: EnrolmentTab
+export type EnrollmentTab = 'ready' | 'held' | 'done'
+export interface EnrollmentQueueQuery {
+  tab: EnrollmentTab
   search?: string
   waveId?: string
   page: number

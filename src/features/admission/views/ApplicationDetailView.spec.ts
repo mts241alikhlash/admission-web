@@ -226,7 +226,7 @@ describe('ApplicationDetailView', () => {
       'admission-payments.create',
       'admission-documents.verify',
       'admission-decisions.decide',
-      'admission-enrolments.process',
+      'admission-enrollments.process',
     ])
     acting.value = false
     error.value = null
@@ -349,11 +349,11 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.text()).toContain('Kartu Keluarga - Contoh Pendaftar.pdf')
   })
 
-  it('hides Terima and Tolak without admission-decisions.decide, and keeps the enrolment button', async () => {
+  it('hides Terima and Tolak without admission-decisions.decide, and keeps the enrollment button', async () => {
     access.granted = new Set([
       'admissions.read',
       'admission-documents.verify',
-      'admission-enrolments.process',
+      'admission-enrollments.process',
     ])
     application.value = {
       ...draft,
@@ -513,7 +513,7 @@ describe('ApplicationDetailView', () => {
     ).toBe(true)
   })
 
-  it('hides Proses Jadi Santri without admission-enrolments.process', async () => {
+  it('hides Proses Jadi Santri without admission-enrollments.process', async () => {
     access.granted = new Set(['admissions.read'])
     application.value = {
       ...draft,
@@ -543,7 +543,7 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.find('input[id$="-nisn"]').exists()).toBe(true)
   })
 
-  it('enrols without typing anything when the NIS and NISN exist', async () => {
+  it('enrolls without typing anything when the NIS and NISN exist', async () => {
     application.value = {
       ...draft,
       status: 'ACCEPTED',
@@ -561,7 +561,7 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.find('input[id$="-nisn"]').exists()).toBe(false)
   })
 
-  it('does not ask to type numbers in the enrol dialog when both exist', async () => {
+  it('does not ask to type numbers in the enroll dialog when both exist', async () => {
     application.value = {
       ...draft,
       status: 'ACCEPTED',
@@ -579,7 +579,7 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.text()).toContain('dipakai untuk membuat akun santri')
   })
 
-  it('asks to complete the missing number in the enrol dialog', async () => {
+  it('asks to complete the missing number in the enroll dialog', async () => {
     application.value = {
       ...draft,
       status: 'ACCEPTED',

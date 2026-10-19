@@ -32,7 +32,7 @@ const mountTree = (
   })
 
 describe('LandingFieldTree', () => {
-  it('renders a labelled input per text field with its limit', () => {
+  it('renders a labeled input per text field with its limit', () => {
     const wrapper = mountTree('faq', landingDefaults.faq)
     const title = wrapper.get('input[name="title"]')
     expect((title.element as HTMLInputElement).value).toBe(

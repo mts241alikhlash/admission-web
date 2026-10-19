@@ -266,7 +266,7 @@ it('forgets selected applicants that are no longer in the tab', async () => {
   expect(wrapper.find('[data-test="selection-bar"]').exists()).toBe(false)
 })
 
-it('cancels an acceptance with a reason, except once enrolment started', async () => {
+it('cancels an acceptance with a reason, except once enrollment started', async () => {
   service.fetchQueue.mockResolvedValue(
     page([
       row('a3', 'Budi', 'ACCEPTED'),

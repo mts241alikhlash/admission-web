@@ -196,12 +196,12 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/admin/enrolments',
-    name: 'admin-enrolments',
-    component: () => import('./views/EnrolmentListView.vue'),
+    path: '/admin/enrollments',
+    name: 'admin-enrollments',
+    component: () => import('./views/EnrollmentListView.vue'),
     meta: {
       requiresAuth: true,
-      requiredPermission: 'admission-enrolments.read',
+      requiredPermission: 'admission-enrollments.read',
       title: 'Daftar Ulang',
       description:
         'Susun NIS dan proses pendaftar yang diterima menjadi santri.',
