@@ -106,13 +106,15 @@ async function upload() {
 
 <template>
   <div class="space-y-4">
-    <Card class="gap-0 overflow-hidden py-0">
+    <Card
+      gap="none"
+      class="overflow-hidden"
+    >
       <CardHeader
-        class="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
+        standard
+        class="flex-wrap"
       >
-        <CardTitle class="text-base font-semibold"
-          >Pembayaran Pendaftaran</CardTitle
-        >
+        <CardTitle size="md">Pembayaran Pendaftaran</CardTitle>
         <Badge :variant="PAYMENT_STATUS_BADGE_VARIANTS[status]">
           {{ PAYMENT_STATUS_LABELS[status] }}
         </Badge>
@@ -182,12 +184,13 @@ async function upload() {
     </Alert>
     <Card
       v-else-if="canUpload"
-      class="gap-0 overflow-hidden py-0"
+      gap="none"
+      class="overflow-hidden"
     >
-      <CardHeader class="border-b px-4 py-3">
-        <CardTitle class="text-base font-semibold"
-          >Unggah Bukti Pembayaran</CardTitle
-        >
+      <CardHeader standard>
+        <div class="flex items-center gap-3">
+          <CardTitle size="md">Unggah Bukti Pembayaran</CardTitle>
+        </div>
       </CardHeader>
       <CardContent class="space-y-5 px-4 py-4">
         <FormField

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, nextTick } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import type { AdmissionApplication } from '../types'
 import ApplicationDetailView from './ApplicationDetailView.vue'
 
@@ -96,7 +96,27 @@ const textarea = defineComponent({
   template: '<textarea v-bind="$attrs"></textarea>',
 })
 
+const ActionCellStub = defineComponent({
+  props: {
+    viewLabel: String,
+    manageLabel: String,
+    editLabel: String,
+    deleteLabel: String,
+    hideEdit: Boolean,
+    hideDelete: Boolean,
+  },
+  setup: (props) => () =>
+    h('div', { 'data-test': 'action-cell' }, [
+      props.viewLabel && h('span', props.viewLabel),
+      props.manageLabel && h('span', props.manageLabel),
+      !props.hideEdit && props.editLabel && h('span', props.editLabel),
+      !props.hideDelete && props.deleteLabel && h('span', props.deleteLabel),
+    ]),
+})
+
 const stubs = {
+  ActionCell: ActionCellStub,
+  FloatingLabelField: passthrough,
   Card: card,
   CardContent: passthrough,
   CardDescription: passthrough,
@@ -326,7 +346,7 @@ describe('ApplicationDetailView', () => {
     expect(wrapper.text()).not.toContain('Setujui')
     expect(wrapper.text()).not.toContain('Minta Revisi')
     expect(wrapper.text()).not.toContain('Verifikasi Aplikasi')
-    expect(wrapper.text()).toContain('kk.pdf')
+    expect(wrapper.text()).toContain('Kartu Keluarga - Contoh Pendaftar.pdf')
   })
 
   it('hides Terima and Tolak without admission-decisions.decide, and keeps the enrolment button', async () => {
@@ -454,11 +474,12 @@ describe('ApplicationDetailView', () => {
     await openTab(wrapper, 'Berkas')
 
     const rows = wrapper.findAll('tbody tr')
-    expect(rows[0].find('[aria-label="wajib"]').exists()).toBe(true)
-    expect(rows[1].find('[aria-label="wajib"]').exists()).toBe(false)
+    expect(rows[0].text()).toContain('Kartu Keluarga')
+    expect(rows[0].text()).not.toContain('(nonaktif)')
+    expect(rows[1].text()).toContain('Berkas Lama (nonaktif)')
     const mobile = wrapper.get('[data-test="mobile-documents"]').findAll('li')
-    expect(mobile[0].find('[aria-label="wajib"]').exists()).toBe(true)
-    expect(mobile[1].find('[aria-label="wajib"]').exists()).toBe(false)
+    expect(mobile[0].text()).toContain('Kartu Keluarga')
+    expect(mobile[1].text()).toContain('Berkas Lama (nonaktif)')
   })
 
   it('shows an empty state when the wave has no document types', async () => {
@@ -678,7 +699,8 @@ describe('ApplicationDetailView', () => {
 
     expect(wrapper.text()).not.toContain('Verifikasi Pembayaran')
     expect(wrapper.text()).not.toContain('Tolak')
-    expect(wrapper.text()).toContain('Lihat Bukti Transfer')
+    expect(wrapper.find('button[data-test="open-file"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Bukti Transfer')
   })
 
   it('links to the payment page with the applicant for those who may add payments', async () => {
@@ -751,5 +773,80 @@ describe('ApplicationDetailView', () => {
     await openTab(wrapper, 'Pembayaran')
 
     expect(wrapper.find('[data-test="add-payment-link"]').exists()).toBe(false)
+  })
+
+  it('renders achievements and scholarships in DataTable when present', async () => {
+    application.value = {
+      ...draft,
+      achievements: [
+        {
+          id: 'ach-1',
+          competitionName: 'Olimpiade Matematika',
+          year: 2025,
+          competitionFieldId: 'cf-1',
+          competitionLevelId: 'cl-1',
+          rank: 'Juara 1',
+          organizer: 'Kemendikbud',
+          file: {
+            id: 'file-ach-1',
+            originalName: 'sertifikat-olimpiade.pdf',
+            storageKey: 'files/sertifikat-olimpiade.pdf',
+          },
+        },
+      ],
+      scholarships: [
+        {
+          id: 'sch-1',
+          scholarshipName: 'Beasiswa Prestasi',
+          year: 2025,
+          categoryId: 'sc-1',
+          providerName: 'Yayasan Peduli',
+          providerTypeId: 'spt-1',
+          duration: '1 Tahun',
+          amount: 5000000,
+          kipNumber: 'KIP-123456',
+          file: null,
+        },
+      ],
+    } as unknown as AdmissionApplication
+
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Prestasi & Beasiswa')
+
+    expect(wrapper.text()).toContain('Olimpiade Matematika')
+    expect(wrapper.text()).toContain(
+      'Olimpiade Matematika - Contoh Pendaftar.pdf',
+    )
+    expect(wrapper.text()).toContain('Juara 1')
+    expect(wrapper.text()).toContain('Beasiswa Prestasi')
+    expect(wrapper.text()).toContain('Yayasan Peduli')
+    expect(wrapper.text()).toContain('Rp. 5.000.000')
+    expect(wrapper.text()).toContain('KIP-123456')
+  })
+
+  it('orders payment footer buttons as tambah pembayaran, tolak, verifikasi', async () => {
+    application.value = {
+      ...draft,
+      status: 'SUBMITTED',
+      payment: {
+        id: 'pay1',
+        applicationId: 'app-1',
+        amount: 150000,
+        status: 'PENDING',
+        note: null,
+        proofFile: { storageKey: 'files/bukti.png' },
+      },
+    } as unknown as AdmissionApplication
+    const wrapper = await mountView()
+    await openTab(wrapper, 'Pembayaran')
+
+    const footerText = wrapper.find('[data-slot="card-footer"]').text()
+    const tambahIdx = footerText.indexOf('Tambah pembayaran')
+    const tolakIdx = footerText.indexOf('Tolak')
+    const verifikasiIdx = footerText.indexOf('Verifikasi Pembayaran')
+
+    expect(tambahIdx).toBeGreaterThan(-1)
+    expect(tolakIdx).toBeGreaterThan(tambahIdx)
+    expect(verifikasiIdx).toBeGreaterThan(tolakIdx)
   })
 })

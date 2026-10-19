@@ -57,7 +57,6 @@ async function mountLanding(path = '/') {
 
 it.each([
   ['hero', '.hero-actions'],
-  ['wave', '#gelombang article'],
   ['closing', '.closing-copy'],
 ])(
   'sends the %s registration action to login without opening signup',

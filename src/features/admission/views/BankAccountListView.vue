@@ -6,7 +6,6 @@ import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Switch } from '@mts241alikhlash/ui/switch'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import { FloatingLabelField, FormControl } from '@mts241alikhlash/ui/form'
@@ -53,7 +52,6 @@ const pendingDelete = ref<AdmissionBankAccount | null>(null)
 const search = ref('')
 const statusFilter = ref('ALL')
 const statusFilterId = useId()
-const activeId = useId()
 const filteredAccounts = computed(() => {
   const keyword = search.value.trim().toLocaleLowerCase('id')
   return accounts.value.filter(
@@ -66,10 +64,9 @@ const filteredAccounts = computed(() => {
   )
 })
 
-const { handleSubmit, resetForm, values, setFieldValue } =
-  useForm<BankAccountSavePayload>({
-    validationSchema: toTypedSchema(bankAccountSchema),
-  })
+const { handleSubmit, resetForm } = useForm<BankAccountSavePayload>({
+  validationSchema: toTypedSchema(bankAccountSchema),
+})
 
 const columns = computed<ColumnDef<AdmissionBankAccount>[]>(() => [
   {
@@ -152,14 +149,11 @@ onMounted(load)
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Rekening Pembayaran
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Rekening Pembayaran </CardTitle>
         <Button
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
           @click="openForm(null)"
@@ -169,7 +163,7 @@ onMounted(load)
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 p-4 sm:p-6">
+      <div class="space-y-4 px-4 py-5 sm:px-6">
         <div
           class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >
@@ -326,23 +320,28 @@ onMounted(load)
                 />
               </FormControl>
             </FloatingField>
-            <div
-              class="flex items-center justify-between gap-4 rounded-md border px-3 py-2"
+            <FloatingField
+              v-slot="{ value, handleChange }"
+              name="isActive"
+              label="Status Rekening"
+              required
             >
-              <label
-                :for="activeId"
-                class="text-sm font-medium"
-              >
-                Aktif (tampil untuk pendaftar)
-              </label>
-              <Switch
-                :id="activeId"
-                :model-value="values.isActive"
+              <Select
+                :model-value="String(value)"
                 :disabled="isSaving"
-                class="focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                @update:model-value="setFieldValue('isActive', $event)"
-              />
-            </div>
+                @update:model-value="handleChange($event === 'true')"
+              >
+                <FormControl>
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="true"> Aktif </SelectItem>
+                  <SelectItem value="false"> Nonaktif </SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingField>
           </form>
         </ScrollArea>
         <DialogFooter

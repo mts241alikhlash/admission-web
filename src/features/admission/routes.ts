@@ -273,6 +273,22 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/payments/new',
+    name: 'admin-payment-new',
+    component: () => import('./views/AddPaymentView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-payments.create',
+      title: 'Pembayaran oleh Staf',
+      description: 'Catat pembayaran pendaftar yang dibantu oleh staf.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Pembayaran', href: '/admin/payments' },
+        { title: 'Pembayaran oleh Staf' },
+      ],
+    },
+  },
+  {
     path: '/admin/announcements',
     name: 'admin-announcements',
     component: () => import('./views/AnnouncementListView.vue'),

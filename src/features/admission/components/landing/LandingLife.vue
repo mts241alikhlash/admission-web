@@ -112,12 +112,10 @@ const loopedPhotos = loop(photos)
   color: #162d53;
 }
 .life-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-  min-width: 0;
+  display: contents;
 }
 .life-intro {
+  order: 1;
   display: grid;
   gap: 1rem;
 }
@@ -140,6 +138,7 @@ h2 {
   color: #475569;
 }
 .life-current {
+  order: 3;
   display: grid;
   align-content: start;
   min-height: 8.5rem;
@@ -159,28 +158,12 @@ h2 {
   color: #475569;
 }
 .life-stage {
+  order: 2;
   position: relative;
   min-width: 0;
 }
 .life-controls {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  display: flex;
-  gap: 0.25rem;
-}
-.life-controls button {
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  color: #fff;
-  cursor: pointer;
-  filter: drop-shadow(0 1px 3px #0009);
-  transition: transform 150ms ease;
-}
-.life-controls button:hover {
-  transform: scale(1.15);
+  display: none;
 }
 .life-controls button:focus-visible,
 .life-track:focus-visible {
@@ -188,6 +171,7 @@ h2 {
   outline-offset: 3px;
 }
 .life-footnote {
+  order: 4;
   margin-top: auto;
   display: flex;
   flex-wrap: wrap;
@@ -257,6 +241,18 @@ h2 {
     min-height: calc(100svh - 3.5rem);
     padding-block: 2rem;
   }
+  .life-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+  }
+  .life-intro,
+  .life-stage,
+  .life-current,
+  .life-footnote {
+    order: initial;
+  }
   .life-stage {
     align-self: center;
   }
@@ -265,6 +261,26 @@ h2 {
   }
   .life-card {
     flex-basis: 78%;
+  }
+  .life-controls {
+    display: flex;
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    gap: 0.25rem;
+  }
+  .life-controls button {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    color: #fff;
+    cursor: pointer;
+    filter: drop-shadow(0 1px 3px #0009);
+    transition: transform 150ms ease;
+  }
+  .life-controls button:hover {
+    transform: scale(1.15);
   }
 }
 </style>

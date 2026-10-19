@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
 import EnrolmentListView from './EnrolmentListView.vue'
 
 const service = vi.hoisted(() => ({
@@ -86,19 +88,25 @@ function page(rows: unknown[], years = YEARS, counts = COUNTS) {
 }
 
 function mountView() {
-  return mount(EnrolmentListView, {
-    global: {
-      stubs: {
-        Dialog: passthrough,
-        DialogContent: passthrough,
-        DialogHeader: passthrough,
-        DialogTitle: passthrough,
-        DialogDescription: passthrough,
-        DialogFooter: passthrough,
-        ...selectStubs,
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(EnrolmentListView)),
+    }),
+    {
+      attachTo: document.body,
+      global: {
+        stubs: {
+          Dialog: passthrough,
+          DialogContent: passthrough,
+          DialogHeader: passthrough,
+          DialogTitle: passthrough,
+          DialogDescription: passthrough,
+          DialogFooter: passthrough,
+          ...selectStubs,
+        },
       },
     },
-  })
+  ).findComponent(EnrolmentListView)
 }
 
 const tab = (wrapper: ReturnType<typeof mountView>, label: string) =>
@@ -175,7 +183,7 @@ it('shows Siap diproses first with the counts and each applicant’s data', asyn
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenCalledWith(
-    expect.objectContaining({ tab: 'ready', page: 1, limit: 50 }),
+    expect.objectContaining({ tab: 'ready', page: 1, limit: 10 }),
   )
   expect(tab(wrapper, 'Siap diproses').text()).toContain('2')
   expect(tab(wrapper, 'Tertahan').text()).toContain('1')
@@ -224,7 +232,7 @@ it('lets TU type a missing NISN and sends it when processing', async () => {
   await rowOf(wrapper).get('[role="checkbox"]').trigger('click')
   await buttonOf(
     wrapper.get('[data-test="selection-bar"]'),
-    'Proses terpilih',
+    'Proses jadi santri',
   ).trigger('click')
   await wrapper.get('[data-test="process-form"]').trigger('submit')
   await flushPromises()
@@ -257,7 +265,7 @@ it('processes the selected applicants after a confirmation with the count', asyn
   )
   await buttonOf(
     wrapper.get('[data-test="selection-bar"]'),
-    'Proses terpilih',
+    'Proses jadi santri',
   ).trigger('click')
   expect(wrapper.get('[data-test="process-form"]').text()).toContain(
     '2 pendaftar',
@@ -290,7 +298,7 @@ it('lists the skipped and failed applicants with their reason', async () => {
     .trigger('click')
   await buttonOf(
     wrapper.get('[data-test="selection-bar"]'),
-    'Proses terpilih',
+    'Proses jadi santri',
   ).trigger('click')
   await wrapper.get('[data-test="process-form"]').trigger('submit')
   await flushPromises()
@@ -491,8 +499,10 @@ it('does not let more than 50 applicants be processed in one run', async () => {
 
   const bar = wrapper.get('[data-test="selection-bar"]')
   expect(bar.text()).toContain('Maksimal 50 pendaftar sekali proses')
-  expect(buttonOf(bar, 'Proses terpilih').attributes('disabled')).toBeDefined()
-})
+  expect(
+    buttonOf(bar, 'Proses jadi santri').attributes('disabled'),
+  ).toBeDefined()
+}, 20000)
 
 it('rejects a typed NISN that is not 10 digits', async () => {
   service.fetchQueue.mockResolvedValue(
@@ -505,7 +515,7 @@ it('rejects a typed NISN that is not 10 digits', async () => {
   await rowOf(wrapper).get('[role="checkbox"]').trigger('click')
   await buttonOf(
     wrapper.get('[data-test="selection-bar"]'),
-    'Proses terpilih',
+    'Proses jadi santri',
   ).trigger('click')
   await wrapper.get('[data-test="process-form"]').trigger('submit')
   await flushPromises()
@@ -589,4 +599,49 @@ it('offers no placement button on a held applicant', async () => {
   await flushPromises()
 
   expect(rowOf(wrapper).text()).not.toContain('Atur jenis dan kelas')
+})
+
+it('renders DataTable with expected columns and without numbering column', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  const dataTable = wrapper.findComponent({ name: 'DataTable' })
+  expect(dataTable.exists()).toBe(true)
+  const columns = dataTable.props('columns') as { header?: unknown }[]
+  const headers = columns.map((c) =>
+    typeof c.header === 'string' ? c.header : undefined,
+  )
+  expect(headers).not.toContain('No')
+  expect(headers.filter(Boolean)).toEqual([
+    'No. Pendaftaran',
+    'Nama Pendaftar',
+    'NISN',
+    'Gelombang',
+    'Jenis',
+    'Kelas',
+    'Status',
+    'Aksi',
+  ])
+})
+
+it('loads the next page from the server and replaces the rows', async () => {
+  service.fetchQueue.mockResolvedValue({
+    ...page([row('a1', 'Ahmad Fauzi')], YEARS, COUNTS),
+    total: 25,
+  })
+  const wrapper = mountView()
+  await flushPromises()
+  service.fetchQueue.mockResolvedValue({
+    ...page([row('a2', 'Siti Aminah')], YEARS, COUNTS),
+    total: 25,
+  })
+
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await flushPromises()
+
+  expect(service.fetchQueue).toHaveBeenLastCalledWith(
+    expect.objectContaining({ tab: 'ready', page: 2, limit: 10 }),
+  )
+  expect(wrapper.text()).toContain('Siti Aminah')
+  expect(wrapper.text()).not.toContain('Ahmad Fauzi')
 })

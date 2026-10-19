@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
 import DocumentReviewListView from './DocumentReviewListView.vue'
 
 const service = vi.hoisted(() => ({ fetchQueue: vi.fn() }))
@@ -34,7 +36,12 @@ function page(
 }
 
 function mountView() {
-  return mount(DocumentReviewListView)
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(DocumentReviewListView)),
+    }),
+    { attachTo: document.body },
+  ).findComponent(DocumentReviewListView)
 }
 
 function tab(wrapper: ReturnType<typeof mountView>, label: string) {
@@ -52,7 +59,7 @@ it('shows Menunggu first with the counts of every tab and the summary of each ap
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenCalledWith(
-    expect.objectContaining({ tab: 'waiting', page: 1, limit: 50 }),
+    expect.objectContaining({ tab: 'waiting', page: 1, limit: 10 }),
   )
   expect(tab(wrapper, 'Menunggu').text()).toContain('1')
   expect(tab(wrapper, 'Perlu perbaikan').text()).toContain('2')
@@ -62,7 +69,7 @@ it('shows Menunggu first with the counts of every tab and the summary of each ap
   expect(item.text()).toContain('PSB-001')
   expect(item.text()).toContain('Gelombang 1')
   expect(item.text()).toContain(
-    '3 disetujui · 1 ditolak · 2 belum diunggah dari 6 berkas wajib',
+    '3 disetujui · 1 ditolak · 2 belum diunggah dari 6 berkas',
   )
 })
 
@@ -97,6 +104,26 @@ it('loads another tab when it is opened', async () => {
   )
 })
 
+it('shows revision note and rejected count on revision tab', async () => {
+  service.fetchQueue.mockResolvedValue(
+    page([
+      {
+        ...row,
+        status: 'REVISION_NEEDED',
+        revisionNote: 'Foto KK buram',
+        summary: { approved: 2, rejected: 1, pending: 0, missing: 3, total: 6 },
+      },
+    ]),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+  await tab(wrapper, 'Perlu perbaikan').trigger('mousedown')
+  await flushPromises()
+
+  expect(wrapper.text()).toContain('1 berkas ditolak')
+  expect(wrapper.text()).toContain('Foto KK buram')
+})
+
 it('says what an empty tab means', async () => {
   service.fetchQueue.mockResolvedValue(
     page([], { waiting: 0, revision: 0, done: 0 }),
@@ -109,34 +136,32 @@ it('says what an empty tab means', async () => {
   )
 })
 
-it('loads the next page after fifty rows', async () => {
-  const rows = Array.from({ length: 50 }, (_, index) => ({
+it('loads the next page from the server and replaces the rows', async () => {
+  const first = Array.from({ length: 10 }, (_, index) => ({
     ...row,
     applicationId: `app${index}`,
   }))
   service.fetchQueue.mockResolvedValue(
-    page(rows, { waiting: 60, revision: 0, done: 0 }, 60),
+    page(first, { waiting: 60, revision: 0, done: 0 }, 60),
   )
   const wrapper = mountView()
   await flushPromises()
+  expect(wrapper.findAll('[data-test="review-row"]')).toHaveLength(10)
   service.fetchQueue.mockResolvedValue(
     page(
-      [{ ...row, applicationId: 'app50' }],
+      [{ ...row, applicationId: 'app10' }],
       { waiting: 60, revision: 0, done: 0 },
       60,
     ),
   )
 
-  await wrapper
-    .findAll('button')
-    .find((b) => b.text() === 'Muat lebih banyak')!
-    .trigger('click')
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenLastCalledWith(
-    expect.objectContaining({ tab: 'waiting', page: 2 }),
+    expect.objectContaining({ tab: 'waiting', page: 2, limit: 10 }),
   )
-  expect(wrapper.findAll('[data-test="review-row"]')).toHaveLength(51)
+  expect(wrapper.findAll('[data-test="review-row"]')).toHaveLength(1)
 })
 
 it('shows the load error with a retry', async () => {
@@ -175,4 +200,26 @@ it('ignores a slow response from a tab that is no longer shown', async () => {
 
   expect(wrapper.text()).toContain('Siti Aminah')
   expect(wrapper.text()).not.toContain('Ahmad Fauzi')
+})
+
+it('renders DataTable with expected columns and without numbering column', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  const dataTable = wrapper.findComponent({ name: 'DataTable' })
+  expect(dataTable.exists()).toBe(true)
+  const columns = dataTable.props('columns') as {
+    header?: string | (() => string)
+  }[]
+  const headers = columns.map((c) =>
+    typeof c.header === 'function' ? c.header() : c.header,
+  )
+  expect(headers).not.toContain('No')
+  expect(headers).toEqual([
+    'No. Pendaftaran',
+    'Nama Pendaftar',
+    'Gelombang',
+    'Berkas',
+    'Aksi',
+  ])
 })

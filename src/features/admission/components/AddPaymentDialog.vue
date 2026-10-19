@@ -153,10 +153,10 @@ watch(debouncedSearch, loadApplicants)
       class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
     >
       <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
-        <DialogTitle>Tambah Pembayaran</DialogTitle>
+        <DialogTitle>Pembayaran oleh Staf</DialogTitle>
         <DialogDescription>
-          Untuk pendaftar yang tidak bisa mengunggah sendiri. Pembayaran
-          langsung terverifikasi.
+          Catat pembayaran pendaftar yang dibantu oleh staf. Pembayaran akan
+          langsung terverifikasi setelah disimpan.
         </DialogDescription>
       </DialogHeader>
       <ScrollArea class="min-h-0 flex-1">

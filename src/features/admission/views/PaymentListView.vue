@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { computed, h, onMounted, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { refDebounced } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
-import { SearchInput } from '@mts241alikhlash/ui'
+import type { ColumnDef } from '@tanstack/vue-table'
+import { ActionCell, DataTable, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@mts241alikhlash/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
 import { Textarea } from '@mts241alikhlash/ui/textarea'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
@@ -27,10 +33,10 @@ import {
 } from '@mts241alikhlash/ui/dialog'
 import { Eye, Plus } from '@lucide/vue'
 import { useRoleGuard } from '@/features/platform/auth'
-import AddPaymentDialog from '../components/AddPaymentDialog.vue'
 import FilePreviewDialog from '../components/FilePreviewDialog.vue'
 import { useFilePreview } from '../composables/useFilePreview'
 import { applicationService } from '../services/applicationService'
+import ServerPager from '../components/ServerPager.vue'
 import { paymentQueueService } from '../services/paymentQueueService'
 import { useApplicationStore } from '../stores/applicationStore'
 import {
@@ -39,8 +45,6 @@ import {
   type PaymentQueueStatus,
 } from '../types'
 import { formatDate, formatIDR, PAYMENT_STATUS_BADGE_VARIANTS } from '../utils'
-
-const LIMIT = 50
 
 const route = useRoute()
 const router = useRouter()
@@ -59,12 +63,12 @@ const rows = ref<AdmissionPaymentQueueRow[]>([])
 const total = ref(0)
 const counts = ref({ pending: 0, verified: 0, rejected: 0 })
 const page = ref(1)
+const pageSize = ref(10)
 const loading = ref(false)
 let latestRequest = 0
 const listError = ref<string | null>(null)
 
-const addOpen = ref(false)
-const addApplicantId = ref<string | null>(null)
+const dialogId = useId()
 
 const reasonKind = ref<'reject' | 'cancel' | null>(null)
 const reasonRow = ref<AdmissionPaymentQueueRow | null>(null)
@@ -78,16 +82,16 @@ const TABS: {
   count: () => number
 }[] = [
   { value: 'PENDING', label: 'Menunggu', count: () => counts.value.pending },
+  { value: 'REJECTED', label: 'Ditolak', count: () => counts.value.rejected },
   {
     value: 'VERIFIED',
     label: 'Terverifikasi',
     count: () => counts.value.verified,
   },
-  { value: 'REJECTED', label: 'Ditolak', count: () => counts.value.rejected },
 ]
 
-async function load(reset = true) {
-  if (reset) page.value = 1
+async function load(resetPage = true) {
+  if (resetPage) page.value = 1
   const request = ++latestRequest
   loading.value = true
   const result = await paymentQueueService.fetchQueue({
@@ -95,32 +99,42 @@ async function load(reset = true) {
     search: debouncedSearch.value.trim() || undefined,
     waveId: waveFilter.value === 'ALL' ? undefined : waveFilter.value,
     page: page.value,
-    limit: LIMIT,
+    limit: pageSize.value,
   })
   if (request !== latestRequest) return
   loading.value = false
   if ('error' in result) {
     listError.value = result.error
-    if (reset) rows.value = []
-    else page.value -= 1
+    rows.value = []
     return
   }
   listError.value = null
-  rows.value = reset ? result.rows : [...rows.value, ...result.rows]
   total.value = result.total
   counts.value = result.counts
+  const lastPage = Math.max(1, Math.ceil(result.total / pageSize.value))
+  if (page.value > lastPage) {
+    page.value = lastPage
+    await load(false)
+    return
+  }
+  rows.value = result.rows
 }
 
-async function loadMore() {
-  page.value += 1
-  await load(false)
+function goToPage(next: number) {
+  page.value = next
+  void load(false)
+}
+
+function changePageSize(size: number) {
+  pageSize.value = size
+  void load()
 }
 
 async function verify(row: AdmissionPaymentQueueRow) {
   acting.value = true
   const result = await paymentQueueService.verify(row.applicationId)
   acting.value = false
-  if (result.success) await load()
+  if (result.success) await load(false)
 }
 
 function openReason(kind: 'reject' | 'cancel', row: AdmissionPaymentQueueRow) {
@@ -146,29 +160,94 @@ async function submitReason() {
   acting.value = false
   if (!result.success) return
   reasonKind.value = null
-  await load()
+  await load(false)
 }
 
 function openAdd(applicationId: string | null) {
-  addApplicantId.value = applicationId
-  addOpen.value = true
-  if (route.query.applicationId) void router.replace({ query: {} })
-}
-
-async function onAddOpen(open: boolean) {
-  addOpen.value = open
-  if (open) return
-  addApplicantId.value = null
-  await load()
-}
-
-async function onAdded() {
-  addOpen.value = false
-  addApplicantId.value = null
-  await load()
+  void router.push({
+    name: 'admin-payment-new',
+    query: applicationId ? { applicationId } : undefined,
+  })
 }
 
 watch([tab, debouncedSearch, waveFilter], () => load())
+
+const columns = computed<ColumnDef<AdmissionPaymentQueueRow>[]>(() => [
+  {
+    accessorKey: 'registrationNumber',
+    header: 'No. Pendaftaran',
+    meta: { align: 'center' },
+  },
+  {
+    accessorKey: 'applicantName',
+    header: 'Nama Pendaftar',
+    meta: { align: 'left' },
+  },
+  {
+    id: 'status',
+    size: 110,
+    header: 'Status',
+    meta: { align: 'center' },
+    cell: ({ row }) =>
+      h(
+        Badge,
+        { variant: PAYMENT_STATUS_BADGE_VARIANTS[row.original.status] },
+        () => PAYMENT_STATUS_LABELS[row.original.status],
+      ),
+  },
+  {
+    id: 'amount',
+    header: 'Jumlah',
+    meta: { align: 'center' },
+    cell: ({ row }) => formatIDR(row.original.amount),
+  },
+  {
+    id: 'sender',
+    header: 'Pengirim',
+    meta: { align: 'left' },
+    cell: ({ row }) => {
+      const name = row.original.senderAccountName ?? '-'
+      return row.original.bankName ? `${name} (${row.original.bankName})` : name
+    },
+  },
+  {
+    id: 'transferDate',
+    header: 'Tanggal',
+    meta: { align: 'center' },
+    cell: ({ row }) =>
+      row.original.transferDate ? formatDate(row.original.transferDate) : '-',
+  },
+  {
+    id: 'actions',
+    size: 60,
+    header: 'Aksi',
+    meta: { align: 'center' },
+    cell: ({ row }) => {
+      const isPending = row.original.status === 'PENDING'
+      const isVerified = row.original.status === 'VERIFIED'
+      return h(ActionCell, {
+        viewLabel: row.original.proofFile ? 'Lihat bukti' : undefined,
+        manageLabel: canVerify.value && isPending ? 'Verifikasi' : undefined,
+        editLabel:
+          canVerify.value && isPending
+            ? 'Tolak'
+            : canVerify.value && isVerified
+              ? 'Batalkan verifikasi'
+              : undefined,
+        hideEdit: !(canVerify.value && (isPending || isVerified)),
+        hideDelete: true,
+        onView: () =>
+          row.original.proofFile && preview.show(row.original.proofFile),
+        onManage: () => verify(row.original),
+        onEdit: () => {
+          if (isPending) openReason('reject', row.original)
+          else if (isVerified) openReason('cancel', row.original)
+        },
+      })
+    },
+    enableSorting: false,
+  },
+])
 
 onMounted(async () => {
   await applicationService.fetchWaves()
@@ -181,14 +260,11 @@ onMounted(async () => {
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Pembayaran
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Pembayaran </CardTitle>
         <Button
           v-if="canCreate"
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
@@ -199,199 +275,232 @@ onMounted(async () => {
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 p-4 sm:p-6">
+      <div class="space-y-4 px-4 py-5 sm:px-6">
         <Tabs
           v-model="tab"
           variant="line"
+          class="min-w-0 gap-0"
         >
-          <TabsList>
-            <TabsTrigger
-              v-for="item in TABS"
-              :key="item.value"
-              :value="item.value"
-            >
-              {{ item.label }}
-              <Badge
-                variant="secondary"
-                class="ml-1.5"
-                >{{ item.count() }}</Badge
-              >
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
-        >
-          <FloatingLabelField
-            label="Gelombang"
-            :for="waveFilterId"
-            class="w-full sm:w-48"
-            floating
+          <Card
+            gap="none"
+            class="overflow-hidden rounded-xl border bg-card shadow-xs"
           >
-            <Select v-model="waveFilter">
-              <SelectTrigger
-                :id="waveFilterId"
-                size="sm"
-                class="w-full"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Semua</SelectItem>
-                <SelectItem
-                  v-for="wave in waves"
-                  :key="wave.id"
-                  :value="wave.id"
+            <CardHeader class="p-0 shrink-0">
+              <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
+                <TabsTrigger
+                  v-for="item in TABS"
+                  :key="item.value"
+                  :value="item.value"
                 >
-                  {{ wave.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FloatingLabelField>
-          <SearchInput
-            v-model="search"
-            label="Cari nama atau no. pendaftaran"
-          />
-        </div>
-
-        <div
-          v-if="listError"
-          class="space-y-3 rounded-md border p-4"
-          role="alert"
-        >
-          <p class="text-sm">{{ listError }}</p>
-          <Button
-            variant="outline"
-            class="min-h-11"
-            @click="load()"
-          >
-            Coba lagi
-          </Button>
-        </div>
-        <template v-else>
-          <p
-            v-if="loading && !rows.length"
-            class="text-center text-sm text-muted-foreground"
-          >
-            Memuat pembayaran…
-          </p>
-          <p
-            v-else-if="!rows.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground"
-          >
-            Tidak ada pembayaran.
-          </p>
-          <ul
-            v-else
-            class="space-y-2"
-          >
-            <li
-              v-for="row in rows"
-              :key="row.paymentId"
-              data-test="payment-row"
-              class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-            >
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <p class="break-words font-semibold">
-                    {{ row.applicantName }}
-                  </p>
-                  <p class="text-muted-foreground">
-                    {{ row.registrationNumber }} · {{ row.waveName }}
-                  </p>
-                </div>
-                <div class="flex items-center gap-2">
+                  {{ item.label }}
                   <Badge
-                    v-if="row.proofUploadedByStaff"
-                    variant="outline"
-                    >Diunggah staf</Badge
+                    variant="secondary"
+                    class="ml-1.5"
                   >
-                  <Badge :variant="PAYMENT_STATUS_BADGE_VARIANTS[row.status]">
-                    {{ PAYMENT_STATUS_LABELS[row.status] }}
+                    {{ item.count() }}
                   </Badge>
-                </div>
-              </div>
-              <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2">
-                <div>
-                  <dt class="text-muted-foreground">Jumlah</dt>
-                  <dd>{{ formatIDR(row.amount) }}</dd>
-                </div>
-                <div>
-                  <dt class="text-muted-foreground">Tanggal transfer</dt>
-                  <dd>{{ formatDate(row.transferDate) }}</dd>
-                </div>
-                <div>
-                  <dt class="text-muted-foreground">Pengirim</dt>
-                  <dd>
-                    {{ row.senderAccountName ?? '-' }}
-                    <span v-if="row.bankName">({{ row.bankName }})</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt class="text-muted-foreground">Rekening tujuan</dt>
-                  <dd>
-                    <template v-if="row.bankAccount">
-                      {{ row.bankAccount.bankName }}
-                      {{ row.bankAccount.accountNumber }}
-                    </template>
-                    <template v-else>-</template>
-                  </dd>
-                </div>
-              </dl>
-              <p
-                v-if="row.note"
-                class="text-muted-foreground"
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
+
+            <CardContent
+              class="space-y-4 px-4 pt-3 pb-4 sm:px-6 sm:pt-3.5 sm:pb-6"
+            >
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
               >
-                Catatan: {{ row.note }}
-              </p>
-              <div class="flex flex-wrap items-center gap-2">
-                <Button
-                  v-if="row.proofFile"
-                  variant="outline"
-                  class="min-h-11 sm:min-h-0"
-                  data-test="open-file"
-                  @click="preview.show(row.proofFile)"
+                <FloatingLabelField
+                  label="Gelombang"
+                  :for="waveFilterId"
+                  class="w-full sm:w-48"
+                  floating
                 >
-                  <Eye class="mr-1.5 size-4" />
-                  Lihat bukti
-                </Button>
-                <template v-if="canVerify && row.status === 'PENDING'">
-                  <Button
-                    variant="destructive"
-                    class="min-h-11 sm:min-h-0"
-                    :disabled="acting"
-                    @click="openReason('reject', row)"
-                    >Tolak</Button
-                  >
-                  <Button
-                    class="min-h-11 sm:min-h-0"
-                    :disabled="acting"
-                    @click="verify(row)"
-                    >Verifikasi</Button
-                  >
-                </template>
-                <Button
-                  v-if="canVerify && row.status === 'VERIFIED'"
-                  variant="outline"
-                  class="min-h-11 sm:min-h-0"
-                  :disabled="acting"
-                  @click="openReason('cancel', row)"
-                  >Batalkan verifikasi</Button
-                >
+                  <Select v-model="waveFilter">
+                    <SelectTrigger
+                      :id="waveFilterId"
+                      size="sm"
+                      class="w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Semua</SelectItem>
+                      <SelectItem
+                        v-for="wave in waves"
+                        :key="wave.id"
+                        :value="wave.id"
+                      >
+                        {{ wave.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FloatingLabelField>
+                <SearchInput
+                  v-model="search"
+                  label="Cari nama atau no. pendaftaran"
+                />
               </div>
-            </li>
-          </ul>
-          <Button
-            v-if="rows.length < total"
-            variant="outline"
-            class="min-h-11 w-full"
-            :disabled="loading"
-            @click="loadMore"
-          >
-            Muat lebih banyak
-          </Button>
-        </template>
+
+              <div
+                v-if="listError"
+                class="space-y-3 rounded-md border p-4"
+                role="alert"
+              >
+                <p class="text-sm">{{ listError }}</p>
+                <Button
+                  variant="outline"
+                  class="min-h-11"
+                  @click="load()"
+                >
+                  Coba lagi
+                </Button>
+              </div>
+              <template v-else>
+                <p
+                  v-if="loading && !rows.length"
+                  class="text-center text-sm text-muted-foreground"
+                >
+                  Memuat pembayaran…
+                </p>
+                <p
+                  v-else-if="!rows.length"
+                  class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+                >
+                  Tidak ada pembayaran.
+                </p>
+                <template v-else>
+                  <DataTable
+                    class="hidden md:block"
+                    :columns="columns"
+                    :data="rows"
+                    :page="page"
+                    :page-size="pageSize"
+                    :total-items="total"
+                    :is-loading="loading"
+                    item-label="pembayaran"
+                    :pinned-columns="{ right: ['status', 'actions'] }"
+                    @update:page="goToPage"
+                    @update:page-size="changePageSize"
+                  />
+                  <ul class="space-y-2 md:hidden">
+                    <li
+                      v-for="row in rows"
+                      :key="row.paymentId"
+                      data-test="payment-row"
+                      class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
+                    >
+                      <div
+                        class="flex flex-wrap items-start justify-between gap-2"
+                      >
+                        <div class="min-w-0">
+                          <p class="break-words font-semibold">
+                            {{ row.applicantName }}
+                          </p>
+                          <p class="text-muted-foreground">
+                            {{ row.registrationNumber }} · {{ row.waveName }}
+                          </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <Badge
+                            v-if="row.proofUploadedByStaff"
+                            variant="outline"
+                            >Diunggah staf</Badge
+                          >
+                          <Badge
+                            :variant="PAYMENT_STATUS_BADGE_VARIANTS[row.status]"
+                          >
+                            {{ PAYMENT_STATUS_LABELS[row.status] }}
+                          </Badge>
+                        </div>
+                      </div>
+                      <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2">
+                        <div>
+                          <dt class="text-muted-foreground">Jumlah</dt>
+                          <dd>{{ formatIDR(row.amount) }}</dd>
+                        </div>
+                        <div>
+                          <dt class="text-muted-foreground">
+                            Tanggal transfer
+                          </dt>
+                          <dd>{{ formatDate(row.transferDate) }}</dd>
+                        </div>
+                        <div>
+                          <dt class="text-muted-foreground">Pengirim</dt>
+                          <dd>
+                            {{ row.senderAccountName ?? '-' }}
+                            <span v-if="row.bankName"
+                              >({{ row.bankName }})</span
+                            >
+                          </dd>
+                        </div>
+                        <div>
+                          <dt class="text-muted-foreground">Rekening tujuan</dt>
+                          <dd>
+                            <template v-if="row.bankAccount">
+                              {{ row.bankAccount.bankName }}
+                              {{ row.bankAccount.accountNumber }}
+                            </template>
+                            <template v-else>-</template>
+                          </dd>
+                        </div>
+                      </dl>
+                      <p
+                        v-if="row.note"
+                        class="text-muted-foreground"
+                      >
+                        Catatan: {{ row.note }}
+                      </p>
+                      <div class="flex flex-wrap items-center gap-2">
+                        <Button
+                          v-if="row.proofFile"
+                          variant="outline"
+                          class="min-h-11 sm:min-h-0"
+                          data-test="open-file"
+                          @click="preview.show(row.proofFile)"
+                        >
+                          <Eye class="mr-1.5 size-4" />
+                          Lihat bukti
+                        </Button>
+                        <template v-if="canVerify && row.status === 'PENDING'">
+                          <Button
+                            variant="destructive"
+                            class="min-h-11 sm:min-h-0"
+                            :disabled="acting"
+                            @click="openReason('reject', row)"
+                            >Tolak</Button
+                          >
+                          <Button
+                            class="min-h-11 sm:min-h-0"
+                            :disabled="acting"
+                            @click="verify(row)"
+                            >Verifikasi</Button
+                          >
+                        </template>
+                        <Button
+                          v-if="canVerify && row.status === 'VERIFIED'"
+                          variant="outline"
+                          class="min-h-11 sm:min-h-0"
+                          :disabled="acting"
+                          @click="openReason('cancel', row)"
+                          >Batalkan verifikasi</Button
+                        >
+                      </div>
+                    </li>
+                  </ul>
+                  <ServerPager
+                    class="md:hidden"
+                    :page="page"
+                    :page-size="pageSize"
+                    :total="total"
+                    item-label="pembayaran"
+                    :disabled="loading"
+                    @update:page="goToPage"
+                  />
+                </template>
+              </template>
+            </CardContent>
+          </Card>
+        </Tabs>
       </div>
     </Card>
 
@@ -399,8 +508,10 @@ onMounted(async () => {
       :open="reasonKind !== null"
       @update:open="(open) => !open && (reasonKind = null)"
     >
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent
+        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
           <DialogTitle>
             {{
               reasonKind === 'cancel'
@@ -408,7 +519,7 @@ onMounted(async () => {
                 : 'Tolak Bukti Pembayaran'
             }}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription class="sr-only">
             {{
               reasonKind === 'cancel'
                 ? 'Pembayaran kembali ke Menunggu dan pendaftar diberi tahu.'
@@ -418,23 +529,39 @@ onMounted(async () => {
         </DialogHeader>
         <form
           data-test="reason-form"
-          class="space-y-2"
+          class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitReason"
         >
-          <Textarea
-            v-model="reason"
-            rows="3"
-            maxlength="500"
-            aria-label="Alasan"
-            placeholder="Alasan"
-          />
-          <p
-            v-if="reasonError"
-            class="text-sm text-destructive"
+          <div class="space-y-4 px-6 py-5">
+            <FloatingLabelField
+              :label="
+                reasonKind === 'cancel'
+                  ? 'Alasan Pembatalan'
+                  : 'Alasan Penolakan'
+              "
+              :for="`${dialogId}-reason`"
+              :error="reasonError"
+              floating
+            >
+              <Textarea
+                :id="`${dialogId}-reason`"
+                v-model="reason"
+                rows="4"
+                maxlength="500"
+                aria-label="Alasan"
+                placeholder=" "
+              />
+            </FloatingLabelField>
+            <p
+              v-if="reasonError"
+              class="text-xs text-destructive"
+            >
+              {{ reasonError }}
+            </p>
+          </div>
+          <DialogFooter
+            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
           >
-            {{ reasonError }}
-          </p>
-          <DialogFooter class="sm:justify-between">
             <Button
               type="button"
               variant="outline"
@@ -445,21 +572,21 @@ onMounted(async () => {
             </Button>
             <Button
               type="submit"
+              variant="destructive"
               :disabled="acting"
             >
-              {{ acting ? 'Menyimpan…' : 'Simpan' }}
+              {{
+                acting
+                  ? 'Memproses…'
+                  : reasonKind === 'cancel'
+                    ? 'Batalkan Verifikasi'
+                    : 'Tolak'
+              }}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-
-    <AddPaymentDialog
-      :open="addOpen"
-      :initial-application-id="addApplicantId"
-      @update:open="onAddOpen"
-      @saved="onAdded"
-    />
 
     <FilePreviewDialog
       v-model:open="preview.open.value"

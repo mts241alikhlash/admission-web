@@ -11,6 +11,7 @@ import {
   jakartaToday,
   pdfFileError,
   presentValue,
+  standardDocumentFileName,
 } from './utils'
 
 it('keeps zero but names absent and placeholder values', () => {
@@ -95,7 +96,7 @@ describe('documentSummaryText', () => {
         missing: 2,
         total: 6,
       }),
-    ).toBe('3 disetujui · 1 ditolak · 2 belum diunggah dari 6 berkas wajib')
+    ).toBe('3 disetujui · 1 ditolak · 2 belum diunggah dari 6 berkas')
   })
 
   it('says so when no document is required', () => {
@@ -107,7 +108,7 @@ describe('documentSummaryText', () => {
         missing: 0,
         total: 0,
       }),
-    ).toBe('Tidak ada berkas wajib')
+    ).toBe('Tidak ada berkas')
   })
 
   it('reads well when everything is still waiting', () => {
@@ -119,7 +120,36 @@ describe('documentSummaryText', () => {
         missing: 0,
         total: 4,
       }),
-    ).toBe('4 menunggu dari 4 berkas wajib')
+    ).toBe('4 menunggu dari 4 berkas')
+  })
+})
+
+describe('standardDocumentFileName', () => {
+  it('formats filename with document type name, applicant name, and original extension', () => {
+    expect(
+      standardDocumentFileName(
+        'Kartu Keluarga',
+        'Ahmad Fauzi',
+        'WhatsApp-IMG-2026.pdf',
+      ),
+    ).toBe('Kartu Keluarga - Ahmad Fauzi.pdf')
+    expect(
+      standardDocumentFileName(
+        'Akta Kelahiran',
+        'Ahmad Fauzi',
+        'scan_akta.jpeg',
+      ),
+    ).toBe('Akta Kelahiran - Ahmad Fauzi.jpeg')
+  })
+
+  it('handles missing applicant name or document type name gracefully', () => {
+    expect(standardDocumentFileName(null, null, 'file.pdf')).toBe('file.pdf')
+    expect(standardDocumentFileName('Kartu Keluarga', null, 'file.pdf')).toBe(
+      'Kartu Keluarga.pdf',
+    )
+    expect(
+      standardDocumentFileName('Kartu Keluarga', 'Ahmad Fauzi', null),
+    ).toBe('-')
   })
 })
 

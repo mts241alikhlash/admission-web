@@ -104,14 +104,11 @@ const publishedLabel = computed(() =>
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Halaman Depan
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Halaman Depan </CardTitle>
         <Button
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
           variant="outline"
@@ -121,7 +118,7 @@ const publishedLabel = computed(() =>
         </Button>
       </CardHeader>
 
-      <div class="space-y-5 p-4 sm:p-6">
+      <div class="space-y-5 px-4 py-5 sm:px-6">
         <div
           v-if="loadError"
           class="space-y-3 rounded-md border p-4"

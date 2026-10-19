@@ -1,23 +1,9 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, useId } from 'vue'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
+import { computed, h, onMounted, ref } from 'vue'
 import { DataTable, ActionCell } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Switch } from '@mts241alikhlash/ui/switch'
-import { Input } from '@mts241alikhlash/ui/input'
-import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
-import { FormControl } from '@mts241alikhlash/ui/form'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@mts241alikhlash/ui/dialog'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,8 +17,7 @@ import {
 import { Plus } from '@lucide/vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { useRoleGuard } from '@/features/platform/auth'
-import FloatingField from '../components/AdmissionField.vue'
-import { documentTypeSchema } from '../schemas/applicationFormSchemas'
+import DocumentTypeFormDialog from '../components/DocumentTypeFormDialog.vue'
 import { documentTypeService } from '../services/documentTypeService'
 import type {
   AdmissionDocumentTypeAdmin,
@@ -55,20 +40,6 @@ const isSaving = ref(false)
 const isFormOpen = ref(false)
 const editing = ref<AdmissionDocumentTypeAdmin | null>(null)
 const pendingDelete = ref<AdmissionDocumentTypeAdmin | null>(null)
-const switchRows = [
-  { field: 'isRequired', id: useId(), label: 'Wajib diunggah' },
-  { field: 'isActive', id: useId(), label: 'Aktif' },
-] as const
-
-function toggle(field: 'isRequired' | 'isActive') {
-  if (isSaving.value) return
-  setFieldValue(field, !values[field])
-}
-
-const { handleSubmit, resetForm, values, setFieldValue } =
-  useForm<DocumentTypeSavePayload>({
-    validationSchema: toTypedSchema(documentTypeSchema),
-  })
 
 const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
   { accessorKey: 'name', header: 'Nama' },
@@ -99,36 +70,22 @@ const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
         () => (row.original.isActive ? 'Aktif' : 'Nonaktif'),
       ),
   },
-  { accessorKey: 'documentCount', header: 'Dipakai' },
-  ...(canUpdate.value || canDelete.value
-    ? [
-        {
-          id: 'actions',
-          header: 'Aksi',
-          cell: ({ row }) =>
-            h(ActionCell, {
-              hideEdit: !canUpdate.value,
-              hideDelete: !canDelete.value || row.original.documentCount > 0,
-              deleteTitle,
-              deleteDescription,
-              onEdit: () => openForm(row.original),
-              onDelete: async ({
-                closeAlert,
-                setLoading,
-              }: {
-                closeAlert: () => void
-                setLoading: (state: boolean) => void
-              }) => {
-                setLoading(true)
-                await remove(row.original)
-                setLoading(false)
-                closeAlert()
-              },
-            }),
-          enableSorting: false,
-        } satisfies ColumnDef<AdmissionDocumentTypeAdmin>,
-      ]
-    : []),
+  {
+    id: 'actions',
+    header: 'Aksi',
+    cell: ({ row }) =>
+      h(ActionCell, {
+        hideEdit: !canUpdate.value,
+        hideDelete: !canDelete.value || row.original.documentCount > 0,
+        deleteTitle,
+        deleteDescription,
+        onEdit: () => openForm(row.original),
+        onDelete: () => {
+          pendingDelete.value = row.original
+        },
+      }),
+    enableSorting: false,
+  },
 ])
 
 async function load() {
@@ -139,8 +96,27 @@ async function load() {
   loading.value = false
 }
 
+function openForm(type: AdmissionDocumentTypeAdmin | null) {
+  editing.value = type
+  isFormOpen.value = true
+}
+
+async function handleSave(payload: DocumentTypeSavePayload) {
+  isSaving.value = true
+  const result = await documentTypeService.save(
+    editing.value?.id ?? null,
+    payload,
+  )
+  isSaving.value = false
+  if (!result.success) return
+  isFormOpen.value = false
+  await load()
+}
+
 async function remove(type: AdmissionDocumentTypeAdmin) {
+  isSaving.value = true
   const result = await documentTypeService.remove(type.id)
+  isSaving.value = false
   if (result.success) await load()
 }
 
@@ -151,44 +127,17 @@ async function confirmDelete() {
   await remove(type)
 }
 
-function openForm(type: AdmissionDocumentTypeAdmin | null) {
-  editing.value = type
-  resetForm({
-    values: {
-      name: type?.name ?? '',
-      isRequired: type?.isRequired ?? true,
-      isActive: type?.isActive ?? true,
-    },
-  })
-  isFormOpen.value = true
-}
-
-const save = handleSubmit(async (payload) => {
-  isSaving.value = true
-  const result = await documentTypeService.save(
-    editing.value?.id ?? null,
-    payload,
-  )
-  isSaving.value = false
-  if (!result.success) return
-  isFormOpen.value = false
-  await load()
-})
-
 onMounted(load)
 </script>
 
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Jenis Berkas
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Jenis Berkas </CardTitle>
         <Button
           v-if="canCreate"
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
@@ -199,7 +148,7 @@ onMounted(load)
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 p-4 sm:p-6">
+      <div class="space-y-4 px-4 py-5 sm:px-6">
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
@@ -215,150 +164,93 @@ onMounted(load)
           </Button>
         </div>
         <template v-else>
-          <DataTable
-            class="hidden md:block"
-            :columns="columns"
-            :data="types"
-            :total-items="types.length"
-            :is-loading="loading"
-            item-label="jenis berkas"
-            hide-per-page
-            hide-pagination
-          />
           <p
-            v-if="!loading && !types.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
+            v-if="loading && !types.length"
+            class="text-center text-sm text-muted-foreground"
           >
-            Tidak ada data.
+            Memuat jenis berkas…
           </p>
-          <ul
-            data-test="mobile-document-types"
-            class="space-y-2 md:hidden"
+          <p
+            v-else-if="!types.length"
+            class="rounded-md border p-4 text-center text-sm text-muted-foreground"
           >
-            <li
-              v-for="type in types"
-              :key="type.id"
-              class="min-w-0 space-y-2 rounded-lg border p-4"
+            Belum ada jenis berkas.
+          </p>
+          <template v-else>
+            <DataTable
+              :columns="columns"
+              :data="types"
+              item-label="jenis berkas"
+              hide-per-page
+              hide-pagination
+              :page-size="Math.max(1, types.length)"
+              class="hidden md:block"
+            />
+            <ul
+              data-test="mobile-document-types"
+              class="space-y-2 md:hidden"
             >
-              <p class="break-words font-semibold">{{ type.name }}</p>
-              <div class="flex flex-wrap items-center gap-2">
-                <Badge :variant="type.isRequired ? 'default' : 'secondary'">{{
-                  type.isRequired ? 'Wajib' : 'Opsional'
-                }}</Badge>
-                <Badge :variant="type.isActive ? 'default' : 'secondary'">{{
-                  type.isActive ? 'Aktif' : 'Nonaktif'
-                }}</Badge>
-                <span class="text-sm text-muted-foreground"
-                  >Dipakai {{ type.documentCount }}</span
+              <li
+                v-for="type in types"
+                :key="type.id"
+                class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <p class="break-words font-semibold">{{ type.name }}</p>
+                    <p class="text-xs text-muted-foreground">{{ type.code }}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <Badge :variant="type.isRequired ? 'default' : 'secondary'">
+                      {{ type.isRequired ? 'Wajib' : 'Opsional' }}
+                    </Badge>
+                    <Badge :variant="type.isActive ? 'default' : 'secondary'">
+                      {{ type.isActive ? 'Aktif' : 'Nonaktif' }}
+                    </Badge>
+                  </div>
+                </div>
+                <div
+                  class="flex items-center justify-between text-xs text-muted-foreground"
                 >
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  v-if="canUpdate"
-                  variant="outline"
-                  class="min-h-11"
-                  :aria-label="`Ubah ${type.name}`"
-                  @click="openForm(type)"
-                  >Ubah</Button
-                >
-                <Button
-                  v-if="canDelete && type.documentCount === 0"
-                  variant="outline"
-                  class="min-h-11"
-                  :aria-label="`Hapus ${type.name}`"
-                  @click="pendingDelete = type"
-                  >Hapus</Button
-                >
-              </div>
-            </li>
-          </ul>
+                  <span>Dipakai {{ type.documentCount }}</span>
+                  <div
+                    v-if="canUpdate || (canDelete && type.documentCount === 0)"
+                    class="flex gap-2"
+                  >
+                    <Button
+                      v-if="canUpdate"
+                      variant="outline"
+                      size="sm"
+                      :aria-label="`Ubah ${type.name}`"
+                      @click="openForm(type)"
+                    >
+                      Ubah
+                    </Button>
+                    <Button
+                      v-if="canDelete && type.documentCount === 0"
+                      variant="outline"
+                      size="sm"
+                      :aria-label="`Hapus ${type.name}`"
+                      @click="pendingDelete = type"
+                    >
+                      Hapus
+                    </Button>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </template>
         </template>
       </div>
     </Card>
 
-    <Dialog v-model:open="isFormOpen">
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
-          <DialogTitle>
-            {{ editing ? 'Ubah Jenis Berkas' : 'Tambah Jenis Berkas' }}
-          </DialogTitle>
-          <DialogDescription class="sr-only">
-            Berkas yang diunggah pendaftar saat mengisi formulir.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea class="min-h-0 flex-1">
-          <form
-            id="document-type-form"
-            class="space-y-4 px-6 py-4"
-            @submit.prevent="save"
-          >
-            <FloatingField
-              v-slot="{ componentField }"
-              name="name"
-              label="Nama Jenis Berkas"
-              required
-            >
-              <FormControl>
-                <Input
-                  v-bind="componentField"
-                  maxlength="100"
-                />
-              </FormControl>
-            </FloatingField>
-            <div
-              v-for="row in switchRows"
-              :key="row.field"
-              :data-test="`switch-row-${row.field}`"
-              class="flex cursor-pointer items-center justify-between gap-4 rounded-md border px-3 py-2"
-              @click="toggle(row.field)"
-            >
-              <span
-                :id="row.id"
-                data-test="switch-label"
-                class="flex-1 text-sm font-medium"
-                >{{ row.label }}</span
-              >
-              <Switch
-                :aria-labelledby="row.id"
-                :model-value="values[row.field]"
-                :disabled="isSaving"
-                class="focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                @click.stop
-                @update:model-value="setFieldValue(row.field, $event)"
-              />
-            </div>
-            <p
-              v-if="editing && editing.documentCount > 0"
-              class="text-xs text-muted-foreground"
-            >
-              Sudah diunggah {{ editing.documentCount }} kali. Nonaktifkan bila
-              tidak dipakai lagi; berkas lama tetap tersimpan.
-            </p>
-          </form>
-        </ScrollArea>
-        <DialogFooter
-          class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
-        >
-          <Button
-            type="button"
-            variant="outline"
-            :disabled="isSaving"
-            @click="isFormOpen = false"
-          >
-            Batal
-          </Button>
-          <Button
-            type="submit"
-            form="document-type-form"
-            :disabled="isSaving"
-          >
-            {{ isSaving ? 'Menyimpan…' : 'Simpan' }}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <DocumentTypeFormDialog
+      :open="isFormOpen"
+      :document-type="editing"
+      :is-saving="isSaving"
+      @update:open="isFormOpen = $event"
+      @save="handleSave"
+    />
 
     <AlertDialog
       :open="pendingDelete !== null"
@@ -376,8 +268,13 @@ onMounted(load)
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Batal</AlertDialogCancel>
-          <AlertDialogAction @click="confirmDelete">Hapus</AlertDialogAction>
+          <AlertDialogCancel :disabled="isSaving">Batal</AlertDialogCancel>
+          <AlertDialogAction
+            :disabled="isSaving"
+            @click="confirmDelete"
+          >
+            Hapus
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

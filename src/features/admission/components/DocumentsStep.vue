@@ -142,11 +142,14 @@ async function upload() {
 
 <template>
   <div>
-    <Card class="gap-0 overflow-hidden py-0">
-      <CardHeader class="border-b px-4 py-3">
-        <CardTitle class="text-base font-semibold"
-          >Dokumen Persyaratan</CardTitle
-        >
+    <Card
+      gap="none"
+      class="overflow-hidden"
+    >
+      <CardHeader standard>
+        <div class="flex items-center gap-3">
+          <CardTitle size="md">Dokumen Persyaratan</CardTitle>
+        </div>
       </CardHeader>
       <CardContent class="px-4 pt-4 pb-4">
         <p

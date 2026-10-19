@@ -134,7 +134,7 @@ it('lists what the applicant still has to do', () => {
   expect(wrapper.text()).toContain('Unggah ulang Kartu Keluarga')
   expect(wrapper.text()).toContain('Buram')
   expect(wrapper.text()).toContain('Unggah bukti pembayaran')
-  expect(wrapper.text()).toContain('1 dari 2 berkas wajib')
+  expect(wrapper.text()).toContain('1 dari 2 berkas')
   expect(
     wrapper.find('a[href="/registration/form?step=documents"]').exists(),
   ).toBe(true)

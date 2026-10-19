@@ -6,10 +6,16 @@ import { DataTable, ActionCell } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Switch } from '@mts241alikhlash/ui/switch'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import { FormControl } from '@mts241alikhlash/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@mts241alikhlash/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -58,18 +64,10 @@ const fileError = ref<string | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const fileInputId = useId()
 const fileHintId = useId()
-const activeId = useId()
 
-const { handleSubmit, resetForm, values, setFieldValue } = useForm<
-  Omit<DownloadSavePayload, 'file'>
->({
+const { handleSubmit, resetForm } = useForm<Omit<DownloadSavePayload, 'file'>>({
   validationSchema: toTypedSchema(downloadSchema),
 })
-
-function toggleActive() {
-  if (isSaving.value) return
-  setFieldValue('isActive', !values.isActive)
-}
 
 function moveButtons(download: AdmissionDownloadAdmin, index: number) {
   return [
@@ -260,14 +258,11 @@ onMounted(load)
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Unduhan
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Unduhan </CardTitle>
         <Button
           v-if="canCreate"
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
@@ -278,7 +273,7 @@ onMounted(load)
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 p-4 sm:p-6">
+      <div class="space-y-4 px-4 py-5 sm:px-6">
         <p class="text-sm text-muted-foreground">
           Berkas PDF yang bisa diunduh calon pendaftar dari halaman depan,
           misalnya brosur dan formulir kosong. Hanya berkas yang aktif yang
@@ -464,25 +459,28 @@ onMounted(load)
                 {{ fileError }}
               </p>
             </div>
-            <div
-              data-test="switch-row-isActive"
-              class="flex cursor-pointer items-center justify-between gap-4 rounded-md border px-3 py-2"
-              @click="toggleActive"
+            <FloatingField
+              v-slot="{ value, handleChange }"
+              name="isActive"
+              label="Status"
+              required
             >
-              <span
-                :id="activeId"
-                class="flex-1 text-sm font-medium"
-                >Aktif (tampil di halaman depan)</span
-              >
-              <Switch
-                :aria-labelledby="activeId"
-                :model-value="values.isActive"
+              <Select
+                :model-value="String(value)"
                 :disabled="isSaving"
-                class="focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                @click.stop
-                @update:model-value="setFieldValue('isActive', $event)"
-              />
-            </div>
+                @update:model-value="handleChange($event === 'true')"
+              >
+                <FormControl>
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="true"> Aktif </SelectItem>
+                  <SelectItem value="false"> Nonaktif </SelectItem>
+                </SelectContent>
+              </Select>
+            </FloatingField>
           </form>
         </ScrollArea>
         <DialogFooter
