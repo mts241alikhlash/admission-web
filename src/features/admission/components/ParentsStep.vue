@@ -101,12 +101,17 @@ defineExpose({ validate })
       v-for="(parent, index) in parents"
       :key="parent.relation"
     >
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <CardHeader
-          class="flex flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+          standard
+          class="flex-wrap"
         >
           <CardTitle
-            class="flex flex-wrap items-center gap-2 text-base font-semibold"
+            size="md"
+            class="flex flex-wrap items-center gap-2"
           >
             {{
               parent.relation === 'GUARDIAN'
@@ -317,13 +322,16 @@ defineExpose({ validate })
 
       <Card
         v-if="parent.relation === 'MOTHER' && guardianRelation !== 'GUARDIAN'"
-        class="gap-0 overflow-hidden py-0"
+        gap="none"
+        class="overflow-hidden"
       >
         <CardHeader
-          class="flex flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-3"
+          standard
+          class="flex-wrap"
         >
           <CardTitle
-            class="flex flex-wrap items-center gap-2 text-base font-semibold"
+            size="md"
+            class="flex flex-wrap items-center gap-2"
           >
             Wali santri
           </CardTitle>

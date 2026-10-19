@@ -13,7 +13,8 @@ import { useApplicationStore } from '../stores/applicationStore'
 const { rows, waves, filters, fetchWaves, push } = vi.hoisted(() => ({
   rows: [] as AdmissionApplicationListItem[],
   waves: [] as AdmissionWaveSummary[],
-  filters: {} as Record<'search' | 'status' | 'waveId', Ref<string>>,
+  filters: {} as Record<'search' | 'status' | 'waveId', Ref<string>> &
+    Record<'page' | 'pageSize', Ref<number>>,
   fetchWaves: vi.fn(),
   push: vi.fn(),
 }))
@@ -22,11 +23,7 @@ const listState = {
   totalItems: ref(0),
   loading: ref(false),
   listError: ref<string | null>(null),
-  hasNextPage: ref(false),
-  isFetchingNextPage: ref(false),
-  isFetching: ref(false),
   filtersPending: ref(false),
-  loadMore: vi.fn(),
 }
 const sessionUser = ref({ id: 'admin-1' })
 vi.mock('@/features/platform/auth', () => ({
@@ -49,19 +46,17 @@ vi.mock('../composables/useApplicationList', async () => {
       search: Ref<string>,
       status: Ref<string>,
       waveId: Ref<string>,
+      page: Ref<number>,
+      pageSize: Ref<number>,
     ) => {
-      Object.assign(filters, { search, status, waveId })
+      Object.assign(filters, { search, status, waveId, page, pageSize })
       return {
         applications: listState.applications,
         waves: ref(waves),
         totalItems: listState.totalItems,
         loading: listState.loading,
         listError: listState.listError,
-        hasNextPage: listState.hasNextPage,
-        isFetchingNextPage: listState.isFetchingNextPage,
-        isFetching: listState.isFetching,
         filtersPending: listState.filtersPending,
-        loadMore: listState.loadMore,
         refresh: vi.fn(),
         fetchWaves,
       }
@@ -169,9 +164,6 @@ describe('ApplicationListView', () => {
     listState.totalItems.value = rows.length
     listState.loading.value = false
     listState.listError.value = null
-    listState.hasNextPage.value = false
-    listState.isFetchingNextPage.value = false
-    listState.isFetching.value = false
     listState.filtersPending.value = false
     vi.clearAllMocks()
   })
@@ -214,78 +206,64 @@ describe('ApplicationListView', () => {
     wrapper.unmount()
   })
 
-  it('never advances using a stale fetch after filters change', async () => {
-    listState.applications.value = Array.from({ length: 20 }, (_, index) => ({
-      ...rows[0],
-      id: `app-${index}`,
-      fullName: `Nama ${index}`,
-    }))
+  it('asks for the next page and goes back to the first when a filter changes', async () => {
     listState.totalItems.value = 50
-    let finish!: () => void
-    listState.loadMore.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          finish = resolve
-        }),
-    )
     const wrapper = mount(ApplicationListView, { global: { stubs } })
     const next = () =>
       wrapper
         .findAll('button')
         .find((button) => button.text() === 'Selanjutnya')!
+
     await next().trigger('click')
-    expect(wrapper.text()).toContain('11–20')
     await next().trigger('click')
+    expect(filters.page.value).toBe(3)
+
     filters.status.value = 'DRAFT'
-    filters.status.value = 'ALL'
-    listState.applications.value = Array.from({ length: 20 }, (_, index) => ({
-      ...rows[0],
-      id: `filtered-${index}`,
-      fullName: `Filter Baru ${index}`,
-    }))
-    listState.totalItems.value = 50
-    finish()
-    await flushPromises()
-    expect(wrapper.text()).toContain('1–10')
-    expect(wrapper.get('[data-test="mobile-applications"]').text()).toContain(
-      'Filter Baru',
-    )
-    expect(
-      wrapper.get('[data-test="mobile-applications"]').text(),
-    ).not.toContain('Nama 10')
+    expect(filters.page.value).toBe(1)
     wrapper.unmount()
   })
 
-  it.each([0, 1, 10, 11, 50])(
-    'shows at most ten of %i applicants per mobile page',
-    (count) => {
-      listState.applications.value = Array.from(
-        { length: count },
-        (_, index) => ({
-          ...rows[0],
-          id: `app-${index}`,
-          fullName: `Nama ${index}`,
-        }),
+  it('asks the server for ten rows at a time', () => {
+    const wrapper = mount(ApplicationListView, { global: { stubs } })
+    expect(filters.pageSize.value).toBe(10)
+    wrapper.unmount()
+  })
+
+  it.each([
+    [0, 0],
+    [1, 1],
+    [10, 10],
+    [10, 11],
+    [10, 50],
+  ])('shows the %i rows of the page out of %i applicants', (shown, total) => {
+    listState.applications.value = Array.from(
+      { length: shown },
+      (_, index) => ({
+        ...rows[0],
+        id: `app-${index}`,
+        fullName: `Nama ${index}`,
+      }),
+    )
+    listState.totalItems.value = total
+    const wrapper = mount(ApplicationListView, { global: { stubs } })
+    expect(
+      wrapper.findAll('[data-test="mobile-applications"] li'),
+    ).toHaveLength(shown)
+    if (total > 10) {
+      expect(wrapper.text()).toContain(
+        `Halaman 1 dari ${Math.ceil(total / 10)}`,
       )
-      listState.totalItems.value = count
-      const wrapper = mount(ApplicationListView, { global: { stubs } })
       expect(
-        wrapper.findAll('[data-test="mobile-applications"] li'),
-      ).toHaveLength(Math.min(count, 10))
-      if (count > 10) {
-        expect(wrapper.text()).toContain(
-          `Halaman 1 dari ${Math.ceil(count / 10)}`,
-        )
-        expect(
-          wrapper
-            .findAll('button')
-            .find((button) => button.text() === 'Sebelumnya')
-            ?.attributes('disabled'),
-        ).toBeDefined()
-      }
-      wrapper.unmount()
-    },
-  )
+        wrapper
+          .findAll('button')
+          .find((button) => button.text() === 'Sebelumnya')
+          ?.attributes('disabled'),
+      ).toBeDefined()
+    } else {
+      expect(wrapper.text()).not.toContain('Halaman 1 dari')
+    }
+    wrapper.unmount()
+  })
 
   it('does not expose old results while filters are pending', async () => {
     const wrapper = mount(ApplicationListView, { global: { stubs } })
@@ -317,6 +295,7 @@ describe('ApplicationListView', () => {
     const returned = mount(ApplicationListView, { global: { stubs } })
     await flushPromises()
     expect(filters.search.value).toBe('Budi')
+    expect(filters.page.value).toBe(2)
     expect(returned.text()).toContain('11–20')
     returned.unmount()
   })

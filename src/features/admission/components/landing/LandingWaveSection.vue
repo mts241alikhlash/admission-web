@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
 import { CalendarDays } from '@lucide/vue'
-import { Button } from '@mts241alikhlash/ui/button'
 import type { ActiveWave } from '../../types'
 import { useInView } from '../../composables/useInView'
 import { formatDateRange, formatIDR } from '../../utils'
@@ -133,14 +131,6 @@ const { target, visible } = useInView()
                 {{ wave.description }}
               </p>
             </div>
-            <Button
-              v-if="wave.remainingQuota > 0"
-              as-child
-              size="lg"
-              class="min-h-12 bg-[#203f73] px-6 font-bold text-white hover:bg-[#162d53]"
-            >
-              <RouterLink to="/login">Mulai pendaftaran</RouterLink>
-            </Button>
           </div>
 
           <dl

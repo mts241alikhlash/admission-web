@@ -137,17 +137,14 @@ onMounted(async () => {
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Penerimaan Santri Baru
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Penerimaan Santri Baru </CardTitle>
       </CardHeader>
 
-      <CardContent class="space-y-4 p-4 sm:p-6">
+      <CardContent class="space-y-4 px-4 py-5 sm:px-6">
         <div class="hidden flex-col gap-3 md:flex md:flex-row md:items-end">
           <FloatingLabelField
             label="Tahun Ajaran"
@@ -241,7 +238,8 @@ onMounted(async () => {
         <template v-else-if="stats">
           <div class="grid gap-4 lg:grid-cols-3">
             <Card
-              class="gap-0 border-primary bg-primary p-6 text-primary-foreground lg:col-span-2"
+              gap="none"
+              class="border-primary bg-primary p-6 text-primary-foreground lg:col-span-2"
             >
               <p class="text-sm font-medium text-primary-foreground">
                 Total pendaftar
@@ -256,7 +254,10 @@ onMounted(async () => {
               </p>
             </Card>
 
-            <Card class="gap-0 p-6">
+            <Card
+              gap="none"
+              class="p-6"
+            >
               <p class="text-sm font-medium text-muted-foreground">
                 Perlu tindakan
               </p>
@@ -281,9 +282,11 @@ onMounted(async () => {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader class="border-b px-6 py-5">
-              <CardTitle class="text-base">Status pendaftar</CardTitle>
+          <Card gap="none">
+            <CardHeader standard>
+              <div class="flex items-center gap-3">
+                <CardTitle size="md">Status pendaftar</CardTitle>
+              </div>
             </CardHeader>
             <CardContent class="pb-6">
               <div
@@ -316,11 +319,9 @@ onMounted(async () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader
-              class="flex flex-row items-center justify-between gap-3 border-b px-6 py-5"
-            >
-              <CardTitle class="text-base">Keterisian kuota</CardTitle>
+          <Card gap="none">
+            <CardHeader standard>
+              <CardTitle size="md">Keterisian kuota</CardTitle>
               <RouterLink
                 v-if="hasWaves"
                 :to="{ name: 'admin-applications' }"

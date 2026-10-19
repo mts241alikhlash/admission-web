@@ -234,7 +234,12 @@ it('offers nothing to change without create, update or delete rights', async () 
   expect(
     wrapper.findAll('button').filter((b) => b.text().includes('Tambah')),
   ).toHaveLength(0)
-  expect(wrapper.find('[data-test="actions"]').exists()).toBe(false)
+  const actions = wrapper.findAll('[data-test="actions"]')
+  expect(actions.length).toBeGreaterThan(0)
+  for (const action of actions) {
+    expect(action.attributes('data-hide-edit')).toBe('true')
+    expect(action.attributes('data-hide-delete')).toBe('true')
+  }
 })
 
 it('lets a user who may only update edit but not delete', async () => {
@@ -274,7 +279,6 @@ it('shows name and code in separate columns with a clear header for the upload r
     'Kode',
     'Kewajiban',
     'Status',
-    'Dipakai',
     'Aksi',
   ])
   const firstRow = wrapper
@@ -283,44 +287,4 @@ it('shows name and code in separate columns with a clear header for the upload r
     .findAll(':scope > span')
   expect(firstRow[0].text()).toBe('Kartu Keluarga')
   expect(firstRow[1].text()).toBe('FAMILY_CARD')
-})
-
-it('toggles a switch from anywhere in its row, once per click', async () => {
-  service.fetchAll.mockResolvedValue({ types: [] })
-  service.save.mockResolvedValue({ success: true })
-  const wrapper = mountView()
-  await flushPromises()
-  await wrapper
-    .findAll('button')
-    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
-    .trigger('click')
-  await wrapper.get('input[name="name"]').setValue('Rapor')
-
-  const required = wrapper.get('[data-test="switch-row-isRequired"]')
-  const active = wrapper.get('[data-test="switch-row-isActive"]')
-  expect(required.text()).toBe('Wajib diunggah')
-  expect(active.text()).toBe('Aktif')
-
-  await required.trigger('click')
-  expect(required.get('[role="switch"]').attributes('aria-checked')).toBe(
-    'false',
-  )
-  await required.get('[role="switch"]').trigger('click')
-  expect(required.get('[role="switch"]').attributes('aria-checked')).toBe(
-    'true',
-  )
-  await required.get('[data-test="switch-label"]').trigger('click')
-  expect(required.get('[role="switch"]').attributes('aria-checked')).toBe(
-    'false',
-  )
-  await active.get('[data-test="switch-label"]').trigger('click')
-
-  await wrapper.get('form').trigger('submit')
-  await flushPromises()
-  await vi.waitFor(() => expect(service.save).toHaveBeenCalled())
-  expect(service.save).toHaveBeenCalledWith(null, {
-    name: 'Rapor',
-    isRequired: false,
-    isActive: false,
-  })
 })

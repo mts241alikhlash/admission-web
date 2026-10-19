@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
-import type { ComponentPublicInstance } from 'vue'
+import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
 import PaymentListView from './PaymentListView.vue'
 
 const service = vi.hoisted(() => ({
@@ -35,20 +36,13 @@ vi.mock('@/features/platform/auth', () => ({
 }))
 
 const route = vi.hoisted(() => ({ query: {} }))
-const router = vi.hoisted(() => ({ replace: vi.fn() }))
+const router = vi.hoisted(() => ({ push: vi.fn() }))
 vi.mock('vue-router', () => ({
   useRoute: () => route,
   useRouter: () => router,
 }))
 
 const passthrough = { template: '<div><slot /></div>' }
-const AddPaymentDialogStub = {
-  props: ['open', 'initialApplicationId'],
-  emits: ['update:open'],
-  template:
-    '<div data-test="add-dialog" :data-open="open" :data-applicant="initialApplicationId" />',
-}
-
 const ALL = [
   'admission-payments.read',
   'admission-payments.verify',
@@ -101,19 +95,24 @@ function page(
 }
 
 function mountView() {
-  return mount(PaymentListView, {
-    global: {
-      stubs: {
-        AddPaymentDialog: AddPaymentDialogStub,
-        Dialog: passthrough,
-        DialogContent: passthrough,
-        DialogHeader: passthrough,
-        DialogTitle: passthrough,
-        DialogDescription: passthrough,
-        DialogFooter: passthrough,
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(PaymentListView)),
+    }),
+    {
+      attachTo: document.body,
+      global: {
+        stubs: {
+          Dialog: passthrough,
+          DialogContent: passthrough,
+          DialogHeader: passthrough,
+          DialogTitle: passthrough,
+          DialogDescription: passthrough,
+          DialogFooter: passthrough,
+        },
       },
     },
-  })
+  ).findComponent(PaymentListView)
 }
 
 function tab(wrapper: ReturnType<typeof mountView>, label: string) {
@@ -275,58 +274,40 @@ it('shows an empty message and a retry on a load error', async () => {
   expect(wrapper.text()).toContain('Tidak ada pembayaran')
 })
 
-it('opens the add dialog for the applicant named in the address', async () => {
-  route.query = { applicationId: 'app9' }
-  const wrapper = mountView()
-  await flushPromises()
-
-  const dialog = wrapper.get('[data-test="add-dialog"]')
-  expect(dialog.attributes('data-open')).toBe('true')
-  expect(dialog.attributes('data-applicant')).toBe('app9')
-})
-
-it('opens the add dialog from the header button', async () => {
-  const wrapper = mountView()
-  await flushPromises()
-
-  await wrapper
-    .findAll('button')
-    .find((b) => b.text().includes('Tambah Pembayaran'))!
-    .trigger('click')
-
-  expect(wrapper.get('[data-test="add-dialog"]').attributes('data-open')).toBe(
-    'true',
-  )
-})
-
-it('drops the applicant from the address once the dialog opens', async () => {
+it('goes to the add page for the applicant named in the address', async () => {
   route.query = { applicationId: 'app9' }
   mountView()
   await flushPromises()
 
-  expect(router.replace).toHaveBeenCalledWith({ query: {} })
+  expect(router.push).toHaveBeenCalledWith({
+    name: 'admin-payment-new',
+    query: { applicationId: 'app9' },
+  })
 })
 
-it('forgets the applicant and reloads the list when the add dialog is closed', async () => {
-  route.query = { applicationId: 'app9' }
+it('goes to the add page from the header button', async () => {
   const wrapper = mountView()
   await flushPromises()
-  const loads = service.fetchQueue.mock.calls.length
-
-  wrapper
-    .getComponent<ComponentPublicInstance>('[data-test="add-dialog"]')
-    .vm.$emit('update:open', false)
-  await flushPromises()
-  expect(service.fetchQueue.mock.calls.length).toBe(loads + 1)
+  expect(router.push).not.toHaveBeenCalled()
 
   await wrapper
     .findAll('button')
     .find((b) => b.text().includes('Tambah Pembayaran'))!
     .trigger('click')
 
-  expect(
-    wrapper.get('[data-test="add-dialog"]').attributes('data-applicant'),
-  ).toBeUndefined()
+  expect(router.push).toHaveBeenCalledWith({
+    name: 'admin-payment-new',
+    query: undefined,
+  })
+})
+
+it('does not go to the add page without the create permission', async () => {
+  access.granted = new Set(['admission-payments.read'])
+  route.query = { applicationId: 'app9' }
+  mountView()
+  await flushPromises()
+
+  expect(router.push).not.toHaveBeenCalled()
 })
 
 it('ignores a slow response from a tab that is no longer shown', async () => {
@@ -355,4 +336,87 @@ it('uses the underlined tab style', async () => {
   const list = wrapper.get('[data-slot="tabs-list"]')
   expect(list.classes()).toContain('border-b')
   expect(list.classes()).not.toContain('bg-muted')
+})
+
+it('renders DataTable with expected columns and without numbering column', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  const dataTable = wrapper.findComponent({ name: 'DataTable' })
+  expect(dataTable.exists()).toBe(true)
+  const columns = dataTable.props('columns') as { header?: string }[]
+  const headers = columns.map((c) => c.header)
+  expect(headers).not.toContain('No')
+  expect(headers).toEqual([
+    'No. Pendaftaran',
+    'Nama Pendaftar',
+    'Status',
+    'Jumlah',
+    'Pengirim',
+    'Tanggal',
+    'Aksi',
+  ])
+})
+
+it('asks the server for ten rows at a time', async () => {
+  mountView()
+  await flushPromises()
+
+  expect(service.fetchQueue).toHaveBeenCalledWith(
+    expect.objectContaining({ page: 1, limit: 10 }),
+  )
+})
+
+it('loads the next page from the server and replaces the rows', async () => {
+  service.fetchQueue.mockResolvedValue({
+    ...page([pending]),
+    total: 25,
+  })
+  const wrapper = mountView()
+  await flushPromises()
+  expect(wrapper.get('[data-test="server-pager"]').text()).toContain(
+    '1–10 dari 25 pembayaran',
+  )
+
+  service.fetchQueue.mockResolvedValue({
+    ...page([{ ...pending, paymentId: 'p9', applicantName: 'Siti Aminah' }]),
+    total: 25,
+  })
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await flushPromises()
+
+  expect(service.fetchQueue).toHaveBeenLastCalledWith(
+    expect.objectContaining({ page: 2, limit: 10 }),
+  )
+  expect(wrapper.text()).toContain('Siti Aminah')
+  expect(wrapper.text()).not.toContain('Ahmad Fauzi')
+})
+
+it('goes back to the first page when another tab is opened', async () => {
+  service.fetchQueue.mockResolvedValue({ ...page([pending]), total: 25 })
+  const wrapper = mountView()
+  await flushPromises()
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await flushPromises()
+
+  await tab(wrapper, 'Terverifikasi').trigger('mousedown')
+  await flushPromises()
+
+  expect(service.fetchQueue).toHaveBeenLastCalledWith(
+    expect.objectContaining({ status: 'VERIFIED', page: 1 }),
+  )
+})
+
+it('steps back to the last page when the current one is gone', async () => {
+  service.fetchQueue.mockResolvedValueOnce({ ...page([pending]), total: 11 })
+  const wrapper = mountView()
+  await flushPromises()
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  service.fetchQueue.mockResolvedValueOnce({ ...page([]), total: 10 })
+  service.fetchQueue.mockResolvedValueOnce({ ...page([pending]), total: 10 })
+  await flushPromises()
+
+  expect(service.fetchQueue).toHaveBeenLastCalledWith(
+    expect.objectContaining({ page: 1 }),
+  )
 })

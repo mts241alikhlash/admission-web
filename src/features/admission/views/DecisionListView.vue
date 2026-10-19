@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { computed, h, onMounted, ref, useId, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { refDebounced } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
-import { SearchInput } from '@mts241alikhlash/ui'
+import type { ColumnDef } from '@tanstack/vue-table'
+import { ActionCell, DataTable, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Checkbox } from '@mts241alikhlash/ui/checkbox'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@mts241alikhlash/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
 import { Textarea } from '@mts241alikhlash/ui/textarea'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
@@ -29,6 +35,7 @@ import {
 import { useRoleGuard } from '@/features/platform/auth'
 import StatusBadge from '../components/StatusBadge.vue'
 import { applicationService } from '../services/applicationService'
+import ServerPager from '../components/ServerPager.vue'
 import { decisionService } from '../services/decisionService'
 import { useApplicationStore } from '../stores/applicationStore'
 import type {
@@ -40,8 +47,6 @@ import { documentSummaryText, formatDate } from '../utils'
 
 type ActionKind =
   'accept' | 'reject' | 'accept-many' | 'cancel-acceptance' | 'cancel-rejection'
-
-const LIMIT = 50
 
 const router = useRouter()
 const { can } = useRoleGuard()
@@ -57,6 +62,7 @@ const rows = ref<AdmissionDecisionRow[]>([])
 const total = ref(0)
 const counts = ref({ waiting: 0, accepted: 0, rejected: 0 })
 const page = ref(1)
+const pageSize = ref(10)
 const loading = ref(false)
 let latestRequest = 0
 const listError = ref<string | null>(null)
@@ -66,6 +72,7 @@ const actionKind = ref<ActionKind | null>(null)
 const actionRow = ref<AdmissionDecisionRow | null>(null)
 const note = ref('')
 const noteError = ref('')
+const dialogId = useId()
 const acting = ref(false)
 const manyResult = ref<{
   accepted: number
@@ -80,21 +87,21 @@ const TABS: {
 }[] = [
   {
     value: 'waiting',
-    label: 'Menunggu keputusan',
+    label: 'Menunggu',
     count: () => counts.value.waiting,
     empty: 'Tidak ada pendaftar yang menunggu keputusan.',
-  },
-  {
-    value: 'accepted',
-    label: 'Diterima',
-    count: () => counts.value.accepted,
-    empty: 'Belum ada pendaftar yang diterima.',
   },
   {
     value: 'rejected',
     label: 'Ditolak',
     count: () => counts.value.rejected,
     empty: 'Belum ada pendaftar yang ditolak.',
+  },
+  {
+    value: 'accepted',
+    label: 'Diterima',
+    count: () => counts.value.accepted,
+    empty: 'Belum ada pendaftar yang diterima.',
   },
 ]
 
@@ -119,18 +126,9 @@ const DIALOG_TITLES: Record<ActionKind, string> = {
   'cancel-acceptance': 'Batalkan penerimaan',
   'cancel-rejection': 'Batalkan penolakan',
 }
-const DIALOG_HINTS: Record<ActionKind, string> = {
-  accept: 'Pendaftar diberi tahu. Catatan boleh dikosongkan.',
-  reject: 'Pendaftar diberi tahu beserta alasannya.',
-  'accept-many': 'Setiap pendaftar diberi tahu. Catatan boleh dikosongkan.',
-  'cancel-acceptance':
-    'Pendaftar kembali menunggu keputusan dan diberi tahu beserta alasannya.',
-  'cancel-rejection':
-    'Pendaftar kembali diperiksa dan diberi tahu beserta alasannya.',
-}
 
-async function load(reset = true) {
-  if (reset) page.value = 1
+async function load(resetPage = true) {
+  if (resetPage) page.value = 1
   const request = ++latestRequest
   loading.value = true
   const result = await decisionService.fetchQueue({
@@ -138,27 +136,37 @@ async function load(reset = true) {
     search: debouncedSearch.value.trim() || undefined,
     waveId: waveFilter.value === 'ALL' ? undefined : waveFilter.value,
     page: page.value,
-    limit: LIMIT,
+    limit: pageSize.value,
   })
   if (request !== latestRequest) return
   loading.value = false
   if ('error' in result) {
     listError.value = result.error
-    if (reset) rows.value = []
-    else page.value -= 1
+    rows.value = []
     return
   }
   listError.value = null
-  rows.value = reset ? result.rows : [...rows.value, ...result.rows]
   total.value = result.total
   counts.value = result.counts
+  const lastPage = Math.max(1, Math.ceil(result.total / pageSize.value))
+  if (page.value > lastPage) {
+    page.value = lastPage
+    await load(false)
+    return
+  }
+  rows.value = result.rows
   const visible = new Set(rows.value.map((row) => row.applicationId))
   selected.value = selected.value.filter((id) => visible.has(id))
 }
 
-async function loadMore() {
-  page.value += 1
-  await load(false)
+function goToPage(next: number) {
+  page.value = next
+  void load(false)
+}
+
+function changePageSize(size: number) {
+  pageSize.value = size
+  void load()
 }
 
 function toggle(applicationId: string, checked: boolean | 'indeterminate') {
@@ -225,13 +233,124 @@ async function submit() {
   if (!success) return
   close()
   if (kind !== 'accept-many') manyResult.value = null
-  await load()
+  await load(false)
 }
 
 watch([tab, debouncedSearch, waveFilter], () => {
   selected.value = []
   manyResult.value = null
   void load()
+})
+
+const columns = computed<ColumnDef<AdmissionDecisionRow>[]>(() => {
+  const isWaiting = tab.value === 'waiting'
+
+  const selectCol: ColumnDef<AdmissionDecisionRow>[] =
+    canDecide.value && isWaiting
+      ? [
+          {
+            id: 'select',
+            header: () =>
+              h(Checkbox, {
+                modelValue: allSelected.value,
+                'aria-label': 'Pilih semua',
+                'onUpdate:modelValue': toggleAll,
+              }),
+            cell: ({ row }: { row: { original: AdmissionDecisionRow } }) =>
+              h(Checkbox, {
+                modelValue: selected.value.includes(row.original.applicationId),
+                'aria-label': `Pilih ${row.original.applicantName}`,
+                'onUpdate:modelValue': (checked: boolean | 'indeterminate') =>
+                  toggle(row.original.applicationId, checked === true),
+              }),
+            meta: { align: 'left' },
+            enableSorting: false,
+          },
+        ]
+      : []
+
+  const baseCols: ColumnDef<AdmissionDecisionRow>[] = [
+    {
+      accessorKey: 'registrationNumber',
+      header: 'No. Pendaftaran',
+      meta: { align: 'center' },
+    },
+    {
+      accessorKey: 'applicantName',
+      header: 'Nama Pendaftar',
+      meta: { align: 'left' },
+    },
+    {
+      accessorKey: 'waveName',
+      header: 'Gelombang',
+      meta: { align: 'center' },
+    },
+  ]
+
+  const middleCols: ColumnDef<AdmissionDecisionRow>[] = isWaiting
+    ? [
+        {
+          id: 'verifiedAt',
+          header: 'Tgl Verifikasi',
+          meta: { align: 'center' },
+          cell: ({ row }) =>
+            row.original.verifiedAt ? formatDate(row.original.verifiedAt) : '-',
+        },
+      ]
+    : [
+        {
+          id: 'decisionNote',
+          header: 'Catatan Keputusan',
+          meta: { align: 'left' },
+          cell: ({ row }) => row.original.decisionNote || '-',
+        },
+        {
+          id: 'decidedAt',
+          header: 'Diputuskan',
+          meta: { align: 'center' },
+          cell: ({ row }) =>
+            row.original.decidedAt ? formatDate(row.original.decidedAt) : '-',
+        },
+      ]
+
+  const actionCol: ColumnDef<AdmissionDecisionRow> = {
+    id: 'actions',
+    header: 'Aksi',
+    meta: { align: 'center' },
+    cell: ({ row }) =>
+      h(ActionCell, {
+        viewLabel: 'Lihat detail',
+        manageLabel: canDecide.value && isWaiting ? 'Terima' : undefined,
+        editLabel:
+          canDecide.value && isWaiting
+            ? 'Tolak'
+            : canDecide.value && row.original.status === 'ACCEPTED'
+              ? 'Batalkan penerimaan'
+              : canDecide.value && row.original.status === 'REJECTED'
+                ? 'Batalkan penolakan'
+                : undefined,
+        hideEdit: !(
+          canDecide.value &&
+          (isWaiting ||
+            row.original.status === 'ACCEPTED' ||
+            row.original.status === 'REJECTED')
+        ),
+        hideDelete: true,
+        onView: () =>
+          router.push(`/admin/applicants/${row.original.applicationId}`),
+        onManage: () => open('accept', row.original),
+        onEdit: () => {
+          if (isWaiting) open('reject', row.original)
+          else if (row.original.status === 'ACCEPTED')
+            open('cancel-acceptance', row.original)
+          else if (row.original.status === 'REJECTED')
+            open('cancel-rejection', row.original)
+        },
+      }),
+    enableSorting: false,
+  }
+
+  return [...selectCol, ...baseCols, ...middleCols, actionCol]
 })
 
 onMounted(async () => {
@@ -243,263 +362,297 @@ onMounted(async () => {
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
       <CardHeader
         data-test="header"
         class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
       >
-        <CardTitle class="text-xl font-bold tracking-tight"
-          >Keputusan</CardTitle
-        >
+        <CardTitle size="lg">Keputusan</CardTitle>
       </CardHeader>
 
-      <div class="space-y-4 p-4 sm:p-6">
+      <div class="space-y-4 px-4 py-5 sm:px-6">
         <Tabs
           v-model="tab"
           variant="line"
+          class="min-w-0 gap-0"
         >
-          <TabsList>
-            <TabsTrigger
-              v-for="item in TABS"
-              :key="item.value"
-              :value="item.value"
-            >
-              {{ item.label }}
-              <Badge
-                variant="secondary"
-                class="ml-1.5"
-                >{{ item.count() }}</Badge
-              >
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div
-          class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
-        >
-          <FloatingLabelField
-            label="Gelombang"
-            :for="waveFilterId"
-            class="w-full sm:w-48"
-            floating
+          <Card
+            gap="none"
+            class="overflow-hidden rounded-xl border bg-card shadow-xs"
           >
-            <Select v-model="waveFilter">
-              <SelectTrigger
-                :id="waveFilterId"
-                size="sm"
-                class="w-full"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Semua</SelectItem>
-                <SelectItem
-                  v-for="wave in waves"
-                  :key="wave.id"
-                  :value="wave.id"
+            <CardHeader class="p-0 shrink-0">
+              <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
+                <TabsTrigger
+                  v-for="item in TABS"
+                  :key="item.value"
+                  :value="item.value"
                 >
-                  {{ wave.name }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </FloatingLabelField>
-          <SearchInput
-            v-model="search"
-            label="Cari nama atau no. pendaftaran"
-          />
-        </div>
+                  {{ item.label }}
+                  <Badge
+                    variant="secondary"
+                    class="ml-1.5"
+                  >
+                    {{ item.count() }}
+                  </Badge>
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
 
-        <div
-          v-if="manyResult"
-          data-test="many-result"
-          class="space-y-1 rounded-md border p-3 text-sm"
-        >
-          <p class="font-semibold">
-            {{ manyResult.accepted }} diterima, {{ manyResult.skipped.length }}
-            dilewati.
-          </p>
-          <ul
-            v-if="manyResult.skipped.length"
-            class="list-disc pl-5"
-          >
-            <li
-              v-for="item in manyResult.skipped"
-              :key="item.name"
+            <CardContent
+              class="space-y-4 px-4 pt-3 pb-4 sm:px-6 sm:pt-3.5 sm:pb-6"
             >
-              {{ item.name }}: {{ item.reason }}
-            </li>
-          </ul>
-        </div>
-
-        <div
-          v-if="canDecide && tab === 'waiting' && rows.length"
-          class="flex flex-wrap items-center justify-between gap-2"
-        >
-          <label
-            data-test="select-all"
-            class="flex min-h-11 items-center gap-2 text-sm sm:min-h-0"
-          >
-            <Checkbox
-              :model-value="allSelected"
-              aria-label="Pilih semua"
-              @update:model-value="toggleAll"
-            />
-            Pilih semua yang dimuat
-          </label>
-          <div
-            v-if="selected.length"
-            data-test="selection-bar"
-            class="flex flex-wrap items-center gap-2"
-          >
-            <span class="text-sm">{{ selected.length }} dipilih</span>
-            <Button
-              class="min-h-11 sm:min-h-0"
-              :disabled="acting"
-              @click="open('accept-many')"
-            >
-              Terima terpilih
-            </Button>
-          </div>
-        </div>
-
-        <div
-          v-if="listError"
-          class="space-y-3 rounded-md border p-4"
-          role="alert"
-        >
-          <p class="text-sm">{{ listError }}</p>
-          <Button
-            variant="outline"
-            class="min-h-11"
-            @click="load()"
-          >
-            Coba lagi
-          </Button>
-        </div>
-        <template v-else>
-          <p
-            v-if="loading && !rows.length"
-            class="text-center text-sm text-muted-foreground"
-          >
-            Memuat antrean keputusan…
-          </p>
-          <p
-            v-else-if="!rows.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground"
-          >
-            {{ emptyText }}
-          </p>
-          <ul
-            v-else
-            class="space-y-2"
-          >
-            <li
-              v-for="row in rows"
-              :key="row.applicationId"
-              data-test="decision-row"
-              class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-            >
-              <div class="flex items-start gap-3">
-                <Checkbox
-                  v-if="canDecide && tab === 'waiting'"
-                  :model-value="selected.includes(row.applicationId)"
-                  :aria-label="`Pilih ${row.applicantName}`"
-                  class="mt-1"
-                  @update:model-value="
-                    (checked) => toggle(row.applicationId, checked)
-                  "
+              <div
+                class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+              >
+                <FloatingLabelField
+                  label="Gelombang"
+                  :for="waveFilterId"
+                  class="w-full sm:w-48"
+                  floating
+                >
+                  <Select v-model="waveFilter">
+                    <SelectTrigger
+                      :id="waveFilterId"
+                      size="sm"
+                      class="w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Semua</SelectItem>
+                      <SelectItem
+                        v-for="wave in waves"
+                        :key="wave.id"
+                        :value="wave.id"
+                      >
+                        {{ wave.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FloatingLabelField>
+                <SearchInput
+                  v-model="search"
+                  label="Cari nama atau no. pendaftaran"
                 />
-                <div
-                  class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
-                >
-                  <div class="min-w-0">
-                    <p class="break-words font-semibold">
-                      {{ row.applicantName }}
-                    </p>
-                    <p class="text-muted-foreground">
-                      {{ row.registrationNumber }} · {{ row.waveName }}
-                    </p>
-                  </div>
-                  <StatusBadge :status="row.status as AdmissionStatus" />
-                </div>
               </div>
-              <p>{{ documentSummaryText(row.summary) }}</p>
-              <p
-                v-if="row.decisionNote"
-                class="text-muted-foreground"
+
+              <div
+                v-if="manyResult"
+                data-test="many-result"
+                class="space-y-1 rounded-md border p-3 text-sm"
               >
-                Catatan: {{ row.decisionNote }}
-              </p>
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <p class="text-muted-foreground">
-                  <template v-if="row.decidedAt">
-                    Diputuskan {{ formatDate(row.decidedAt) }}
-                  </template>
-                  <template v-else-if="row.verifiedAt">
-                    Terverifikasi {{ formatDate(row.verifiedAt) }}
-                  </template>
+                <p class="font-semibold">
+                  {{ manyResult.accepted }} diterima,
+                  {{ manyResult.skipped.length }}
+                  dilewati.
                 </p>
-                <div class="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    class="min-h-11 sm:min-h-0"
-                    data-test="open-detail"
-                    @click="
-                      router.push(`/admin/applicants/${row.applicationId}`)
-                    "
+                <ul
+                  v-if="manyResult.skipped.length"
+                  class="list-disc pl-5"
+                >
+                  <li
+                    v-for="item in manyResult.skipped"
+                    :key="item.name"
                   >
-                    Lihat detail
-                  </Button>
-                  <template v-if="canDecide && tab === 'waiting'">
-                    <Button
-                      variant="destructive"
-                      class="min-h-11 sm:min-h-0"
-                      :disabled="acting"
-                      @click="open('reject', row)"
-                    >
-                      Tolak
-                    </Button>
-                    <Button
-                      class="min-h-11 sm:min-h-0"
-                      :disabled="acting"
-                      @click="open('accept', row)"
-                    >
-                      Terima
-                    </Button>
-                  </template>
-                  <Button
-                    v-if="canDecide && row.status === 'ACCEPTED'"
-                    variant="outline"
-                    class="min-h-11 sm:min-h-0"
-                    :disabled="acting"
-                    @click="open('cancel-acceptance', row)"
-                  >
-                    Batalkan penerimaan
-                  </Button>
-                  <Button
-                    v-if="canDecide && row.status === 'REJECTED'"
-                    variant="outline"
-                    class="min-h-11 sm:min-h-0"
-                    :disabled="acting"
-                    @click="open('cancel-rejection', row)"
-                  >
-                    Batalkan penolakan
-                  </Button>
-                </div>
+                    {{ item.name }}: {{ item.reason }}
+                  </li>
+                </ul>
               </div>
-            </li>
-          </ul>
-          <Button
-            v-if="rows.length < total"
-            variant="outline"
-            class="min-h-11 w-full"
-            :disabled="loading"
-            @click="loadMore"
-          >
-            Muat lebih banyak
-          </Button>
-        </template>
+
+              <div
+                v-if="canDecide && tab === 'waiting' && rows.length"
+                class="flex flex-wrap items-center justify-between gap-2 md:hidden"
+              >
+                <label
+                  data-test="select-all"
+                  class="flex min-h-11 items-center gap-2 text-sm sm:min-h-0"
+                >
+                  <Checkbox
+                    :model-value="allSelected"
+                    aria-label="Pilih semua"
+                    @update:model-value="toggleAll"
+                  />
+                  Pilih semua di halaman ini
+                </label>
+              </div>
+
+              <div
+                v-if="listError"
+                class="space-y-3 rounded-md border p-4"
+                role="alert"
+              >
+                <p class="text-sm">{{ listError }}</p>
+                <Button
+                  variant="outline"
+                  class="min-h-11"
+                  @click="load()"
+                >
+                  Coba lagi
+                </Button>
+              </div>
+              <template v-else>
+                <p
+                  v-if="loading && !rows.length"
+                  class="text-center text-sm text-muted-foreground"
+                >
+                  Memuat antrean keputusan…
+                </p>
+                <p
+                  v-else-if="!rows.length"
+                  class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+                >
+                  {{ emptyText }}
+                </p>
+                <template v-else>
+                  <DataTable
+                    class="hidden md:block"
+                    :columns="columns"
+                    :data="rows"
+                    :page="page"
+                    :page-size="pageSize"
+                    :total-items="total"
+                    :is-loading="loading"
+                    item-label="pendaftar"
+                    @update:page="goToPage"
+                    @update:page-size="changePageSize"
+                  />
+                  <ul class="space-y-2 md:hidden">
+                    <li
+                      v-for="row in rows"
+                      :key="row.applicationId"
+                      data-test="decision-row"
+                      class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
+                    >
+                      <div class="flex items-start gap-3">
+                        <Checkbox
+                          v-if="canDecide && tab === 'waiting'"
+                          :model-value="selected.includes(row.applicationId)"
+                          :aria-label="`Pilih ${row.applicantName}`"
+                          class="mt-1"
+                          @update:model-value="
+                            (checked) => toggle(row.applicationId, checked)
+                          "
+                        />
+                        <div
+                          class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
+                        >
+                          <div class="min-w-0">
+                            <p class="break-words font-semibold">
+                              {{ row.applicantName }}
+                            </p>
+                            <p class="text-muted-foreground">
+                              {{ row.registrationNumber }} · {{ row.waveName }}
+                            </p>
+                          </div>
+                          <StatusBadge
+                            :status="row.status as AdmissionStatus"
+                          />
+                        </div>
+                      </div>
+                      <p>{{ documentSummaryText(row.summary) }}</p>
+                      <p
+                        v-if="row.decisionNote"
+                        class="text-muted-foreground"
+                      >
+                        Catatan: {{ row.decisionNote }}
+                      </p>
+                      <div
+                        class="flex flex-wrap items-center justify-between gap-2"
+                      >
+                        <p class="text-muted-foreground">
+                          <template v-if="row.decidedAt">
+                            Diputuskan {{ formatDate(row.decidedAt) }}
+                          </template>
+                          <template v-else-if="row.verifiedAt">
+                            Terverifikasi {{ formatDate(row.verifiedAt) }}
+                          </template>
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            class="min-h-11 sm:min-h-0"
+                            data-test="open-detail"
+                            @click="
+                              router.push(
+                                `/admin/applicants/${row.applicationId}`,
+                              )
+                            "
+                          >
+                            Lihat detail
+                          </Button>
+                          <template v-if="canDecide && tab === 'waiting'">
+                            <Button
+                              variant="destructive"
+                              class="min-h-11 sm:min-h-0"
+                              :disabled="acting"
+                              @click="open('reject', row)"
+                            >
+                              Tolak
+                            </Button>
+                            <Button
+                              class="min-h-11 sm:min-h-0"
+                              :disabled="acting"
+                              @click="open('accept', row)"
+                            >
+                              Terima
+                            </Button>
+                          </template>
+                          <Button
+                            v-if="canDecide && row.status === 'ACCEPTED'"
+                            variant="outline"
+                            class="min-h-11 sm:min-h-0"
+                            :disabled="acting"
+                            @click="open('cancel-acceptance', row)"
+                          >
+                            Batalkan penerimaan
+                          </Button>
+                          <Button
+                            v-if="canDecide && row.status === 'REJECTED'"
+                            variant="outline"
+                            class="min-h-11 sm:min-h-0"
+                            :disabled="acting"
+                            @click="open('cancel-rejection', row)"
+                          >
+                            Batalkan penolakan
+                          </Button>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <div
+                    v-if="canDecide && tab === 'waiting' && selected.length"
+                    data-test="selection-bar"
+                    class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 sm:px-4"
+                  >
+                    <span class="text-sm font-medium"
+                      >{{ selected.length }} dipilih</span
+                    >
+                    <Button
+                      class="min-h-11 sm:min-h-0"
+                      :disabled="acting"
+                      @click="open('accept-many')"
+                    >
+                      Terima terpilih
+                    </Button>
+                  </div>
+
+                  <ServerPager
+                    class="md:hidden"
+                    :page="page"
+                    :page-size="pageSize"
+                    :total="total"
+                    item-label="pendaftar"
+                    :disabled="loading"
+                    @update:page="goToPage"
+                  />
+                </template>
+              </template>
+            </CardContent>
+          </Card>
+        </Tabs>
       </div>
     </Card>
 
@@ -507,40 +660,48 @@ onMounted(async () => {
       :open="actionKind !== null"
       @update:open="(isOpen) => !isOpen && close()"
     >
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent
+        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
           <DialogTitle>{{
             actionKind ? DIALOG_TITLES[actionKind] : ''
           }}</DialogTitle>
-          <DialogDescription>
-            <template v-if="actionKind === 'accept-many'">
-              {{ selected.length }} pendaftar akan diterima.
-            </template>
-            <template v-else-if="actionRow">
-              {{ actionRow.applicantName }}.
-            </template>
-            {{ actionKind ? DIALOG_HINTS[actionKind] : '' }}
+          <DialogDescription class="sr-only">
+            {{ actionKind ? DIALOG_TITLES[actionKind] : '' }}
           </DialogDescription>
         </DialogHeader>
         <form
           data-test="action-form"
-          class="space-y-2"
+          class="flex flex-1 flex-col justify-between"
           @submit.prevent="submit"
         >
-          <Textarea
-            v-model="note"
-            rows="3"
-            maxlength="1000"
-            :aria-label="reasonRequired ? 'Alasan' : 'Catatan (opsional)'"
-            :placeholder="reasonRequired ? 'Alasan' : 'Catatan (opsional)'"
-          />
-          <p
-            v-if="noteError"
-            class="text-sm text-destructive"
+          <div class="space-y-4 px-6 py-5">
+            <FloatingLabelField
+              :label="reasonRequired ? 'Alasan' : 'Catatan (opsional)'"
+              :for="`${dialogId}-note`"
+              :error="noteError"
+              floating
+            >
+              <Textarea
+                :id="`${dialogId}-note`"
+                v-model="note"
+                rows="3"
+                maxlength="1000"
+                :aria-label="reasonRequired ? 'Alasan' : 'Catatan (opsional)'"
+                placeholder=" "
+              />
+            </FloatingLabelField>
+            <p
+              v-if="noteError"
+              class="text-xs text-destructive"
+            >
+              {{ noteError }}
+            </p>
+          </div>
+          <DialogFooter
+            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
           >
-            {{ noteError }}
-          </p>
-          <DialogFooter class="sm:justify-between">
             <Button
               type="button"
               variant="outline"

@@ -1,16 +1,6 @@
 <script setup lang="ts">
-import {
-  computed,
-  h,
-  nextTick,
-  onMounted,
-  ref,
-  useId,
-  useTemplateRef,
-  watch,
-} from 'vue'
+import { computed, h, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useIntersectionObserver } from '@vueuse/core'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
@@ -33,6 +23,7 @@ import {
 } from '@mts241alikhlash/ui/select'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { Filter, Plus } from '@lucide/vue'
+import ServerPager from '../components/ServerPager.vue'
 import { useApplicationList } from '../composables/useApplicationList'
 import { useAdminRegistration } from '../composables/useAdminRegistration'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
@@ -87,11 +78,9 @@ const statusFilterId = useId()
 const waveFilterId = useId()
 const mobileStatusFilterId = useId()
 const mobileWaveFilterId = useId()
-const mobilePage = ref(returning ? savedContext.page : requestedPage)
+const page = ref(returning ? savedContext.page : requestedPage)
+const pageSize = ref(10)
 const listStart = ref<HTMLElement | null>(null)
-const changingPage = ref(false)
-const pageLoadError = ref<string | null>(null)
-let filterRevision = 0
 const filterOpen = ref(false)
 const activeFiltersCount = computed(
   () =>
@@ -104,62 +93,34 @@ const {
   totalItems,
   loading,
   listError,
-  hasNextPage,
-  isFetchingNextPage,
-  isFetching,
   filtersPending,
-  loadMore,
   refresh,
   fetchWaves,
-} = useApplicationList(searchQuery, statusFilter, waveFilter)
-const loadMoreButton = useTemplateRef('loadMoreButton')
-useIntersectionObserver(loadMoreButton, ([entry]) => {
-  if (entry?.isIntersecting) void loadMore()
-})
-const mobileApplications = computed(() =>
-  applications.value.slice((mobilePage.value - 1) * 10, mobilePage.value * 10),
-)
+} = useApplicationList(searchQuery, statusFilter, waveFilter, page, pageSize)
+
 watch(
   [searchQuery, statusFilter, waveFilter],
   () => {
-    filterRevision++
-    mobilePage.value = 1
-    pageLoadError.value = null
+    page.value = 1
   },
   { flush: 'sync' },
 )
 
-async function nextMobilePage() {
-  if (changingPage.value || filtersPending.value || isFetching.value) return
-  const revision = filterRevision
-  const from = mobilePage.value
-  changingPage.value = true
-  pageLoadError.value = null
-  try {
-    if (from * 10 >= applications.value.length) await loadMore()
-    if (
-      revision !== filterRevision ||
-      from !== mobilePage.value ||
-      listError.value
-    )
-      return
-    if (applications.value.length > from * 10) {
-      mobilePage.value = from + 1
-      await nextTick()
-      listStart.value?.scrollIntoView({ block: 'start', behavior: 'auto' })
-    }
-  } catch {
-    if (revision === filterRevision)
-      pageLoadError.value = 'Halaman berikutnya gagal dimuat. Coba lagi.'
-  } finally {
-    changingPage.value = false
-  }
-}
+watch([totalItems, loading, filtersPending], () => {
+  if (loading.value || filtersPending.value) return
+  const lastPage = Math.max(1, Math.ceil(totalItems.value / pageSize.value))
+  if (page.value > lastPage) page.value = lastPage
+})
 
-async function previousMobilePage() {
-  mobilePage.value = Math.max(1, mobilePage.value - 1)
+async function goToPage(next: number) {
+  page.value = next
   await nextTick()
   listStart.value?.scrollIntoView({ block: 'start', behavior: 'auto' })
+}
+
+function changePageSize(size: number) {
+  pageSize.value = size
+  page.value = 1
 }
 
 function resetFilters() {
@@ -176,7 +137,7 @@ function saveListContext() {
     search: searchQuery.value,
     status: statusFilter.value,
     waveId: waveFilter.value,
-    page: mobilePage.value,
+    page: page.value,
     scrollTop: listStart.value?.closest('[data-app-scroll]')?.scrollTop ?? 0,
     returning: true,
   }
@@ -192,24 +153,10 @@ watch(
 async function restoreListContext() {
   if (restored || loading.value || filtersPending.value) return
   restored = true
-  if (!returning && requestedPage === 1) return
-  const target = mobilePage.value
-  while (
-    applications.value.length < (target - 1) * 10 + 1 &&
-    hasNextPage.value &&
-    !listError.value
-  ) {
-    const previous = applications.value.length
-    await loadMore()
-    if (applications.value.length <= previous) break
-  }
-  mobilePage.value = Math.min(
-    target,
-    Math.max(1, Math.ceil(totalItems.value / 10)),
-  )
+  if (!returning) return
   await nextTick()
   const container = listStart.value?.closest('[data-app-scroll]')
-  if (returning && container && typeof container.scrollTo === 'function') {
+  if (container && typeof container.scrollTo === 'function') {
     container.scrollTo({ top: savedContext.scrollTop, behavior: 'auto' })
   }
   applicationStore.listContext.returning = false
@@ -361,14 +308,11 @@ function fillForm() {
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Daftar Pendaftar
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Daftar Pendaftar </CardTitle>
         <Button
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
           @click="openRegister"
@@ -380,7 +324,7 @@ function fillForm() {
 
       <div
         ref="listStart"
-        class="space-y-4 p-4 sm:p-6"
+        class="space-y-4 px-4 py-5 sm:px-6"
       >
         <div class="hidden gap-3 md:flex md:items-end md:justify-between">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -507,11 +451,13 @@ function fillForm() {
             class="hidden md:block"
             :columns="columns"
             :data="applications"
-            :total-items="applications.length"
+            :page="page"
+            :page-size="pageSize"
+            :total-items="totalItems"
             :is-loading="loading"
             item-label="pendaftar"
-            hide-per-page
-            hide-pagination
+            @update:page="goToPage"
+            @update:page-size="changePageSize"
           />
           <p
             v-if="loading || filtersPending"
@@ -544,7 +490,7 @@ function fillForm() {
             class="divide-y rounded-md border md:hidden"
           >
             <li
-              v-for="item in mobileApplications"
+              v-for="item in applications"
               :key="item.id"
               class="min-w-0"
             >
@@ -573,77 +519,15 @@ function fillForm() {
               </RouterLink>
             </li>
           </ul>
-          <div
+          <ServerPager
             v-if="!loading && !filtersPending && totalItems > 0"
-            class="flex flex-wrap items-center justify-between gap-2 text-sm md:hidden"
-          >
-            <span class="text-muted-foreground">
-              {{ (mobilePage - 1) * 10 + 1 }}–{{
-                Math.min(mobilePage * 10, totalItems)
-              }}
-              dari {{ totalItems }} pendaftar
-            </span>
-            <div
-              v-if="totalItems > 10"
-              class="flex flex-wrap gap-2"
-            >
-              <span class="self-center text-muted-foreground"
-                >Halaman {{ mobilePage }} dari
-                {{ Math.ceil(totalItems / 10) }}</span
-              >
-              <Button
-                variant="outline"
-                class="min-h-11"
-                :disabled="mobilePage === 1"
-                @click="previousMobilePage"
-              >
-                Sebelumnya
-              </Button>
-              <Button
-                variant="outline"
-                class="min-h-11"
-                :disabled="
-                  mobilePage * 10 >= totalItems ||
-                  isFetchingNextPage ||
-                  changingPage ||
-                  isFetching ||
-                  filtersPending
-                "
-                @click="nextMobilePage"
-              >
-                {{ changingPage ? 'Memuat…' : 'Selanjutnya' }}
-              </Button>
-            </div>
-          </div>
-          <p
-            v-if="pageLoadError"
-            role="alert"
-            class="text-sm text-destructive md:hidden"
-          >
-            {{ pageLoadError }}
-            <Button
-              variant="outline"
-              @click="nextMobilePage"
-              >Coba lagi</Button
-            >
-          </p>
-          <div
-            v-if="hasNextPage"
-            class="hidden flex-col items-center gap-2 md:flex"
-          >
-            <p class="text-sm text-muted-foreground">
-              Menampilkan {{ applications.length }} dari
-              {{ totalItems }} pendaftar
-            </p>
-            <Button
-              ref="loadMoreButton"
-              variant="outline"
-              :disabled="isFetchingNextPage"
-              @click="loadMore"
-            >
-              {{ isFetchingNextPage ? 'Memuat…' : 'Muat lebih banyak' }}
-            </Button>
-          </div>
+            class="md:hidden"
+            :page="page"
+            :page-size="pageSize"
+            :total="totalItems"
+            item-label="pendaftar"
+            @update:page="goToPage"
+          />
         </template>
       </div>
     </Card>

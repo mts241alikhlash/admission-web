@@ -15,15 +15,6 @@ const sortedDocumentTypes = computed(() =>
   ),
 )
 
-const groups = computed(() => {
-  const required = sortedDocumentTypes.value.filter((type) => type.isRequired)
-  const optional = sortedDocumentTypes.value.filter((type) => !type.isRequired)
-  return [
-    { key: 'required', label: 'Wajib', items: required, primary: true },
-    { key: 'optional', label: 'Opsional', items: optional, primary: false },
-  ].filter((group) => group.items.length)
-})
-
 const { target, visible } = useInView()
 </script>
 
@@ -42,8 +33,7 @@ const { target, visible } = useInView()
           Berkas yang perlu disiapkan
         </h2>
         <p class="mt-5 max-w-xl text-sm leading-7 text-slate-700">
-          Siapkan berkas berikut sebelum mulai mendaftar. Berkas yang berlabel
-          Wajib harus diunggah agar pendaftaranmu lengkap.
+          Siapkan berkas berikut sebelum mulai mendaftar.
         </p>
         <div
           class="mt-8 max-w-md rounded-2xl bg-[#f5f2e9] p-5 text-sm leading-6 text-slate-700"
@@ -71,56 +61,32 @@ const { target, visible } = useInView()
         />
       </div>
 
-      <div
+      <ul
         v-else-if="sortedDocumentTypes.length"
-        class="grid content-start gap-8"
-        :class="groups.length > 1 && 'sm:grid-cols-2'"
+        class="grid content-start gap-3 sm:grid-cols-2"
       >
-        <section
-          v-for="group in groups"
-          :key="group.key"
-          :aria-label="`Berkas ${group.label.toLowerCase()}`"
+        <li
+          v-for="(documentType, index) in sortedDocumentTypes"
+          :key="documentType.id"
+          class="flex items-center gap-4 rounded-2xl bg-[#f5f2e9] px-4 py-4 transition duration-500 ease-out motion-reduce:transition-none"
+          :class="
+            visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          "
+          :style="{ transitionDelay: `${Math.min(index, 8) * 70}ms` }"
         >
-          <p class="flex items-center gap-2 text-xs font-semibold">
-            <span
-              class="rounded-full px-3 py-1"
-              :class="
-                group.primary
-                  ? 'bg-[#203f73] text-white'
-                  : 'bg-[#203f73]/10 text-[#203f73]'
-              "
-            >
-              {{ group.label }}
-            </span>
-            <span class="text-slate-600">{{ group.items.length }} berkas</span>
+          <span
+            class="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#203f73]"
+          >
+            <FileText
+              class="size-5"
+              aria-hidden="true"
+            />
+          </span>
+          <p class="min-w-0 flex-1 text-sm font-semibold text-[#203f73]">
+            {{ documentType.name }}
           </p>
-          <ul class="mt-4 grid gap-3">
-            <li
-              v-for="(documentType, index) in group.items"
-              :key="documentType.id"
-              class="flex items-center gap-4 rounded-2xl bg-[#f5f2e9] px-4 py-4 transition duration-500 ease-out motion-reduce:transition-none"
-              :class="
-                visible
-                  ? 'translate-y-0 opacity-100'
-                  : 'translate-y-4 opacity-0'
-              "
-              :style="{ transitionDelay: `${Math.min(index, 8) * 70}ms` }"
-            >
-              <span
-                class="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#203f73]"
-              >
-                <FileText
-                  class="size-5"
-                  aria-hidden="true"
-                />
-              </span>
-              <p class="min-w-0 flex-1 text-sm font-semibold text-[#203f73]">
-                {{ documentType.name }}
-              </p>
-            </li>
-          </ul>
-        </section>
-      </div>
+        </li>
+      </ul>
 
       <div
         v-else

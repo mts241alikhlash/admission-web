@@ -388,10 +388,12 @@ useBreadcrumbs(() => {
     class="p-4 sm:p-6"
   >
     <Card
-      class="gap-0 overflow-hidden rounded-2xl py-0 shadow-sm shadow-black/5 ring-1 ring-black/4"
+      gap="none"
+      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
       <CardHeader
-        class="flex flex-row flex-wrap items-center justify-between gap-2 border-b px-4 py-4 sm:px-6 sm:py-5"
+        standard
+        class="flex-wrap"
       >
         <div class="flex min-w-0 items-center gap-3">
           <BackButton
@@ -406,7 +408,7 @@ useBreadcrumbs(() => {
               )
             "
           />
-          <CardTitle class="text-xl font-bold tracking-tight">{{
+          <CardTitle size="lg">{{
             isAdminForm ? 'Formulir Pendaftar' : 'Formulir Pendaftaran'
           }}</CardTitle>
         </div>

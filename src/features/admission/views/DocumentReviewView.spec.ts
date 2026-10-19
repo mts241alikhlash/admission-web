@@ -11,6 +11,11 @@ const service = vi.hoisted(() => ({
 vi.mock('../services/documentReviewService', () => ({
   documentReviewService: service,
 }))
+vi.mock('../api/admissionApi', () => ({
+  admissionApi: {
+    getFile: vi.fn().mockResolvedValue({ data: new Blob(['%PDF-1.4']) }),
+  },
+}))
 
 const access = vi.hoisted(() => ({ granted: new Set<string>() }))
 vi.mock('@/features/platform/auth', () => ({
@@ -149,11 +154,9 @@ it('shows the applicant and every document with its status', async () => {
   const slots = wrapper.findAll('[data-test="slot"]')
   expect(slots).toHaveLength(3)
   expect(slots[0].text()).toContain('Kartu Keluarga')
-  expect(slots[0].text()).toContain('Wajib')
-  expect(slots[0].text()).toContain('Menunggu Verifikasi')
+  expect(slots[0].text()).not.toContain('Menunggu')
   expect(slots[1].text()).toContain('Disetujui')
   expect(slots[2].text()).toContain('Surat Prestasi')
-  expect(slots[2].text()).toContain('Opsional')
   expect(slots[2].text()).toContain('Belum diunggah')
 })
 
@@ -273,20 +276,20 @@ it('shows the reason of a rejected document and offers to approve it', async () 
   expect(item.find('[data-test="reject"]').exists()).toBe(false)
 })
 
-it('disables Kirim hasil while a required document is undecided, with the reason', async () => {
+it('disables Kirim hasil while a document is undecided, with the reason', async () => {
   const wrapper = mountView()
   await flushPromises()
 
   expect(button(wrapper, 'send').attributes('disabled')).toBeDefined()
   expect(wrapper.text()).toContain(
-    '1 berkas wajib belum diputuskan atau belum diunggah',
+    '2 berkas belum diputuskan atau belum diunggah',
   )
   expect(
     button(wrapper, 'request-data-fix').attributes('disabled'),
   ).toBeUndefined()
 })
 
-it('counts a missing required document as undecided', async () => {
+it('counts a missing document as undecided', async () => {
   service.fetchReview.mockResolvedValue({
     review: review({
       slots: [
@@ -301,7 +304,7 @@ it('counts a missing required document as undecided', async () => {
   expect(button(wrapper, 'send').attributes('disabled')).toBeDefined()
 })
 
-it('lets an optional document stay undecided', async () => {
+it('requires every document to be decided before sending', async () => {
   service.fetchReview.mockResolvedValue({
     review: review({
       slots: [
@@ -313,7 +316,17 @@ it('lets an optional document stay undecided', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  expect(button(wrapper, 'send').attributes('disabled')).toBeUndefined()
+  expect(button(wrapper, 'send').attributes('disabled')).toBeDefined()
+
+  service.fetchReview.mockResolvedValue({
+    review: review({
+      slots: [
+        slot('kk', 'Kartu Keluarga', true, doc('d1', 'kk', 'APPROVED')),
+        slot('surat', 'Surat Prestasi', false, doc('d3', 'surat', 'APPROVED')),
+      ],
+    }),
+  })
+  await flushPromises()
 })
 
 it('sends the result after confirmation and returns to the queue', async () => {

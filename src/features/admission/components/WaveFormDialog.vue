@@ -105,6 +105,12 @@ const { handleSubmit, resetForm, values, setFieldValue } =
 
 const dateRangeOpen = ref(false)
 
+function closeDialog() {
+  resetForm()
+  dateRangeOpen.value = false
+  emit('update:open', false)
+}
+
 const dateRangeValue = computed<DateRange>({
   get() {
     const s = values.startDate ?? ''
@@ -206,7 +212,9 @@ const onSubmit = handleSubmit((formValues) => {
 <template>
   <Dialog
     :open="open"
-    @update:open="emit('update:open', $event)"
+    @update:open="
+      (value) => (value ? emit('update:open', true) : closeDialog())
+    "
   >
     <DialogContent
       class="sm:max-w-2xl max-h-[calc(100dvh-2rem)] flex flex-col gap-0 p-0 overflow-hidden"
@@ -415,7 +423,7 @@ const onSubmit = handleSubmit((formValues) => {
           type="button"
           variant="outline"
           :disabled="isSaving"
-          @click="emit('update:open', false)"
+          @click="closeDialog"
         >
           Batal
         </Button>

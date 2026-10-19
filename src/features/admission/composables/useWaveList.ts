@@ -4,17 +4,21 @@ import { refDebounced } from '@vueuse/core'
 import { admissionApi } from '../api/admissionApi'
 import { waveService } from '../services/waveService'
 import { useWaveStore } from '../stores/waveStore'
-import { useInfiniteList } from './useInfiniteList'
+import { usePagedList } from './usePagedList'
 
 export function useWaveList(
   search: Ref<string>,
   academicYearId: Ref<string>,
   isActive: Ref<string>,
+  page: Ref<number>,
+  pageSize: Ref<number>,
 ) {
   const { academicYears, isSaving } = storeToRefs(useWaveStore())
   const debouncedSearch = refDebounced(search, 300)
 
-  const list = useInfiniteList({
+  const list = usePagedList({
+    page,
+    pageSize,
     scope: ['admission', 'waves'],
     filters: { search: debouncedSearch, academicYearId, isActive },
     fetchPage: async (page, limit) =>

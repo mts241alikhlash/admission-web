@@ -10,6 +10,8 @@ beforeEach(() => {
 
 const state = vi.hoisted(() => ({
   waves: [] as unknown[],
+  total: null as number | null,
+  page: null as { value: number } | null,
   error: null as string | null,
   deleteWave: vi.fn(),
   refresh: vi.fn(),
@@ -17,23 +19,27 @@ const state = vi.hoisted(() => ({
 vi.mock('../composables/useWaveList', async () => {
   const { computed, ref } = await import('vue')
   return {
-    useWaveList: () => ({
-      waves: computed(() => state.waves),
-      listError: computed(() => state.error),
-      totalItems: computed(() => state.waves.length),
-      academicYears: ref([]),
-      loading: ref(false),
-      hasNextPage: ref(false),
-      isFetchingNextPage: ref(false),
-      isFetching: ref(false),
-      filtersPending,
-      loadMore: vi.fn(),
-      refresh: state.refresh,
-      isSaving: ref(false),
-      fetchAcademicYears: vi.fn(),
-      saveWave: vi.fn(),
-      deleteWave: state.deleteWave,
-    }),
+    useWaveList: (
+      _search: unknown,
+      _year: unknown,
+      _status: unknown,
+      page: { value: number },
+    ) => {
+      state.page = page
+      return {
+        waves: computed(() => state.waves),
+        listError: computed(() => state.error),
+        totalItems: computed(() => state.total ?? state.waves.length),
+        academicYears: ref([]),
+        loading: ref(false),
+        filtersPending,
+        refresh: state.refresh,
+        isSaving: ref(false),
+        fetchAcademicYears: vi.fn(),
+        saveWave: vi.fn(),
+        deleteWave: state.deleteWave,
+      }
+    },
   }
 })
 const stubs = Object.fromEntries(
@@ -121,10 +127,11 @@ it('distinguishes empty waves from failed load', async () => {
   expect(state.refresh).toHaveBeenCalled()
 })
 
-it('shows ten waves per mobile page with filters reachable from a dialog', async () => {
+it('shows the ten waves of the page with filters reachable from a dialog', async () => {
   state.error = null
   filtersPending.value = false
-  state.waves = Array.from({ length: 11 }, (_, index) => ({
+  state.total = 11
+  state.waves = Array.from({ length: 10 }, (_, index) => ({
     id: `w-${index}`,
     name: `Gelombang ${index}`,
     code: `G${index}`,
@@ -136,6 +143,7 @@ it('shows ten waves per mobile page with filters reachable from a dialog', async
   }))
   const wrapper = mountView()
   expect(wrapper.findAll('[data-test="mobile-waves"] li')).toHaveLength(10)
+  expect(wrapper.text()).toContain('Halaman 1 dari 2')
   expect(
     wrapper.findAll('button').some((button) => button.text() === 'Filter'),
   ).toBe(true)
@@ -143,9 +151,8 @@ it('shows ten waves per mobile page with filters reachable from a dialog', async
     .findAll('button')
     .find((button) => button.text() === 'Selanjutnya')!
     .trigger('click')
-  expect(wrapper.get('[data-test="mobile-waves"]').text()).toContain(
-    'Gelombang 10',
-  )
+  expect(state.page?.value).toBe(2)
+  state.total = null
   wrapper.unmount()
 })
 

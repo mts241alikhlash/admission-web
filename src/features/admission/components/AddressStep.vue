@@ -75,15 +75,18 @@ defineExpose({ validate: validateAll })
 
 <template>
   <div class="space-y-6">
-    <Card class="gap-0 overflow-hidden py-0">
-      <CardHeader class="border-b px-4 py-3">
-        <CardTitle class="text-base font-semibold">
-          Alamat {{ addressOwner }}
-        </CardTitle>
-        <p class="text-sm text-muted-foreground">
-          Santri mengikuti alamat ini. Anggota keluarga lain juga mengikutinya,
-          kecuali yang tinggal di tempat lain.
-        </p>
+    <Card
+      gap="none"
+      class="overflow-hidden"
+    >
+      <CardHeader standard>
+        <div class="flex items-center gap-3">
+          <CardTitle size="md"> Alamat {{ addressOwner }} </CardTitle>
+          <p class="text-sm text-muted-foreground">
+            Santri mengikuti alamat ini. Anggota keluarga lain juga
+            mengikutinya, kecuali yang tinggal di tempat lain.
+          </p>
+        </div>
       </CardHeader>
       <CardContent class="grid gap-4 px-4 pt-4 pb-4 sm:grid-cols-2">
         <FloatingField

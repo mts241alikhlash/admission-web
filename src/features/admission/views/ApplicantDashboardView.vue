@@ -243,12 +243,19 @@ onMounted(() => {
     v-else-if="application"
     class="space-y-6 p-4 sm:p-6"
   >
-    <Card class="gap-0 overflow-hidden py-0">
+    <Card
+      gap="none"
+      class="overflow-hidden"
+    >
       <CardHeader
-        class="flex flex-row flex-wrap items-start justify-between gap-3 border-b px-4 py-4 sm:px-6"
+        standard
+        class="flex-wrap"
       >
         <div class="min-w-0 space-y-1">
-          <CardTitle class="text-xl break-words">
+          <CardTitle
+            size="lg"
+            class="break-words"
+          >
             {{ application.fullName }}
           </CardTitle>
           <CardDescription>
@@ -443,14 +450,14 @@ onMounted(() => {
 
         <div class="grid gap-3 sm:grid-cols-3">
           <div class="space-y-2 rounded-lg border p-4 text-sm">
-            <p class="text-muted-foreground">Berkas Wajib</p>
+            <p class="text-muted-foreground">Kelengkapan Berkas</p>
             <p class="font-semibold">
-              {{ requiredDocs.done }} dari {{ requiredDocs.total }} berkas wajib
+              {{ requiredDocs.done }} dari {{ requiredDocs.total }} berkas
             </p>
             <Progress
               :model-value="docProgress"
               class="h-2"
-              aria-label="Kelengkapan berkas wajib"
+              aria-label="Kelengkapan berkas"
             />
           </div>
           <div class="space-y-1 rounded-lg border p-4 text-sm">
@@ -493,11 +500,15 @@ onMounted(() => {
     </Card>
 
     <div class="grid gap-6 lg:grid-cols-2">
-      <Card class="gap-0 overflow-hidden py-0">
-        <CardHeader
-          class="flex flex-row items-center justify-between gap-2 border-b px-4 py-3"
-        >
-          <CardTitle class="flex items-center gap-2 text-base">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
+        <CardHeader standard>
+          <CardTitle
+            size="md"
+            class="flex items-center gap-2"
+          >
             <Bell class="size-4" />
             Notifikasi
             <Badge
@@ -566,12 +577,20 @@ onMounted(() => {
         </CardContent>
       </Card>
 
-      <Card class="gap-0 overflow-hidden py-0">
-        <CardHeader class="border-b px-4 py-3">
-          <CardTitle class="flex items-center gap-2 text-base">
-            <Megaphone class="size-4" />
-            Pengumuman
-          </CardTitle>
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
+        <CardHeader standard>
+          <div class="flex items-center gap-3">
+            <CardTitle
+              size="md"
+              class="flex items-center gap-2"
+            >
+              <Megaphone class="size-4" />
+              Pengumuman
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent class="p-0">
           <div

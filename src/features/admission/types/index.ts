@@ -32,7 +32,9 @@ export interface PaymentQueueQuery {
   limit: number
 }
 export type AdmissionDocumentReviewRow =
-  Schemas['AdmissionDocumentReviewRowResponseDto']
+  Schemas['AdmissionDocumentReviewRowResponseDto'] & {
+    revisionNote?: string | null
+  }
 export type AdmissionDocumentReview =
   Schemas['AdmissionDocumentReviewResponseDto']
 export type AdmissionDocumentReviewSlot =
@@ -250,7 +252,7 @@ export const PAYMENT_STATUS_LABELS: Record<AdmissionPaymentStatus, string> = {
 }
 
 export const DOCUMENT_STATUS_LABELS: Record<AdmissionDocumentStatus, string> = {
-  PENDING: 'Menunggu Verifikasi',
+  PENDING: 'Menunggu',
   APPROVED: 'Disetujui',
   REJECTED: 'Ditolak',
 }

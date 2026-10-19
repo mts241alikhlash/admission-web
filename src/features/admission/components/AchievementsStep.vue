@@ -335,11 +335,15 @@ defineExpose({ validate: validateStep })
 
 <template>
   <div class="space-y-8">
-    <Card class="gap-0 overflow-hidden py-0">
+    <Card
+      gap="none"
+      class="overflow-hidden"
+    >
       <CardHeader
-        class="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
+        standard
+        class="flex-wrap"
       >
-        <CardTitle class="text-base font-semibold">Prestasi Siswa</CardTitle>
+        <CardTitle size="md">Prestasi Siswa</CardTitle>
         <Button
           v-if="editable"
           variant="outline"
@@ -553,13 +557,15 @@ defineExpose({ validate: validateStep })
       </CardContent>
     </Card>
 
-    <Card class="gap-0 overflow-hidden py-0">
+    <Card
+      gap="none"
+      class="overflow-hidden"
+    >
       <CardHeader
-        class="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
+        standard
+        class="flex-wrap"
       >
-        <CardTitle class="text-base font-semibold"
-          >Beasiswa & Bantuan</CardTitle
-        >
+        <CardTitle size="md">Beasiswa & Bantuan</CardTitle>
         <Button
           v-if="editable"
           variant="outline"

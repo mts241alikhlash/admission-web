@@ -13,6 +13,7 @@ import LandingLife from '../components/landing/LandingLife.vue'
 import LandingStories from '../components/landing/LandingStories.vue'
 import LandingCta from '../components/landing/LandingCta.vue'
 import LandingDownloads from '../components/landing/LandingDownloads.vue'
+import LandingPpdbShowcase from '../components/landing/LandingPpdbShowcase.vue'
 import { useLandingContent } from '../composables/useLandingContent'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
 import type {
@@ -132,6 +133,7 @@ onMounted(() => {
           :waves="waves"
           :loading="isLoading"
         />
+        <LandingPpdbShowcase />
         <LandingInfo :content="content.info" />
         <LandingHowItWorks
           id="alur"

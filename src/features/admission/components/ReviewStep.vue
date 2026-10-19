@@ -46,12 +46,14 @@ const fieldGridClass =
   <div class="space-y-4 text-sm">
     <Card
       v-if="editable"
-      class="gap-0 overflow-hidden py-0"
+      gap="none"
+      class="overflow-hidden"
     >
       <CardHeader
-        class="flex flex-row flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
+        standard
+        class="flex-wrap"
       >
-        <CardTitle class="text-base font-semibold">Kelengkapan Data</CardTitle>
+        <CardTitle size="md">Kelengkapan Data</CardTitle>
         <Badge :variant="missing.length ? 'destructive' : 'secondary'">
           {{
             missing.length
@@ -100,7 +102,10 @@ const fieldGridClass =
     <div
       class="grid min-w-0 items-start gap-4 [&>div]:min-w-0 [&>div]:break-words"
     >
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"
@@ -229,7 +234,10 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"
@@ -300,7 +308,10 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"
@@ -349,7 +360,10 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"
@@ -386,7 +400,10 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"
@@ -445,7 +462,10 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"
@@ -502,7 +522,10 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-      <Card class="gap-0 overflow-hidden py-0">
+      <Card
+        gap="none"
+        class="overflow-hidden"
+      >
         <details
           open
           class="group"

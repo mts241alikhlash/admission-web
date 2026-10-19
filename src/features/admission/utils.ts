@@ -146,7 +146,7 @@ export function documentSummaryText(summary: {
   missing: number
   total: number
 }) {
-  if (summary.total === 0) return 'Tidak ada berkas wajib'
+  if (summary.total === 0) return 'Tidak ada berkas'
   const parts: [number, string][] = [
     [summary.approved, 'disetujui'],
     [summary.rejected, 'ditolak'],
@@ -157,7 +157,23 @@ export function documentSummaryText(summary: {
     .filter(([count]) => count > 0)
     .map(([count, label]) => `${count} ${label}`)
     .join(' · ')
-  return `${text} dari ${summary.total} berkas wajib`
+  return `${text} dari ${summary.total} berkas`
+}
+
+export function standardDocumentFileName(
+  documentTypeName: string | null | undefined,
+  applicantName: string | null | undefined,
+  originalFileName: string | null | undefined,
+) {
+  if (!originalFileName) return '-'
+  const ext = originalFileName.includes('.')
+    ? originalFileName.slice(originalFileName.lastIndexOf('.'))
+    : ''
+  const docType = documentTypeName?.trim()
+  const name = applicantName?.trim()
+  if (docType && name) return `${docType} - ${name}${ext}`
+  if (docType) return `${docType}${ext}`
+  return originalFileName
 }
 
 export const MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024

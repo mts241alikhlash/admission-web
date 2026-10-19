@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
-import { useIntersectionObserver } from '@vueuse/core'
+import { computed, h, onMounted, ref, useId, watch } from 'vue'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
@@ -33,6 +32,7 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import type { ColumnDef } from '@tanstack/vue-table'
+import ServerPager from '../components/ServerPager.vue'
 import { useAnnouncementList } from '../composables/useAnnouncementList'
 import AnnouncementFormDialog from '../components/AnnouncementFormDialog.vue'
 import type { AdmissionAnnouncement, AnnouncementSavePayload } from '../types'
@@ -46,9 +46,8 @@ const waveFilterId = useId()
 const mobileStatusFilterId = useId()
 const mobileWaveFilterId = useId()
 const filterOpen = ref(false)
-const mobilePage = ref(1)
-const changingPage = ref(false)
-let filterRevision = 0
+const page = ref(1)
+const pageSize = ref(10)
 
 const {
   announcements,
@@ -56,53 +55,33 @@ const {
   totalItems,
   listError,
   loading,
-  hasNextPage,
-  isFetchingNextPage,
-  isFetching,
   filtersPending,
-  loadMore,
   refresh,
   isSaving,
   fetchWaves,
   saveAnnouncement,
   publishAnnouncement,
   deleteAnnouncement,
-} = useAnnouncementList(search, statusFilter, waveFilter)
-const mobileAnnouncements = computed(() =>
-  announcements.value.slice((mobilePage.value - 1) * 10, mobilePage.value * 10),
-)
+} = useAnnouncementList(search, statusFilter, waveFilter, page, pageSize)
 watch(
   [search, statusFilter, waveFilter],
   () => {
-    filterRevision++
-    mobilePage.value = 1
+    page.value = 1
   },
   { flush: 'sync' },
 )
-watch(totalItems, (total) => {
-  mobilePage.value = Math.min(
-    mobilePage.value,
-    Math.max(1, Math.ceil(total / 10)),
-  )
+watch([totalItems, loading, filtersPending], () => {
+  if (loading.value || filtersPending.value) return
+  const lastPage = Math.max(1, Math.ceil(totalItems.value / pageSize.value))
+  if (page.value > lastPage) page.value = lastPage
 })
-async function nextMobilePage() {
-  if (changingPage.value || isFetching.value || filtersPending.value) return
-  const revision = filterRevision
-  const page = mobilePage.value
-  changingPage.value = true
-  try {
-    if (page * 10 >= announcements.value.length) await loadMore()
-    if (
-      revision === filterRevision &&
-      page === mobilePage.value &&
-      announcements.value.length > page * 10
-    )
-      mobilePage.value = page + 1
-  } finally {
-    changingPage.value = false
-  }
+function goToPage(next: number) {
+  page.value = next
 }
-
+function changePageSize(size: number) {
+  pageSize.value = size
+  page.value = 1
+}
 function resetFilters() {
   statusFilter.value = 'ALL'
   waveFilter.value = 'ALL'
@@ -113,16 +92,12 @@ const selected = ref<AdmissionAnnouncement | null>(null)
 const pendingAction = ref<{ kind: 'publish' | 'delete'; id: string } | null>(
   null,
 )
-const loadMoreButton = useTemplateRef('loadMoreButton')
-useIntersectionObserver(loadMoreButton, ([entry]) => {
-  if (entry?.isIntersecting) void loadMore()
-})
 
 const columns = computed<ColumnDef<AdmissionAnnouncement>[]>(() => [
   {
     id: 'no',
     header: 'No',
-    cell: ({ row }) => row.index + 1,
+    cell: ({ row }) => (page.value - 1) * pageSize.value + row.index + 1,
     enableSorting: false,
   },
   { accessorKey: 'title', header: 'Judul' },
@@ -214,14 +189,11 @@ async function confirmPendingAction() {
 <template>
   <div class="p-4 sm:p-6">
     <Card
+      gap="none"
       class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
     >
-      <CardHeader
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle class="text-xl font-bold tracking-tight">
-          Pengumuman PSB
-        </CardTitle>
+      <CardHeader standard>
+        <CardTitle size="lg"> Pengumuman PSB </CardTitle>
         <Button
           class="min-h-11 w-full sm:min-h-0 sm:w-auto"
           @click="openCreateForm"
@@ -231,7 +203,7 @@ async function confirmPendingAction() {
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 p-4 sm:p-6">
+      <div class="space-y-4 px-4 py-5 sm:px-6">
         <div
           class="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between"
         >
@@ -340,11 +312,13 @@ async function confirmPendingAction() {
             class="hidden md:block"
             :columns="columns"
             :data="announcements"
-            :total-items="announcements.length"
+            :page="page"
+            :page-size="pageSize"
+            :total-items="totalItems"
             :is-loading="loading"
             item-label="pengumuman"
-            hide-per-page
-            hide-pagination
+            @update:page="goToPage"
+            @update:page-size="changePageSize"
           />
           <p
             v-if="!loading && !filtersPending && !announcements.length"
@@ -364,7 +338,7 @@ async function confirmPendingAction() {
             class="space-y-2 md:hidden"
           >
             <li
-              v-for="item in mobileAnnouncements"
+              v-for="item in announcements"
               :key="item.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
@@ -407,54 +381,15 @@ async function confirmPendingAction() {
               </div>
             </li>
           </ul>
-          <div
-            v-if="!loading && !filtersPending && totalItems > 10"
-            class="flex flex-wrap items-center justify-between gap-2 text-sm md:hidden"
-          >
-            <span
-              >Halaman {{ mobilePage }} dari
-              {{ Math.ceil(totalItems / 10) }}</span
-            >
-            <div class="flex gap-2">
-              <Button
-                variant="outline"
-                class="min-h-11"
-                :disabled="mobilePage === 1"
-                @click="mobilePage--"
-                >Sebelumnya</Button
-              >
-              <Button
-                variant="outline"
-                class="min-h-11"
-                :disabled="
-                  mobilePage * 10 >= totalItems ||
-                  changingPage ||
-                  isFetchingNextPage ||
-                  isFetching ||
-                  filtersPending
-                "
-                @click="nextMobilePage"
-                >Selanjutnya</Button
-              >
-            </div>
-          </div>
-          <div
-            v-if="hasNextPage"
-            class="hidden flex-col items-center gap-2 md:flex"
-          >
-            <p class="text-sm text-muted-foreground">
-              Menampilkan {{ announcements.length }} dari
-              {{ totalItems }} pengumuman
-            </p>
-            <Button
-              ref="loadMoreButton"
-              variant="outline"
-              :disabled="isFetchingNextPage"
-              @click="loadMore"
-            >
-              {{ isFetchingNextPage ? 'Memuat…' : 'Muat lebih banyak' }}
-            </Button>
-          </div>
+          <ServerPager
+            v-if="!loading && !filtersPending && totalItems > 0"
+            class="md:hidden"
+            :page="page"
+            :page-size="pageSize"
+            :total="totalItems"
+            item-label="pengumuman"
+            @update:page="goToPage"
+          />
         </template>
       </div>
     </Card>

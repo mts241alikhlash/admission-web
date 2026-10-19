@@ -13,10 +13,12 @@ async function run(
   action: () => Promise<unknown>,
   done: string,
   fallback: string,
+  description?: string,
 ) {
   try {
     await action()
-    toast.success(done)
+    if (description) toast.success(done, { description })
+    else toast.success(done)
     return { success: true }
   } catch (error: unknown) {
     toast.error(admissionErrorMessage(error, fallback))
@@ -48,6 +50,7 @@ export const decisionService = {
         admissionApi.acceptDecision(applicationId, note?.trim() || undefined),
       'Pendaftar diterima.',
       'Gagal menerima pendaftar.',
+      'Status pendaftar diubah menjadi diterima dan siap daftar ulang.',
     ),
 
   reject: (applicationId: string, reason: string) =>
@@ -55,6 +58,7 @@ export const decisionService = {
       () => admissionApi.rejectDecision(applicationId, reason.trim()),
       'Pendaftar ditolak.',
       'Gagal menolak pendaftar.',
+      'Pendaftar diberi tahu hasil keputusan penolakan beserta alasannya.',
     ),
 
   acceptMany: async (applicationIds: string[], note?: string) => {
@@ -74,7 +78,13 @@ export const decisionService = {
           applicationId: result.applicationId,
           reason: result.reason ?? 'Dilewati',
         }))
-      toast.success(`${accepted} diterima, ${skipped.length} dilewati.`)
+      const description =
+        skipped.length > 0
+          ? `${accepted} pendaftar diterima, ${skipped.length} dilewati.`
+          : `${accepted} pendaftar diterima.`
+      toast.success('Penerimaan massal selesai diproses.', {
+        description,
+      })
       return { success: true as const, accepted, skipped }
     } catch (error: unknown) {
       toast.error(admissionErrorMessage(error, 'Gagal menerima pendaftar.'))
@@ -85,8 +95,9 @@ export const decisionService = {
   cancelAcceptance: (applicationId: string, reason: string) =>
     run(
       () => admissionApi.cancelAcceptance(applicationId, reason.trim()),
-      'Penerimaan dibatalkan. Pendaftar kembali menunggu keputusan.',
+      'Penerimaan dibatalkan.',
       'Gagal membatalkan penerimaan.',
+      'Pendaftar dikembalikan ke antrean menunggu keputusan.',
     ),
 
   cancelRejection: async (applicationId: string, reason: string) => {
@@ -94,11 +105,12 @@ export const decisionService = {
       const decision = (
         await admissionApi.cancelRejection(applicationId, reason.trim())
       ).data.data
-      toast.success(
-        decision.status === 'VERIFIED'
-          ? 'Penolakan dibatalkan. Pendaftar kembali menunggu keputusan.'
-          : 'Penolakan dibatalkan. Pendaftar kembali diperiksa.',
-      )
+      toast.success('Penolakan dibatalkan.', {
+        description:
+          decision.status === 'VERIFIED'
+            ? 'Pendaftar dikembalikan ke antrean menunggu keputusan.'
+            : 'Pendaftar dikembalikan ke antrean verifikasi berkas.',
+      })
       return { success: true }
     } catch (error: unknown) {
       toast.error(admissionErrorMessage(error, 'Gagal membatalkan penolakan.'))

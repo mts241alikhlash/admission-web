@@ -111,7 +111,11 @@ export const enrolmentService = {
         (result) => result.outcome === 'ENROLLED',
       ).length
       const problems = results.filter((result) => result.outcome !== 'ENROLLED')
-      toast.success(`${enrolled} diproses, ${problems.length} bermasalah.`)
+      const message =
+        problems.length > 0
+          ? `${enrolled} diproses, ${problems.length} bermasalah.`
+          : `${enrolled} santri berhasil diproses.`
+      toast.success(message)
       return { success: true as const, enrolled, problems }
     } catch (error: unknown) {
       toast.error(admissionErrorMessage(error, 'Gagal memproses pendaftar.'))

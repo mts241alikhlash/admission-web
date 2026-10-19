@@ -92,8 +92,14 @@ describe('decisionService', () => {
       'app1',
       'Kuota penuh',
     )
-    expect(toast.success).toHaveBeenCalledWith('Pendaftar diterima.')
-    expect(toast.success).toHaveBeenCalledWith('Pendaftar ditolak.')
+    expect(toast.success).toHaveBeenCalledWith('Pendaftar diterima.', {
+      description:
+        'Status pendaftar diubah menjadi diterima dan siap daftar ulang.',
+    })
+    expect(toast.success).toHaveBeenCalledWith('Pendaftar ditolak.', {
+      description:
+        'Pendaftar diberi tahu hasil keputusan penolakan beserta alasannya.',
+    })
   })
 
   it('shows the server message when a decision is refused', async () => {
@@ -141,7 +147,12 @@ describe('decisionService', () => {
         { applicationId: 'b', reason: 'Status pendaftar sudah berubah' },
       ],
     })
-    expect(toast.success).toHaveBeenCalledWith('1 diterima, 1 dilewati.')
+    expect(toast.success).toHaveBeenCalledWith(
+      'Penerimaan massal selesai diproses.',
+      {
+        description: '1 pendaftar diterima, 1 dilewati.',
+      },
+    )
   })
 
   it('cancels an acceptance and a rejection with a reason and says where the applicant went', async () => {
@@ -162,15 +173,15 @@ describe('decisionService', () => {
       'app1',
       'Salah klik',
     )
-    expect(toast.success).toHaveBeenCalledWith(
-      'Penerimaan dibatalkan. Pendaftar kembali menunggu keputusan.',
-    )
-    expect(toast.success).toHaveBeenCalledWith(
-      'Penolakan dibatalkan. Pendaftar kembali menunggu keputusan.',
-    )
-    expect(toast.success).toHaveBeenCalledWith(
-      'Penolakan dibatalkan. Pendaftar kembali diperiksa.',
-    )
+    expect(toast.success).toHaveBeenCalledWith('Penerimaan dibatalkan.', {
+      description: 'Pendaftar dikembalikan ke antrean menunggu keputusan.',
+    })
+    expect(toast.success).toHaveBeenCalledWith('Penolakan dibatalkan.', {
+      description: 'Pendaftar dikembalikan ke antrean menunggu keputusan.',
+    })
+    expect(toast.success).toHaveBeenCalledWith('Penolakan dibatalkan.', {
+      description: 'Pendaftar dikembalikan ke antrean verifikasi berkas.',
+    })
   })
 
   it('shows the 409 message when enrolment has started', async () => {

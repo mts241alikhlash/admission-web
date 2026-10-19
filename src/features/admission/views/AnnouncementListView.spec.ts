@@ -16,23 +16,27 @@ const state = vi.hoisted(() => ({
   remove: vi.fn(),
   refresh: vi.fn(),
   search: null as { value: string } | null,
+  total: null as number | null,
+  page: null as { value: number } | null,
 }))
 vi.mock('../composables/useAnnouncementList', async () => {
   const { computed, ref } = await import('vue')
   return {
-    useAnnouncementList: (search: { value: string }) => {
+    useAnnouncementList: (
+      search: { value: string },
+      _status: unknown,
+      _wave: unknown,
+      page: { value: number },
+    ) => {
       state.search = search
+      state.page = page
       return {
         announcements: computed(() => state.announcements),
         waves: ref([]),
-        totalItems: computed(() => state.announcements.length),
+        totalItems: computed(() => state.total ?? state.announcements.length),
         listError: computed(() => state.error),
         loading: computed(() => state.loading),
-        hasNextPage: ref(false),
-        isFetchingNextPage: ref(false),
-        isFetching: ref(false),
         filtersPending,
-        loadMore: vi.fn(),
         refresh: state.refresh,
         isSaving: ref(false),
         fetchWaves: vi.fn(),
@@ -44,10 +48,11 @@ vi.mock('../composables/useAnnouncementList', async () => {
   }
 })
 
-it('paginates mobile announcements and exposes filters behind one button', async () => {
+it('shows the announcements of the page and exposes filters behind one button', async () => {
   state.error = null
   filtersPending.value = false
-  state.announcements = Array.from({ length: 11 }, (_, index) => ({
+  state.total = 11
+  state.announcements = Array.from({ length: 10 }, (_, index) => ({
     id: `a-${index}`,
     title: `Pengumuman ${index}`,
     isPublished: false,
@@ -58,6 +63,7 @@ it('paginates mobile announcements and exposes filters behind one button', async
   expect(wrapper.findAll('[data-test="mobile-announcements"] li')).toHaveLength(
     10,
   )
+  expect(wrapper.text()).toContain('Halaman 1 dari 2')
   expect(
     wrapper.findAll('button').some((button) => button.text() === 'Filter'),
   ).toBe(true)
@@ -65,9 +71,8 @@ it('paginates mobile announcements and exposes filters behind one button', async
     .findAll('button')
     .find((button) => button.text() === 'Selanjutnya')!
     .trigger('click')
-  expect(wrapper.get('[data-test="mobile-announcements"]').text()).toContain(
-    'Pengumuman 10',
-  )
+  expect(state.page?.value).toBe(2)
+  state.total = null
   wrapper.unmount()
 })
 

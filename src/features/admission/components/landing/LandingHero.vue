@@ -238,6 +238,7 @@ h1 {
   position: relative;
   min-width: 0;
   padding: 0 0 3.25rem 0.75rem;
+  order: -1;
 }
 .hero-school-photo {
   position: relative;
@@ -315,6 +316,9 @@ h1 {
     grid-template-columns: 1.05fr 0.95fr;
     align-items: center;
     gap: 1.5rem;
+  }
+  .hero-photographs {
+    order: 0;
   }
   h1 {
     font-size: clamp(2.9rem, 5.7vw, 5rem);

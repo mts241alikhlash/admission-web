@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
 import DecisionListView from './DecisionListView.vue'
 
 const service = vi.hoisted(() => ({
@@ -51,18 +53,24 @@ function page(rows: unknown[], counts = COUNTS, total = rows.length) {
 }
 
 function mountView() {
-  return mount(DecisionListView, {
-    global: {
-      stubs: {
-        Dialog: passthrough,
-        DialogContent: passthrough,
-        DialogHeader: passthrough,
-        DialogTitle: passthrough,
-        DialogDescription: passthrough,
-        DialogFooter: passthrough,
+  return mount(
+    defineComponent({
+      render: () => h(TooltipProvider, null, () => h(DecisionListView)),
+    }),
+    {
+      attachTo: document.body,
+      global: {
+        stubs: {
+          Dialog: passthrough,
+          DialogContent: passthrough,
+          DialogHeader: passthrough,
+          DialogTitle: passthrough,
+          DialogDescription: passthrough,
+          DialogFooter: passthrough,
+        },
       },
     },
-  })
+  ).findComponent(DecisionListView)
 }
 
 const tab = (wrapper: ReturnType<typeof mountView>, label: string) =>
@@ -93,19 +101,19 @@ beforeEach(() => {
   })
 })
 
-it('shows Menunggu keputusan first with the counts of every tab and each summary', async () => {
+it('shows Menunggu first with the counts of every tab and each summary', async () => {
   const wrapper = mountView()
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenCalledWith(
-    expect.objectContaining({ tab: 'waiting', page: 1, limit: 50 }),
+    expect.objectContaining({ tab: 'waiting', page: 1, limit: 10 }),
   )
-  expect(tab(wrapper, 'Menunggu keputusan').text()).toContain('2')
+  expect(tab(wrapper, 'Menunggu').text()).toContain('2')
   expect(tab(wrapper, 'Diterima').text()).toContain('1')
   expect(tab(wrapper, 'Ditolak').text()).toContain('1')
   expect(rowOf(wrapper).text()).toContain('Ahmad Fauzi')
   expect(rowOf(wrapper).text()).toContain('PSB-a1')
-  expect(rowOf(wrapper).text()).toContain('3 disetujui dari 3 berkas wajib')
+  expect(rowOf(wrapper).text()).toContain('3 disetujui dari 3 berkas')
 })
 
 it('has no primary action in the card header', async () => {
@@ -197,7 +205,7 @@ it('accepts the selected applicants after a confirmation with the count', async 
     wrapper.get('[data-test="selection-bar"]'),
     'Terima terpilih',
   ).trigger('click')
-  expect(wrapper.text()).toContain('2 pendaftar')
+  expect(wrapper.find('[data-test="action-form"]').exists()).toBe(true)
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -364,4 +372,85 @@ it('ignores a slow response from a tab that is no longer shown', async () => {
 
   expect(wrapper.text()).toContain('Siti Aminah')
   expect(wrapper.text()).not.toContain('Ahmad Fauzi')
+})
+
+it('renders DataTable with expected columns and without numbering column', async () => {
+  const wrapper = mountView()
+  await flushPromises()
+
+  const dataTable = wrapper.findComponent({ name: 'DataTable' })
+  expect(dataTable.exists()).toBe(true)
+  const columns = dataTable.props('columns') as { header?: unknown }[]
+  const headers = columns.map((c) =>
+    typeof c.header === 'string' ? c.header : undefined,
+  )
+  expect(headers).not.toContain('No')
+  expect(headers.filter(Boolean)).toEqual([
+    'No. Pendaftaran',
+    'Nama Pendaftar',
+    'Gelombang',
+    'Tgl Verifikasi',
+    'Aksi',
+  ])
+
+  service.fetchQueue.mockResolvedValue(
+    page([row('a1', 'Ahmad Fauzi', 'ACCEPTED')]),
+  )
+  await tab(wrapper, 'Diterima').trigger('mousedown')
+  await flushPromises()
+  const acceptedCols = dataTable.props('columns') as { header?: unknown }[]
+  const acceptedHeaders = acceptedCols.map((c) =>
+    typeof c.header === 'string' ? c.header : undefined,
+  )
+  expect(acceptedHeaders.filter(Boolean)).toEqual([
+    'No. Pendaftaran',
+    'Nama Pendaftar',
+    'Gelombang',
+    'Catatan Keputusan',
+    'Diputuskan',
+    'Aksi',
+  ])
+})
+
+it('loads the next page from the server and replaces the rows', async () => {
+  service.fetchQueue.mockResolvedValue(
+    page([row('a1', 'Ahmad Fauzi')], COUNTS, 25),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+  expect(wrapper.get('[data-test="server-pager"]').text()).toContain(
+    '1–10 dari 25 pendaftar',
+  )
+  service.fetchQueue.mockResolvedValue(
+    page([row('a2', 'Siti Aminah')], COUNTS, 25),
+  )
+
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await flushPromises()
+
+  expect(service.fetchQueue).toHaveBeenLastCalledWith(
+    expect.objectContaining({ tab: 'waiting', page: 2, limit: 10 }),
+  )
+  expect(wrapper.text()).toContain('Siti Aminah')
+  expect(wrapper.text()).not.toContain('Ahmad Fauzi')
+})
+
+it('keeps only the selection that is still on the shown page', async () => {
+  service.fetchQueue.mockResolvedValue(
+    page([row('a1', 'Ahmad Fauzi')], COUNTS, 25),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+  await rowOf(wrapper).get('[role="checkbox"]').trigger('click')
+  expect(wrapper.get('[data-test="selection-bar"]').text()).toContain(
+    '1 dipilih',
+  )
+  service.fetchQueue.mockResolvedValue(
+    page([row('a2', 'Siti Aminah')], COUNTS, 25),
+  )
+
+  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await flushPromises()
+
+  expect(wrapper.find('[data-test="selection-bar"]').exists()).toBe(false)
 })
