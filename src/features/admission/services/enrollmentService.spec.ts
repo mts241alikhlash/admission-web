@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'vue-sonner'
 import { admissionApi } from '../api/admissionApi'
-import { enrolmentService } from './enrolmentService'
+import { enrollmentService } from './enrollmentService'
 
 vi.mock('../api/admissionApi', () => ({
   admissionApi: {
-    getEnrolmentQueue: vi.fn(),
+    getEnrollmentQueue: vi.fn(),
     getNisPreview: vi.fn(),
     composeNis: vi.fn(),
     lockNis: vi.fn(),
-    processEnrolments: vi.fn(),
+    processEnrollments: vi.fn(),
     setPlacement: vi.fn(),
   },
 }))
@@ -19,11 +19,11 @@ function failure(status: number, message: string) {
   return { isAxiosError: true, response: { status, data: { message } } }
 }
 
-describe('enrolmentService', () => {
+describe('enrollmentService', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('loads a tab with its counts and school years', async () => {
-    vi.mocked(admissionApi.getEnrolmentQueue).mockResolvedValue({
+    vi.mocked(admissionApi.getEnrollmentQueue).mockResolvedValue({
       data: {
         data: [{ applicationId: 'a' }],
         meta: {
@@ -44,13 +44,13 @@ describe('enrolmentService', () => {
       },
     } as never)
 
-    const result = await enrolmentService.fetchQueue({
+    const result = await enrollmentService.fetchQueue({
       tab: 'ready',
       page: 1,
       limit: 50,
     })
 
-    expect(admissionApi.getEnrolmentQueue).toHaveBeenCalledWith({
+    expect(admissionApi.getEnrollmentQueue).toHaveBeenCalledWith({
       tab: 'ready',
       page: 1,
       limit: 50,
@@ -71,12 +71,12 @@ describe('enrolmentService', () => {
   })
 
   it('returns the load error', async () => {
-    vi.mocked(admissionApi.getEnrolmentQueue).mockRejectedValue(
+    vi.mocked(admissionApi.getEnrollmentQueue).mockRejectedValue(
       Object.assign(new Error('offline'), { isAxiosError: true }),
     )
 
     await expect(
-      enrolmentService.fetchQueue({ tab: 'ready', page: 1, limit: 50 }),
+      enrollmentService.fetchQueue({ tab: 'ready', page: 1, limit: 50 }),
     ).resolves.toHaveProperty('error')
   })
 
@@ -88,10 +88,10 @@ describe('enrolmentService', () => {
       failure(409, 'Nama tahun ajaran tidak bisa dibaca untuk NIS'),
     )
 
-    await expect(enrolmentService.previewNis('y1')).resolves.toEqual({
+    await expect(enrollmentService.previewNis('y1')).resolves.toEqual({
       preview: { academicYearId: 'y1', changes: 2 },
     })
-    await expect(enrolmentService.previewNis('y1')).resolves.toEqual({
+    await expect(enrollmentService.previewNis('y1')).resolves.toEqual({
       error: 'Nama tahun ajaran tidak bisa dibaca untuk NIS',
     })
   })
@@ -109,7 +109,7 @@ describe('enrolmentService', () => {
       },
     } as never)
 
-    const result = await enrolmentService.composeNis('y1', 2)
+    const result = await enrollmentService.composeNis('y1', 2)
 
     expect(admissionApi.composeNis).toHaveBeenCalledWith({
       academicYearId: 'y1',
@@ -149,7 +149,7 @@ describe('enrolmentService', () => {
       },
     } as never)
 
-    await enrolmentService.composeNis('y1', 1, true)
+    await enrollmentService.composeNis('y1', 1, true)
 
     expect(toast.error).toHaveBeenCalledWith(
       '1 santri belum diperbarui NIS-nya. Jalankan sinkronisasi ulang.',
@@ -161,7 +161,7 @@ describe('enrolmentService', () => {
       failure(409, 'Hasil susun NIS berubah, lihat pratinjau lagi'),
     )
 
-    await expect(enrolmentService.composeNis('y1', 2)).resolves.toEqual({
+    await expect(enrollmentService.composeNis('y1', 2)).resolves.toEqual({
       success: false,
       stale: true,
     })
@@ -173,7 +173,7 @@ describe('enrolmentService', () => {
   it('locks a year', async () => {
     vi.mocked(admissionApi.lockNis).mockResolvedValue({} as never)
 
-    await expect(enrolmentService.lockNis('y1')).resolves.toEqual({
+    await expect(enrollmentService.lockNis('y1')).resolves.toEqual({
       success: true,
     })
     expect(admissionApi.lockNis).toHaveBeenCalledWith('y1')
@@ -181,7 +181,7 @@ describe('enrolmentService', () => {
   })
 
   it('processes the selected applicants and splits the outcomes', async () => {
-    vi.mocked(admissionApi.processEnrolments).mockResolvedValue({
+    vi.mocked(admissionApi.processEnrollments).mockResolvedValue({
       data: {
         data: {
           results: [
@@ -201,12 +201,12 @@ describe('enrolmentService', () => {
       },
     } as never)
 
-    const result = await enrolmentService.process(
+    const result = await enrollmentService.process(
       ['a', 'b', 'c'],
       [{ applicationId: 'b', nisn: '0099999999' }],
     )
 
-    expect(admissionApi.processEnrolments).toHaveBeenCalledWith({
+    expect(admissionApi.processEnrollments).toHaveBeenCalledWith({
       applicationIds: ['a', 'b', 'c'],
       nisn: [{ applicationId: 'b', nisn: '0099999999' }],
     })
@@ -226,11 +226,11 @@ describe('enrolmentService', () => {
   })
 
   it('shows the server message when processing is refused', async () => {
-    vi.mocked(admissionApi.processEnrolments).mockRejectedValue(
+    vi.mocked(admissionApi.processEnrollments).mockRejectedValue(
       failure(400, 'Pilih 1 sampai 50 pendaftar'),
     )
 
-    await expect(enrolmentService.process(['a'], [])).resolves.toEqual({
+    await expect(enrollmentService.process(['a'], [])).resolves.toEqual({
       success: false,
     })
     expect(toast.error).toHaveBeenCalledWith('Pilih 1 sampai 50 pendaftar')
@@ -240,7 +240,7 @@ describe('enrolmentService', () => {
     vi.mocked(admissionApi.setPlacement).mockResolvedValue({} as never)
 
     await expect(
-      enrolmentService.setPlacement('a', 'TRANSFER', 'g8'),
+      enrollmentService.setPlacement('a', 'TRANSFER', 'g8'),
     ).resolves.toEqual({
       success: true,
     })

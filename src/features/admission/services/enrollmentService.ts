@@ -1,15 +1,15 @@
 import { toast } from 'vue-sonner'
 import { admissionApi } from '../api/admissionApi'
 import type {
-  AdmissionEnrolmentRow,
+  AdmissionEnrollmentRow,
   AdmissionNisPreview,
   AdmissionType,
-  EnrolmentQueueQuery,
+  EnrollmentQueueQuery,
 } from '../types'
 import { admissionErrorMessage } from '../utils'
 
 interface QueuePage {
-  rows: AdmissionEnrolmentRow[]
+  rows: AdmissionEnrollmentRow[]
   total: number
   counts: { ready: number; held: number; done: number }
   years: {
@@ -24,12 +24,12 @@ function statusOf(error: unknown): number | undefined {
   return (error as { response?: { status?: number } } | null)?.response?.status
 }
 
-export const enrolmentService = {
+export const enrollmentService = {
   fetchQueue: async (
-    query: EnrolmentQueueQuery,
+    query: EnrollmentQueueQuery,
   ): Promise<QueuePage | { error: string }> => {
     try {
-      const body = (await admissionApi.getEnrolmentQueue(query)).data
+      const body = (await admissionApi.getEnrollmentQueue(query)).data
       return {
         rows: body.data ?? [],
         total: body.meta.total,
@@ -105,7 +105,7 @@ export const enrolmentService = {
   ) => {
     try {
       const results = (
-        await admissionApi.processEnrolments({ applicationIds, nisn })
+        await admissionApi.processEnrollments({ applicationIds, nisn })
       ).data.data.results
       const enrolled = results.filter(
         (result) => result.outcome === 'ENROLLED',

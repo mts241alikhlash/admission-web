@@ -82,7 +82,7 @@ describe('useLoopCarousel start position', () => {
     expect(track.scrollLeft).toBe(7 * 608)
   })
 
-  it('re-centres when the track is resized before the visitor touches it', () => {
+  it('re-centers when the track is resized before the visitor touches it', () => {
     const { track } = mountCarousel(7, 695)
     track.scrollLeft = 7 * 695
 

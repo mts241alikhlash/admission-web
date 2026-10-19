@@ -91,7 +91,9 @@ const {
 const canVerifyPayment = computed(() => can('admission-payments.verify'))
 const canReviewDocuments = computed(() => can('admission-documents.verify'))
 const canDecide = computed(() => can('admission-decisions.decide'))
-const canProcessEnrolment = computed(() => can('admission-enrolments.process'))
+const canProcessEnrollment = computed(() =>
+  can('admission-enrollments.process'),
+)
 const canAddPayment = computed(
   () =>
     can('admission-payments.create') &&
@@ -125,7 +127,7 @@ const hasActions = computed(
     (canReviewDocuments.value && status.value === 'SUBMITTED') ||
     (canDecide.value &&
       (status.value === 'SUBMITTED' || status.value === 'VERIFIED')) ||
-    (canProcessEnrolment.value && status.value === 'ACCEPTED'),
+    (canProcessEnrollment.value && status.value === 'ACCEPTED'),
 )
 
 const documentRows = computed(() =>
@@ -453,11 +455,11 @@ function rtRw(rt?: string | null, rw?: string | null) {
 }
 
 function fullAddress(parent: AdmissionApplicationParent) {
-  const neighbourhood = rtRw(parent.rt, parent.rw)
+  const neighborhood = rtRw(parent.rt, parent.rw)
   return (
     [
       parent.street,
-      neighbourhood && `RT/RW ${neighbourhood}`,
+      neighborhood && `RT/RW ${neighborhood}`,
       parent.village,
       parent.district,
       parent.city,
@@ -1614,7 +1616,7 @@ useBreadcrumbs(() => {
           Terima
         </Button>
         <Button
-          v-if="canProcessEnrolment && status === 'ACCEPTED'"
+          v-if="canProcessEnrollment && status === 'ACCEPTED'"
           :disabled="acting"
           @click="openDialog('enroll')"
         >

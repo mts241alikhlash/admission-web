@@ -131,7 +131,7 @@ it('lists what is incomplete and takes the applicant to that step', async () => 
   expect(onGoToStep).toHaveBeenCalledWith(5)
 })
 
-it('summarises every answer and opens the step behind each section', async () => {
+it('summarizes every answer and opens the step behind each section', async () => {
   const { personal, parents, address, school, hydrate } =
     useApplicationFormState()
   hydrate({ ...draft, parents: [] })

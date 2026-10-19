@@ -29,12 +29,12 @@ import type {
   AdmissionDocumentReviewSend,
   DecisionQueueQuery,
   AdmissionGrade,
-  AdmissionEnrolmentQueue,
+  AdmissionEnrollmentQueue,
   AdmissionNisPreview,
   AdmissionNisCompose,
-  AdmissionEnrolmentProcess,
+  AdmissionEnrollmentProcess,
   AdmissionType,
-  EnrolmentQueueQuery,
+  EnrollmentQueueQuery,
   DocumentReviewQuery,
   PaymentQueueQuery,
   AdmissionAcademicYear,
@@ -573,12 +573,12 @@ export const admissionApi = {
   getGrades: () =>
     api.get<ApiSingleResponse<AdmissionGrade[]>>('/admissions/grades'),
 
-  getEnrolmentQueue: (params: EnrolmentQueueQuery) =>
-    api.get<AdmissionEnrolmentQueue>('/admissions/enrolments', { params }),
+  getEnrollmentQueue: (params: EnrollmentQueueQuery) =>
+    api.get<AdmissionEnrollmentQueue>('/admissions/enrollments', { params }),
 
   getNisPreview: (academicYearId: string) =>
     api.get<ApiSingleResponse<AdmissionNisPreview>>(
-      '/admissions/enrolments/nis-preview',
+      '/admissions/enrollments/nis-preview',
       { params: { academicYearId } },
     ),
 
@@ -588,24 +588,24 @@ export const admissionApi = {
     syncStudents?: boolean
   }) =>
     api.post<ApiSingleResponse<AdmissionNisCompose>>(
-      '/admissions/enrolments/nis',
+      '/admissions/enrollments/nis',
       payload,
     ),
 
   lockNis: (academicYearId: string) =>
-    api.post('/admissions/enrolments/nis-lock', { academicYearId }),
+    api.post('/admissions/enrollments/nis-lock', { academicYearId }),
 
-  processEnrolments: (payload: {
+  processEnrollments: (payload: {
     applicationIds: string[]
     nisn: { applicationId: string; nisn: string }[]
   }) =>
-    api.post<ApiSingleResponse<AdmissionEnrolmentProcess>>(
-      '/admissions/enrolments/process',
+    api.post<ApiSingleResponse<AdmissionEnrollmentProcess>>(
+      '/admissions/enrollments/process',
       payload,
     ),
 
   setPlacement: (
     applicationId: string,
     payload: { admissionType: AdmissionType; targetGradeId: string },
-  ) => api.patch(`/admissions/enrolments/${applicationId}/placement`, payload),
+  ) => api.patch(`/admissions/enrollments/${applicationId}/placement`, payload),
 }

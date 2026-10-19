@@ -8,7 +8,7 @@ export default {
     documentType: 'Jenis Berkas',
     documentReview: 'Verifikasi Berkas',
     download: 'Unduhan',
-    enrolment: 'Daftar Ulang',
+    enrollment: 'Daftar Ulang',
     landing: 'Halaman Depan',
     form: 'Formulir',
     myProfile: 'Profil Saya',

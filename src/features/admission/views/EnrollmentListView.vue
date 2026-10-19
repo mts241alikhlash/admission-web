@@ -36,30 +36,30 @@ import { useRoleGuard } from '@/features/platform/auth'
 import StatusBadge from '../components/StatusBadge.vue'
 import { applicationService } from '../services/applicationService'
 import ServerPager from '../components/ServerPager.vue'
-import { enrolmentService } from '../services/enrolmentService'
+import { enrollmentService } from '../services/enrollmentService'
 import { publicAdmissionService } from '../services/publicAdmissionService'
 import { useApplicationStore } from '../stores/applicationStore'
 import {
   ADMISSION_TYPE_LABELS,
-  type AdmissionEnrolmentRow,
+  type AdmissionEnrollmentRow,
   type AdmissionGrade,
   type AdmissionNisPreview,
   type AdmissionType,
-  type EnrolmentTab,
+  type EnrollmentTab,
 } from '../types'
 
 const { can } = useRoleGuard()
 const router = useRouter()
-const canProcess = computed(() => can('admission-enrolments.process'))
-const canCompose = computed(() => can('admission-enrolments.nis'))
+const canProcess = computed(() => can('admission-enrollments.process'))
+const canCompose = computed(() => can('admission-enrollments.nis'))
 const { waves } = storeToRefs(useApplicationStore())
 
-const tab = ref<EnrolmentTab>('ready')
+const tab = ref<EnrollmentTab>('ready')
 const search = ref('')
 const debouncedSearch = refDebounced(search, 300)
 const waveFilter = ref('ALL')
 const waveFilterId = useId()
-const rows = ref<AdmissionEnrolmentRow[]>([])
+const rows = ref<AdmissionEnrollmentRow[]>([])
 const total = ref(0)
 const counts = ref({ ready: 0, held: 0, done: 0 })
 const years = ref<
@@ -87,7 +87,7 @@ const processResult = ref<{
 } | null>(null)
 const acting = ref(false)
 
-const placementRow = ref<AdmissionEnrolmentRow | null>(null)
+const placementRow = ref<AdmissionEnrollmentRow | null>(null)
 const placementType = ref('')
 const placementGrade = ref('')
 const placementError = ref('')
@@ -104,7 +104,7 @@ const nisnError = ref('')
 const NISN_PATTERN = /^\d{10}$/
 
 const TABS: {
-  value: EnrolmentTab
+  value: EnrollmentTab
   label: string
   count: () => number
   empty: string
@@ -148,7 +148,7 @@ const typedNisn = computed(() =>
   }),
 )
 
-function gradeLabel(row: AdmissionEnrolmentRow) {
+function gradeLabel(row: AdmissionEnrollmentRow) {
   const grade = grades.value.find((item) => item.level === row.targetGradeLevel)
   return grade?.name ?? `Kelas ${row.targetGradeLevel}`
 }
@@ -157,7 +157,7 @@ async function load(resetPage = true) {
   if (resetPage) page.value = 1
   const request = ++latestRequest
   loading.value = true
-  const result = await enrolmentService.fetchQueue({
+  const result = await enrollmentService.fetchQueue({
     tab: tab.value,
     search: debouncedSearch.value.trim() || undefined,
     waveId: waveFilter.value === 'ALL' ? undefined : waveFilter.value,
@@ -221,7 +221,10 @@ async function submitProcess() {
   const names = new Map(
     rows.value.map((row) => [row.applicationId, row.applicantName]),
   )
-  const result = await enrolmentService.process(selected.value, typedNisn.value)
+  const result = await enrollmentService.process(
+    selected.value,
+    typedNisn.value,
+  )
   acting.value = false
   if (!result.success) return
   processOpen.value = false
@@ -236,7 +239,7 @@ async function submitProcess() {
   await load(false)
 }
 
-function openPlacement(row: AdmissionEnrolmentRow) {
+function openPlacement(row: AdmissionEnrollmentRow) {
   placementRow.value = row
   placementType.value = row.admissionType ?? ''
   placementGrade.value =
@@ -252,7 +255,7 @@ async function submitPlacement() {
     return
   }
   acting.value = true
-  const result = await enrolmentService.setPlacement(
+  const result = await enrollmentService.setPlacement(
     row.applicationId,
     placementType.value as AdmissionType,
     placementGrade.value,
@@ -266,7 +269,7 @@ async function submitPlacement() {
 async function loadPreview() {
   nisLoading.value = true
   nisError.value = ''
-  const result = await enrolmentService.previewNis(yearId.value)
+  const result = await enrollmentService.previewNis(yearId.value)
   nisLoading.value = false
   if ('error' in result) {
     nisPreview.value = null
@@ -286,7 +289,7 @@ async function openNis() {
 async function submitNis() {
   if (!nisPreview.value) return
   acting.value = true
-  const result = await enrolmentService.composeNis(
+  const result = await enrollmentService.composeNis(
     yearId.value,
     nisPreview.value.changes,
     false,
@@ -303,7 +306,7 @@ async function submitNis() {
 
 async function syncStudents() {
   acting.value = true
-  const result = await enrolmentService.composeNis(yearId.value, 0, true)
+  const result = await enrollmentService.composeNis(yearId.value, 0, true)
   acting.value = false
   if (result.success) syncPending.value = result.result.failed.length
   await load(false)
@@ -311,7 +314,7 @@ async function syncStudents() {
 
 async function submitLock() {
   acting.value = true
-  const result = await enrolmentService.lockNis(yearId.value)
+  const result = await enrollmentService.lockNis(yearId.value)
   acting.value = false
   if (!result.success) return
   lockOpen.value = false
@@ -324,10 +327,10 @@ watch([tab, debouncedSearch, waveFilter], () => {
   void load()
 })
 
-const columns = computed<ColumnDef<AdmissionEnrolmentRow>[]>(() => {
+const columns = computed<ColumnDef<AdmissionEnrollmentRow>[]>(() => {
   const isDone = tab.value === 'done'
 
-  const selectCol: ColumnDef<AdmissionEnrolmentRow>[] =
+  const selectCol: ColumnDef<AdmissionEnrollmentRow>[] =
     canProcess.value && selectable.value
       ? [
           {
@@ -342,7 +345,7 @@ const columns = computed<ColumnDef<AdmissionEnrolmentRow>[]>(() => {
                   'onUpdate:modelValue': toggleAll,
                 }),
               ),
-            cell: ({ row }: { row: { original: AdmissionEnrolmentRow } }) =>
+            cell: ({ row }: { row: { original: AdmissionEnrollmentRow } }) =>
               h(
                 'div',
                 { class: 'flex items-center justify-center' },
@@ -361,7 +364,7 @@ const columns = computed<ColumnDef<AdmissionEnrolmentRow>[]>(() => {
         ]
       : []
 
-  const baseCols: ColumnDef<AdmissionEnrolmentRow>[] = [
+  const baseCols: ColumnDef<AdmissionEnrollmentRow>[] = [
     {
       accessorKey: 'registrationNumber',
       header: 'No. Pendaftaran',
@@ -386,7 +389,7 @@ const columns = computed<ColumnDef<AdmissionEnrolmentRow>[]>(() => {
     },
   ]
 
-  const nisCol: ColumnDef<AdmissionEnrolmentRow>[] = isDone
+  const nisCol: ColumnDef<AdmissionEnrollmentRow>[] = isDone
     ? [
         {
           id: 'nis',
@@ -397,7 +400,7 @@ const columns = computed<ColumnDef<AdmissionEnrolmentRow>[]>(() => {
       ]
     : []
 
-  const detailCols: ColumnDef<AdmissionEnrolmentRow>[] = [
+  const detailCols: ColumnDef<AdmissionEnrollmentRow>[] = [
     {
       id: 'nisn',
       header: 'NISN',
@@ -464,7 +467,7 @@ const columns = computed<ColumnDef<AdmissionEnrolmentRow>[]>(() => {
     },
   ]
 
-  const actionCol: ColumnDef<AdmissionEnrolmentRow> = {
+  const actionCol: ColumnDef<AdmissionEnrollmentRow> = {
     id: 'actions',
     header: 'Aksi',
     meta: { align: 'center' },
@@ -686,7 +689,7 @@ onMounted(async () => {
                     <li
                       v-for="row in rows"
                       :key="row.applicationId"
-                      data-test="enrolment-row"
+                      data-test="enrollment-row"
                       class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
                     >
                       <div class="flex items-start gap-3">
