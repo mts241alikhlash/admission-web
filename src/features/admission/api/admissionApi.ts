@@ -21,6 +21,8 @@ import type {
   AddPaymentPayload,
   AdmissionEligibleApplication,
   AdmissionPaymentQueue,
+  LateDocumentList,
+  LateDocumentQuery,
   AdmissionDecision,
   AdmissionDecisionMany,
   AdmissionDecisionQueue,
@@ -479,6 +481,33 @@ export const admissionApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
+
+  getLateDocuments: (params: LateDocumentQuery) =>
+    api.get<LateDocumentList>('/admissions/late-documents', { params }),
+
+  uploadLateDocument: (
+    applicationId: string,
+    documentTypeId: string,
+    file: File,
+  ) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(
+      `/admissions/late-documents/${applicationId}/documents/${documentTypeId}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+  },
+
+  decideLateDocument: (
+    applicationId: string,
+    documentId: string,
+    payload: { status: 'APPROVED' | 'REJECTED'; note?: string },
+  ) =>
+    api.patch(
+      `/admissions/late-documents/${applicationId}/documents/${documentId}`,
+      payload,
+    ),
 
   getManageAnnouncements: (params?: {
     page?: number

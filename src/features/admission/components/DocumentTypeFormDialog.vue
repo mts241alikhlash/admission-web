@@ -41,7 +41,7 @@ const emit = defineEmits<{
 
 const isEdit = computed(() => !!props.documentType)
 
-const { handleSubmit, resetForm } = useForm<DocumentTypeSavePayload>({
+const { handleSubmit, resetForm, values } = useForm({
   validationSchema: toTypedSchema(documentTypeSchema),
 })
 
@@ -58,7 +58,8 @@ watch(
       resetForm({
         values: {
           name: props.documentType.name,
-          isRequired: props.documentType.isRequired,
+          requirement: props.documentType.requirement,
+          lateDueMonths: props.documentType.lateDueMonths,
           isActive: props.documentType.isActive,
         },
       })
@@ -66,7 +67,8 @@ watch(
       resetForm({
         values: {
           name: '',
-          isRequired: true,
+          requirement: 'REQUIRED' as const,
+          lateDueMonths: null,
           isActive: true,
         },
       })
@@ -78,7 +80,8 @@ watch(
 const onSubmit = handleSubmit((formValues) => {
   emit('save', {
     name: formValues.name.trim(),
-    isRequired: formValues.isRequired,
+    requirement: formValues.requirement,
+    lateDueMonths: formValues.lateDueMonths,
     isActive: formValues.isActive,
   })
 })
@@ -123,14 +126,14 @@ const onSubmit = handleSubmit((formValues) => {
 
           <FloatingField
             v-slot="{ value, handleChange }"
-            name="isRequired"
+            name="requirement"
             label="Sifat Berkas"
             required
           >
             <Select
-              :model-value="String(value)"
+              :model-value="value"
               :disabled="isSaving"
-              @update:model-value="handleChange($event === 'true')"
+              @update:model-value="handleChange"
             >
               <FormControl>
                 <SelectTrigger class="w-full">
@@ -138,10 +141,30 @@ const onSubmit = handleSubmit((formValues) => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="true"> Wajib </SelectItem>
-                <SelectItem value="false"> Opsional </SelectItem>
+                <SelectItem value="REQUIRED"> Wajib </SelectItem>
+                <SelectItem value="LATER"> Susulan </SelectItem>
+                <SelectItem value="OPTIONAL"> Opsional </SelectItem>
               </SelectContent>
             </Select>
+          </FloatingField>
+
+          <FloatingField
+            v-if="values.requirement === 'LATER'"
+            v-slot="{ componentField }"
+            name="lateDueMonths"
+            label="Batas (bulan sejak awal tahun ajaran)"
+            required
+          >
+            <FormControl>
+              <Input
+                v-bind="componentField"
+                type="number"
+                min="1"
+                max="12"
+                inputmode="numeric"
+                :disabled="isSaving"
+              />
+            </FormControl>
           </FloatingField>
 
           <FloatingField

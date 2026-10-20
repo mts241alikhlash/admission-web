@@ -225,7 +225,11 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
 ])
 
 function needsReview(doc: AdmissionDocument | null): doc is AdmissionDocument {
-  return !!doc?.file && doc.status !== 'APPROVED'
+  if (!doc?.file || doc.status === 'APPROVED') return false
+  const type = application.value?.documentTypes?.find(
+    (item) => item.id === doc.documentTypeId,
+  )
+  return type?.requirement !== 'LATER'
 }
 
 const actionColumn: ColumnDef<DocumentRow> = {

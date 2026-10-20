@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType, type VNode } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import DocumentTypeListView from './DocumentTypeListView.vue'
+import DocumentTypeFormDialog from '../components/DocumentTypeFormDialog.vue'
 
 const service = vi.hoisted(() => ({
   fetchAll: vi.fn(),
@@ -35,6 +36,8 @@ const types = [
     code: 'FAMILY_CARD',
     name: 'Kartu Keluarga',
     isRequired: true,
+    requirement: 'REQUIRED',
+    lateDueMonths: null,
     isActive: true,
     sortOrder: 1,
     documentCount: 4,
@@ -44,6 +47,8 @@ const types = [
     code: 'PHOTO',
     name: 'Pas Foto',
     isRequired: true,
+    requirement: 'REQUIRED',
+    lateDueMonths: null,
     isActive: true,
     sortOrder: 2,
     documentCount: 0,
@@ -53,6 +58,8 @@ const types = [
     code: 'REPORT_CARD',
     name: 'Rapor',
     isRequired: false,
+    requirement: 'OPTIONAL',
+    lateDueMonths: null,
     isActive: false,
     sortOrder: 3,
     documentCount: 0,
@@ -151,7 +158,8 @@ it('adds a type and reloads the list', async () => {
 
   expect(service.save).toHaveBeenCalledWith(null, {
     name: 'Surat Keterangan Sehat',
-    isRequired: true,
+    requirement: 'REQUIRED',
+    lateDueMonths: null,
     isActive: true,
   })
   expect(service.fetchAll).toHaveBeenCalledTimes(2)
@@ -287,4 +295,74 @@ it('shows name and code in separate columns with a clear header for the upload r
     .findAll(':scope > span')
   expect(firstRow[0].text()).toBe('Kartu Keluarga')
   expect(firstRow[1].text()).toBe('FAMILY_CARD')
+})
+
+it('shows the requirement badge and the limit for Susulan', async () => {
+  service.fetchAll.mockResolvedValue({
+    types: [
+      {
+        ...types[0],
+        id: 't4',
+        name: 'Ijazah SD',
+        requirement: 'LATER',
+        lateDueMonths: 3,
+      },
+    ],
+  })
+  const wrapper = mountView()
+  await flushPromises()
+
+  const item = wrapper
+    .get('[data-test="mobile-document-types"]')
+    .findAll('li')[0]
+  expect(item.text()).toContain('Susulan · 3 bln')
+})
+
+it('shows the limit field only for Susulan', async () => {
+  service.fetchAll.mockResolvedValue({ types: [] })
+  const wrapper = mountView()
+  await flushPromises()
+
+  await wrapper
+    .findAll('button')
+    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .trigger('click')
+  expect(wrapper.find('input[name="lateDueMonths"]').exists()).toBe(false)
+
+  const dialog = wrapper.findComponent(DocumentTypeFormDialog)
+  const select = dialog
+    .findAllComponents({ name: 'Select' })
+    .find((c) => c.props('modelValue') === 'REQUIRED')!
+  await select.setValue('LATER')
+  await flushPromises()
+  expect(wrapper.find('input[name="lateDueMonths"]').exists()).toBe(true)
+})
+
+it('saves requirement and limit', async () => {
+  service.fetchAll.mockResolvedValue({ types: [] })
+  service.save.mockResolvedValue({ success: true })
+  const wrapper = mountView()
+  await flushPromises()
+
+  await wrapper
+    .findAll('button')
+    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .trigger('click')
+  await wrapper.get('input[name="name"]').setValue('Ijazah SD')
+  const select = wrapper
+    .findComponent(DocumentTypeFormDialog)
+    .findAllComponents({ name: 'Select' })
+    .find((c) => c.props('modelValue') === 'REQUIRED')!
+  await select.setValue('LATER')
+  await flushPromises()
+  await wrapper.get('input[name="lateDueMonths"]').setValue('3')
+  await wrapper.get('form').trigger('submit')
+  await vi.waitFor(() => expect(service.save).toHaveBeenCalled())
+
+  expect(service.save).toHaveBeenCalledWith(null, {
+    name: 'Ijazah SD',
+    requirement: 'LATER',
+    lateDueMonths: 3,
+    isActive: true,
+  })
 })

@@ -119,8 +119,8 @@ it('lists what the applicant still has to do', () => {
     ...draft,
     status: 'REVISION_NEEDED',
     documentTypes: [
-      { id: 'kk', name: 'Kartu Keluarga', isRequired: true },
-      { id: 'akta', name: 'Akta Kelahiran', isRequired: true },
+      { id: 'kk', name: 'Kartu Keluarga', requirement: 'REQUIRED' },
+      { id: 'akta', name: 'Akta Kelahiran', requirement: 'REQUIRED' },
     ],
     documents: [
       { documentTypeId: 'kk', status: 'REJECTED', note: 'Buram' },
@@ -166,4 +166,45 @@ it('asks for no transfer when the wave is free', () => {
 
   expect(wrapper.text()).toContain('Tanpa biaya')
   expect(wrapper.text()).not.toContain('Unggah bukti pembayaran')
+})
+
+it('shows the yellow box with the date and hides it when nothing is left', () => {
+  state.dashboardError = null
+  const later = {
+    id: 'ijazah',
+    name: 'Ijazah SD',
+    requirement: 'LATER',
+    dueDate: '2026-09-30',
+  }
+  state.application = {
+    ...draft,
+    status: 'ACCEPTED',
+    documentTypes: [later],
+    documents: [],
+    payment: { status: 'VERIFIED', amount: 150000, note: null },
+  }
+  const shown = mountView()
+  const box = shown.get('[data-test="late-reminders"]')
+  expect(box.text()).toContain('Ijazah SD')
+  expect(box.text()).toContain('30 September 2026')
+
+  state.application = {
+    ...draft,
+    status: 'ACCEPTED',
+    documentTypes: [later],
+    documents: [{ documentTypeId: 'ijazah', status: 'PENDING', note: null }],
+    payment: { status: 'VERIFIED', amount: 150000, note: null },
+  }
+  expect(mountView().find('[data-test="late-reminders"]').exists()).toBe(false)
+})
+
+it('hides the yellow box while the applicant can still edit', () => {
+  state.dashboardError = null
+  state.application = {
+    ...draft,
+    status: 'DRAFT',
+    documentTypes: [{ id: 'ijazah', name: 'Ijazah SD', requirement: 'LATER' }],
+    documents: [],
+  }
+  expect(mountView().find('[data-test="late-reminders"]').exists()).toBe(false)
 })

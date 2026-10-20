@@ -7,6 +7,7 @@ export default {
     decision: 'Decisions',
     documentType: 'Document Types',
     documentReview: 'Document Review',
+    lateDocuments: 'Late Documents',
     download: 'Downloads',
     enrollment: 'Re-registration',
     landing: 'Landing Page',

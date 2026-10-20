@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import { DOCUMENT_STATUS_LABELS } from '../types'
-import { DOCUMENT_STATUS_BADGE_VARIANTS } from '../utils'
+import { DOCUMENT_STATUS_BADGE_VARIANTS, formatJakartaDate } from '../utils'
 import type { AdmissionDocument, AdmissionDocumentType } from '../types'
 
 const props = defineProps<{
@@ -40,6 +40,32 @@ const selectedFile = computed(() =>
   activeDocType.value ? props.documentFiles[activeDocType.value.code] : null,
 )
 
+const GROUPS = [
+  { key: 'REQUIRED', title: 'Wajib diunggah sekarang' },
+  { key: 'LATER', title: 'Boleh menyusul' },
+  { key: 'OPTIONAL', title: 'Opsional' },
+] as const
+
+const groups = computed(() =>
+  GROUPS.map((group) => ({
+    ...group,
+    items: props.documentTypes.filter((type) => type.requirement === group.key),
+  })).filter((group) => group.items.length),
+)
+
+function laterNote(type: AdmissionDocumentType) {
+  if (type.requirement !== 'LATER') return null
+  return type.dueDate
+    ? `Boleh dikirim belakangan. Serahkan ke TU paling lambat ${formatJakartaDate(type.dueDate)}.`
+    : 'Boleh dikirim belakangan. Serahkan ke TU sesuai pemberitahuan sekolah.'
+}
+
+function uploadLabel(type: AdmissionDocumentType) {
+  return type.requirement === 'LATER'
+    ? 'Unggah kalau sudah ada'
+    : 'Unggah Berkas'
+}
+
 function documentFor(typeId: string) {
   return props.documents.find((d) => d.documentTypeId === typeId)
 }
@@ -48,17 +74,28 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
   {
     accessorKey: 'name',
     header: 'Jenis Dokumen',
-    cell: ({ row }) =>
-      h('span', [
-        row.original.name,
-        row.original.isRequired
+    cell: ({ row }) => {
+      const note = laterNote(row.original)
+      return h('div', { class: 'min-w-0 space-y-1' }, [
+        h('span', [
+          row.original.name,
+          row.original.requirement === 'REQUIRED'
+            ? h(
+                'span',
+                { class: 'text-destructive', 'aria-label': 'wajib' },
+                ' *',
+              )
+            : null,
+        ]),
+        note
           ? h(
-              'span',
-              { class: 'text-destructive', 'aria-label': 'wajib' },
-              ' *',
+              'p',
+              { class: 'text-xs text-amber-700 dark:text-amber-400' },
+              note,
             )
           : null,
-      ]),
+      ])
+    },
   },
   {
     id: 'file',
@@ -106,7 +143,7 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
               hideDelete: true,
               editLabel: documentFor(row.original.id)?.file
                 ? 'Ganti Berkas'
-                : 'Unggah Berkas',
+                : uploadLabel(row.original),
               onEdit: () => {
                 activeDocType.value = row.original
               },
@@ -159,80 +196,96 @@ async function upload() {
           Belum ada jenis berkas yang tersedia.
         </p>
         <template v-else>
-          <DataTable
-            class="hidden md:block"
-            :columns="columns"
-            :data="documentTypes"
-            item-label="dokumen"
-            hide-per-page
-            hide-pagination
-            :page-size="Math.max(1, documentTypes.length)"
-          />
-          <ul
-            data-test="mobile-documents"
-            class="divide-y rounded-lg border md:hidden"
+          <section
+            v-for="group in groups"
+            :key="group.key"
+            :data-test="`group-${group.key}`"
+            class="space-y-2 pb-4 last:pb-0"
           >
-            <li
-              v-for="docType in documentTypes"
-              :key="docType.id"
-              class="min-w-0 space-y-3 p-4 text-sm"
+            <h3 class="text-sm font-semibold">{{ group.title }}</h3>
+            <DataTable
+              class="hidden md:block"
+              :columns="columns"
+              :data="group.items"
+              item-label="dokumen"
+              hide-per-page
+              hide-pagination
+              :page-size="Math.max(1, group.items.length)"
+            />
+            <ul
+              data-test="mobile-documents"
+              class="divide-y rounded-lg border md:hidden"
             >
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="break-words font-medium">
-                    {{ docType.name
-                    }}<span
-                      v-if="docType.isRequired"
-                      class="text-destructive"
-                      aria-label="wajib"
-                    >
-                      *</span
-                    >
-                  </p>
+              <li
+                v-for="docType in group.items"
+                :key="docType.id"
+                class="min-w-0 space-y-3 p-4 text-sm"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="break-words font-medium">
+                      {{ docType.name
+                      }}<span
+                        v-if="docType.requirement === 'REQUIRED'"
+                        class="text-destructive"
+                        aria-label="wajib"
+                      >
+                        *</span
+                      >
+                    </p>
+                  </div>
+                  <Badge
+                    class="shrink-0"
+                    :variant="
+                      documentFor(docType.id)?.file
+                        ? DOCUMENT_STATUS_BADGE_VARIANTS[
+                            documentFor(docType.id)!.status
+                          ]
+                        : 'outline'
+                    "
+                  >
+                    {{
+                      documentFor(docType.id)?.file
+                        ? DOCUMENT_STATUS_LABELS[
+                            documentFor(docType.id)!.status
+                          ]
+                        : 'Belum diunggah'
+                    }}
+                  </Badge>
                 </div>
-                <Badge
-                  class="shrink-0"
-                  :variant="
-                    documentFor(docType.id)?.file
-                      ? DOCUMENT_STATUS_BADGE_VARIANTS[
-                          documentFor(docType.id)!.status
-                        ]
-                      : 'outline'
-                  "
+                <p
+                  v-if="laterNote(docType)"
+                  class="text-xs text-amber-700 dark:text-amber-400"
+                >
+                  {{ laterNote(docType) }}
+                </p>
+                <p
+                  v-if="documentFor(docType.id)?.file"
+                  class="break-all"
+                >
+                  {{ documentFor(docType.id)?.file?.originalName }}
+                </p>
+                <p
+                  v-if="documentFor(docType.id)?.note"
+                  class="text-destructive"
+                >
+                  Catatan: {{ documentFor(docType.id)?.note }}
+                </p>
+                <Button
+                  v-if="editable"
+                  variant="outline"
+                  class="min-h-11 w-full"
+                  @click="activeDocType = docType"
                 >
                   {{
                     documentFor(docType.id)?.file
-                      ? DOCUMENT_STATUS_LABELS[documentFor(docType.id)!.status]
-                      : 'Belum diunggah'
+                      ? 'Ganti Berkas'
+                      : 'Unggah Berkas'
                   }}
-                </Badge>
-              </div>
-              <p
-                v-if="documentFor(docType.id)?.file"
-                class="break-all"
-              >
-                {{ documentFor(docType.id)?.file?.originalName }}
-              </p>
-              <p
-                v-if="documentFor(docType.id)?.note"
-                class="text-destructive"
-              >
-                Catatan: {{ documentFor(docType.id)?.note }}
-              </p>
-              <Button
-                v-if="editable"
-                variant="outline"
-                class="min-h-11 w-full"
-                @click="activeDocType = docType"
-              >
-                {{
-                  documentFor(docType.id)?.file
-                    ? 'Ganti Berkas'
-                    : 'Unggah Berkas'
-                }}
-              </Button>
-            </li>
-          </ul>
+                </Button>
+              </li>
+            </ul>
+          </section>
         </template>
       </CardContent>
     </Card>

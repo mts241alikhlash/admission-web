@@ -41,6 +41,21 @@ const isFormOpen = ref(false)
 const editing = ref<AdmissionDocumentTypeAdmin | null>(null)
 const pendingDelete = ref<AdmissionDocumentTypeAdmin | null>(null)
 
+function requirementVariant(
+  requirement: AdmissionDocumentTypeAdmin['requirement'],
+) {
+  return requirement === 'OPTIONAL' ? 'secondary' : 'default'
+}
+
+function requirementLabel(type: AdmissionDocumentTypeAdmin) {
+  if (type.requirement === 'LATER') {
+    return type.lateDueMonths
+      ? `Susulan · ${type.lateDueMonths} bln`
+      : 'Susulan'
+  }
+  return type.requirement === 'REQUIRED' ? 'Wajib' : 'Opsional'
+}
+
 const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
   { accessorKey: 'name', header: 'Nama' },
   {
@@ -50,13 +65,11 @@ const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
       h('span', { class: 'text-muted-foreground' }, row.original.code),
   },
   {
-    id: 'isRequired',
+    id: 'requirement',
     header: 'Kewajiban',
     cell: ({ row }) =>
-      h(
-        Badge,
-        { variant: row.original.isRequired ? 'default' : 'secondary' },
-        () => (row.original.isRequired ? 'Wajib' : 'Opsional'),
+      h(Badge, { variant: requirementVariant(row.original.requirement) }, () =>
+        requirementLabel(row.original),
       ),
   },
   {
@@ -201,8 +214,8 @@ onMounted(load)
                     <p class="text-xs text-muted-foreground">{{ type.code }}</p>
                   </div>
                   <div class="flex items-center gap-1.5">
-                    <Badge :variant="type.isRequired ? 'default' : 'secondary'">
-                      {{ type.isRequired ? 'Wajib' : 'Opsional' }}
+                    <Badge :variant="requirementVariant(type.requirement)">
+                      {{ requirementLabel(type) }}
                     </Badge>
                     <Badge :variant="type.isActive ? 'default' : 'secondary'">
                       {{ type.isActive ? 'Aktif' : 'Nonaktif' }}

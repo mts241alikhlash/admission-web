@@ -29,6 +29,25 @@ export function formatDate(value: string | null | undefined) {
   }).format(new Date(value))
 }
 
+export function formatJakartaDate(value: string | null | undefined) {
+  if (!value) return '-'
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  }).format(new Date(value))
+}
+
+export function jakartaDaysUntil(value: string, now: Date = new Date()) {
+  const day = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+  }).format(new Date(value))
+  return Math.round(
+    (Date.parse(day) - Date.parse(jakartaToday(now))) / 86_400_000,
+  )
+}
+
 export function formatDateRange(
   start: string | null | undefined,
   end: string | null | undefined,

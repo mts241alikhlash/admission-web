@@ -18,7 +18,7 @@ const agreed = ref(false)
 
 const requiredDocuments = computed(() =>
   (props.application.documentTypes ?? [])
-    .filter((type) => type.isRequired)
+    .filter((type) => type.requirement === 'REQUIRED')
     .map((type) => type.name),
 )
 </script>

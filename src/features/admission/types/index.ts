@@ -4,7 +4,9 @@ import type { components } from '@mts241alikhlash/admission-api'
 type Schemas = components['schemas']
 
 export type AdmissionDocumentType =
-  Schemas['AdmissionActiveWavesResponseDocumentTypesDto']
+  Schemas['AdmissionActiveWavesResponseDocumentTypesDto'] & {
+    dueDate?: string | null
+  }
 export type AdmissionFile = Schemas['AdmissionPaymentResponseProofFileDto']
 export type AdmissionApplicationParent =
   Schemas['MyAdmissionApplicationResponseParentsDto']
@@ -18,6 +20,19 @@ export interface BankAccountSavePayload {
 }
 export type AdmissionDocumentTypeAdmin =
   Schemas['AdmissionDocumentTypeResponseDto']
+export type DocumentRequirement = 'REQUIRED' | 'LATER' | 'OPTIONAL'
+export type LateDocumentRow = Schemas['AdmissionLateDocumentRowResponseDto']
+export type LateDocumentList = Schemas['AdmissionLateDocumentListResponseDto']
+export type LateDocumentState = LateDocumentRow['state']
+export type LateDocumentStateFilter = 'OPEN' | LateDocumentState
+export interface LateDocumentQuery {
+  page: number
+  limit: number
+  search?: string
+  documentTypeId?: string
+  waveId?: string
+  state?: LateDocumentStateFilter
+}
 export type AdmissionPaymentQueueRow =
   Schemas['AdmissionPaymentQueueRowResponseDto']
 export type AdmissionPaymentQueue = Schemas['AdmissionPaymentQueueResponseDto']
@@ -95,7 +110,8 @@ export interface AddPaymentPayload {
 }
 export interface DocumentTypeSavePayload {
   name: string
-  isRequired: boolean
+  requirement: DocumentRequirement
+  lateDueMonths: number | null
   isActive: boolean
 }
 export type AdmissionDownloadAdmin = Schemas['AdmissionDownloadResponseDto']

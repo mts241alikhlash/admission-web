@@ -3,6 +3,7 @@ import {
   FileText,
   FileStack,
   FileCheck,
+  FileClock,
   BadgeCheck,
   GraduationCap,
   Banknote,
@@ -97,6 +98,12 @@ export const menuSections: MenuSection[] = [
         url: '/admin/document-reviews',
         icon: FileCheck,
         requiredPermission: 'admission-documents.read',
+      },
+      {
+        title: 'menu.lateDocuments',
+        url: '/admin/late-documents',
+        icon: FileClock,
+        requiredPermission: 'admission-late-documents.read',
       },
       {
         title: 'menu.decision',

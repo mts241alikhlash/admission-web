@@ -41,7 +41,8 @@ import { useRoleGuard } from '@/features/platform/auth'
 import StatusBadge from '../components/StatusBadge.vue'
 import type { AdmissionStatus } from '../types'
 import { PAYMENT_STATUS_LABELS, STATUS_LABELS } from '../types'
-import { formatDateTime, formatIDR } from '../utils'
+import { lateDocumentReminders } from '../composables/lateDocumentReminders'
+import { formatDateTime, formatIDR, formatJakartaDate } from '../utils'
 
 const {
   application,
@@ -123,13 +124,21 @@ const editable = computed(
 const requiredDocs = computed(() => {
   const app = application.value
   if (!app) return { done: 0, total: 0 }
-  const required = (app.documentTypes ?? []).filter((type) => type.isRequired)
+  const required = (app.documentTypes ?? []).filter(
+    (type) => type.requirement === 'REQUIRED',
+  )
   const done = required.filter((type) =>
     (app.documents ?? []).some(
       (doc) => doc.documentTypeId === type.id && doc.status !== 'REJECTED',
     ),
   ).length
   return { done, total: required.length }
+})
+
+const reminders = computed(() => {
+  const app = application.value
+  if (!app || app.status === 'REJECTED' || editable.value) return []
+  return lateDocumentReminders(app.documentTypes ?? [], app.documents ?? [])
 })
 
 const docProgress = computed(() =>
@@ -345,6 +354,28 @@ onMounted(() => {
             <ArrowRight class="ml-1 size-4" />
           </RouterLink>
         </Button>
+
+        <section
+          v-if="reminders.length"
+          data-test="late-reminders"
+          class="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100"
+        >
+          <h2 class="font-semibold">Berkas yang masih harus diserahkan</h2>
+          <ul class="list-disc space-y-1 pl-5">
+            <li
+              v-for="reminder in reminders"
+              :key="reminder.name"
+            >
+              {{ reminder.name
+              }}<template v-if="reminder.dueDate">
+                , paling lambat
+                {{ formatJakartaDate(reminder.dueDate) }}</template
+              ><template v-else>, sesuai pemberitahuan sekolah</template>
+              <span v-if="reminder.note"> ({{ reminder.note }})</span>
+            </li>
+          </ul>
+          <p>Serahkan ke TU sekolah. TU yang mengunggah dan memeriksanya.</p>
+        </section>
 
         <template v-if="tasks.length">
           <Separator />

@@ -5,6 +5,7 @@ import {
   personalSchema,
   schoolSchema,
 } from '../schemas/applicationFormSchemas'
+import type { DocumentRequirement } from '../types'
 import type {
   AchievementForm,
   AddressForm,
@@ -28,7 +29,7 @@ export interface CompletenessInput {
   scholarships: ScholarshipForm[]
   lifeStatuses: Named[]
   scholarshipCategories: Named[]
-  documentTypes: (Named & { isRequired: boolean })[]
+  documentTypes: (Named & { requirement: DocumentRequirement })[]
   documents: { documentTypeId: string; status: string }[]
 }
 
@@ -54,7 +55,7 @@ export function applicationCompleteness(
   ) => schema.safeParse(value).success
 
   const documentGaps = input.documentTypes
-    .filter((type) => type.isRequired)
+    .filter((type) => type.requirement === 'REQUIRED')
     .flatMap((type) => {
       const document = input.documents.find(
         (item) => item.documentTypeId === type.id,

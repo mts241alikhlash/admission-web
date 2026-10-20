@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { jakartaToday } from '../utils'
 import {
+  documentTypeSchema,
   achievementsSchema,
   achievementsSchemaFor,
   addressOwnerOf,
@@ -551,5 +552,37 @@ describe('achievementsSchemaFor', () => {
         ],
       }),
     ).toEqual(['scholarships.1.kipNumber'])
+  })
+})
+
+describe('documentTypeSchema', () => {
+  const base = { name: 'Ijazah', isActive: true }
+
+  it('LATER requires a limit from 1 to 12 months', () => {
+    for (const lateDueMonths of [null, '', 0, 13, 1.5]) {
+      const result = documentTypeSchema.safeParse({
+        ...base,
+        requirement: 'LATER',
+        lateDueMonths,
+      })
+      expect(result.success).toBe(false)
+    }
+    const ok = documentTypeSchema.safeParse({
+      ...base,
+      requirement: 'LATER',
+      lateDueMonths: '3',
+    })
+    expect(ok.success && ok.data.lateDueMonths).toBe(3)
+  })
+
+  it('a limit is ignored for WAJIB and OPSIONAL', () => {
+    for (const requirement of ['REQUIRED', 'OPTIONAL']) {
+      const result = documentTypeSchema.safeParse({
+        ...base,
+        requirement,
+        lateDueMonths: 5,
+      })
+      expect(result.success && result.data.lateDueMonths).toBe(null)
+    }
   })
 })
