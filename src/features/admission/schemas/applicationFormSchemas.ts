@@ -392,11 +392,36 @@ export const bankAccountSchema = z.object({
   isActive: z.boolean(),
 })
 
-export const documentTypeSchema = z.object({
-  name: z.string().trim().min(1, 'Nama jenis berkas wajib diisi').max(100),
-  isRequired: z.boolean(),
-  isActive: z.boolean(),
-})
+export const documentTypeSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Nama jenis berkas wajib diisi').max(100),
+    requirement: z.enum(['REQUIRED', 'LATER', 'OPTIONAL']),
+    lateDueMonths: z.preprocess(
+      (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
+      z.number().nullable(),
+    ),
+    isActive: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.requirement !== 'LATER') return
+    const months = value.lateDueMonths
+    if (
+      months === null ||
+      !Number.isInteger(months) ||
+      months < 1 ||
+      months > 12
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['lateDueMonths'],
+        message: 'Batas 1 sampai 12 bulan',
+      })
+    }
+  })
+  .transform((value) => ({
+    ...value,
+    lateDueMonths: value.requirement === 'LATER' ? value.lateDueMonths : null,
+  }))
 
 export const downloadSchema = z.object({
   title: z.string().trim().min(1, 'Judul berkas wajib diisi').max(100),

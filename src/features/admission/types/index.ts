@@ -108,7 +108,8 @@ export interface AddPaymentPayload {
 }
 export interface DocumentTypeSavePayload {
   name: string
-  isRequired: boolean
+  requirement: DocumentRequirement
+  lateDueMonths: number | null
   isActive: boolean
 }
 export type AdmissionDownloadAdmin = Schemas['AdmissionDownloadResponseDto']
