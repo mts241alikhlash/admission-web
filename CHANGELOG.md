@@ -1,5 +1,11 @@
 # admission-web
 
+## 1.17.0
+
+### Minor Changes
+
+- 986cbca: Berkas susulan: jenis berkas kini Wajib, Susulan atau Opsional dengan batas bulan, pendaftar boleh mengirim tanpa berkas susulan dan diingatkan tanggalnya, dan menu Berkas Susulan membantu TU mengunggah dan memeriksa berkasnya.
+
 ## 1.16.0
 
 ### Minor Changes
