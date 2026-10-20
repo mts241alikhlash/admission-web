@@ -4,7 +4,9 @@ import type { components } from '@mts241alikhlash/admission-api'
 type Schemas = components['schemas']
 
 export type AdmissionDocumentType =
-  Schemas['AdmissionActiveWavesResponseDocumentTypesDto']
+  Schemas['AdmissionActiveWavesResponseDocumentTypesDto'] & {
+    dueDate?: string | null
+  }
 export type AdmissionFile = Schemas['AdmissionPaymentResponseProofFileDto']
 export type AdmissionApplicationParent =
   Schemas['MyAdmissionApplicationResponseParentsDto']

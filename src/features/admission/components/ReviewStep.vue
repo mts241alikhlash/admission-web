@@ -37,6 +37,11 @@ const props = defineProps<{
 }>()
 
 const { nameOf } = useFormOptions()
+
+function requirementSuffix(requirement: string) {
+  if (requirement === 'REQUIRED') return ' (wajib)'
+  return requirement === 'LATER' ? ' (susulan)' : ''
+}
 const missing = computed(() => props.completeness.filter((item) => !item.done))
 const fieldGridClass =
   'grid grid-cols-[minmax(0,40%)_minmax(0,1fr)] gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,20%)_minmax(0,1fr)_minmax(0,20%)_minmax(0,1fr)] [&>dt]:flex [&>dt]:min-w-0 [&>dt]:justify-between [&>dt]:gap-2 [&>dt]:text-muted-foreground [&_dt>span:first-child]:break-words [&>dd]:min-w-0 [&>dd]:break-words'
@@ -559,7 +564,7 @@ const fieldGridClass =
                 <dt>
                   <span
                     >{{ type.name
-                    }}{{ type.isRequired ? ' (wajib)' : '' }}</span
+                    }}{{ requirementSuffix(type.requirement) }}</span
                   ><span>:</span>
                 </dt>
                 <dd>

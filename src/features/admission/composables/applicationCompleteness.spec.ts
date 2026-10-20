@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { applicationCompleteness } from './applicationCompleteness'
+import {
+  applicationCompleteness,
+  type CompletenessInput,
+} from './applicationCompleteness'
 
 const statuses = [{ id: 'alive', name: 'Masih hidup' }]
 const year = String(new Date().getFullYear())
@@ -75,9 +78,9 @@ function complete() {
     lifeStatuses: statuses,
     scholarshipCategories: [],
     documentTypes: [
-      { id: 'kk', name: 'Kartu Keluarga', isRequired: true },
-      { id: 'rapor', name: 'Rapor', isRequired: false },
-    ],
+      { id: 'kk', name: 'Kartu Keluarga', requirement: 'REQUIRED' },
+      { id: 'rapor', name: 'Rapor', requirement: 'OPTIONAL' },
+    ] as CompletenessInput['documentTypes'],
     documents: [{ documentTypeId: 'kk', status: 'PENDING' }],
   }
 }
@@ -130,5 +133,22 @@ describe('applicationCompleteness', () => {
     )!
     expect(parents.done).toBe(false)
     expect(parents.detail).toBe('NIK ayah sama dengan NIK santri')
+  })
+
+  it('a missing LATER type does not block', () => {
+    const input = complete()
+    input.documentTypes = [
+      ...input.documentTypes,
+      { id: 'ijazah', name: 'Ijazah', requirement: 'LATER' },
+    ]
+    expect(applicationCompleteness(input)[5].done).toBe(true)
+  })
+
+  it('a missing REQUIRED type does', () => {
+    const input = complete()
+    input.documents = []
+    const berkas = applicationCompleteness(input)[5]
+    expect(berkas.done).toBe(false)
+    expect(berkas.detail).toContain('Kartu Keluarga')
   })
 })
