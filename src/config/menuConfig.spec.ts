@@ -33,4 +33,11 @@ describe('menu', () => {
       expect(read(id, key), `id is missing ${key}`).toBeTypeOf('string')
     }
   })
+
+  it('the late documents entry needs admission-late-documents.read', () => {
+    const entry = menuSections
+      .flatMap((section) => section.items)
+      .find((item) => item.url === '/admin/late-documents')
+    expect(entry?.requiredPermission).toBe('admission-late-documents.read')
+  })
 })

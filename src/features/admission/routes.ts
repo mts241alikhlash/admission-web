@@ -242,6 +242,21 @@ export const admissionRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/admin/late-documents',
+    name: 'admin-late-documents',
+    component: () => import('./views/LateDocumentListView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiredPermission: 'admission-late-documents.read',
+      title: 'Berkas Susulan',
+      description: 'Pantau dan periksa berkas yang menyusul setelah mendaftar.',
+      breadcrumbs: [
+        { title: 'Admin PSB', href: '/admin' },
+        { title: 'Berkas Susulan' },
+      ],
+    },
+  },
+  {
     path: '/admin/document-reviews/:applicationId',
     name: 'admin-document-review',
     component: () => import('./views/DocumentReviewView.vue'),

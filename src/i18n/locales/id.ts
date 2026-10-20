@@ -7,6 +7,7 @@ export default {
     decision: 'Keputusan',
     documentType: 'Jenis Berkas',
     documentReview: 'Verifikasi Berkas',
+    lateDocuments: 'Berkas Susulan',
     download: 'Unduhan',
     enrollment: 'Daftar Ulang',
     landing: 'Halaman Depan',
