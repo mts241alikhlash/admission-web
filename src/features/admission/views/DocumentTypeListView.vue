@@ -48,7 +48,11 @@ function requirementVariant(
 }
 
 function requirementLabel(type: AdmissionDocumentTypeAdmin) {
-  if (type.requirement === 'LATER') return `Susulan · ${type.lateDueMonths} bln`
+  if (type.requirement === 'LATER') {
+    return type.lateDueMonths
+      ? `Susulan · ${type.lateDueMonths} bln`
+      : 'Susulan'
+  }
   return type.requirement === 'REQUIRED' ? 'Wajib' : 'Opsional'
 }
 

@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import { DOCUMENT_STATUS_LABELS } from '../types'
-import { DOCUMENT_STATUS_BADGE_VARIANTS, formatDate } from '../utils'
+import { DOCUMENT_STATUS_BADGE_VARIANTS, formatJakartaDate } from '../utils'
 import type { AdmissionDocument, AdmissionDocumentType } from '../types'
 
 const props = defineProps<{
@@ -56,8 +56,14 @@ const groups = computed(() =>
 function laterNote(type: AdmissionDocumentType) {
   if (type.requirement !== 'LATER') return null
   return type.dueDate
-    ? `Boleh dikirim belakangan. Serahkan ke TU paling lambat ${formatDate(type.dueDate)}.`
-    : 'Boleh dikirim belakangan, sesuai pemberitahuan sekolah.'
+    ? `Boleh dikirim belakangan. Serahkan ke TU paling lambat ${formatJakartaDate(type.dueDate)}.`
+    : 'Boleh dikirim belakangan. Serahkan ke TU sesuai pemberitahuan sekolah.'
+}
+
+function uploadLabel(type: AdmissionDocumentType) {
+  return type.requirement === 'LATER'
+    ? 'Unggah kalau sudah ada'
+    : 'Unggah Berkas'
 }
 
 function documentFor(typeId: string) {
@@ -137,7 +143,7 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
               hideDelete: true,
               editLabel: documentFor(row.original.id)?.file
                 ? 'Ganti Berkas'
-                : 'Unggah Berkas',
+                : uploadLabel(row.original),
               onEdit: () => {
                 activeDocType.value = row.original
               },

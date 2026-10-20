@@ -42,7 +42,7 @@ import StatusBadge from '../components/StatusBadge.vue'
 import type { AdmissionStatus } from '../types'
 import { PAYMENT_STATUS_LABELS, STATUS_LABELS } from '../types'
 import { lateDocumentReminders } from '../composables/lateDocumentReminders'
-import { formatDate, formatDateTime, formatIDR } from '../utils'
+import { formatDateTime, formatIDR, formatJakartaDate } from '../utils'
 
 const {
   application,
@@ -137,7 +137,7 @@ const requiredDocs = computed(() => {
 
 const reminders = computed(() => {
   const app = application.value
-  if (!app || app.status === 'REJECTED') return []
+  if (!app || app.status === 'REJECTED' || editable.value) return []
   return lateDocumentReminders(app.documentTypes ?? [], app.documents ?? [])
 })
 
@@ -368,7 +368,8 @@ onMounted(() => {
             >
               {{ reminder.name
               }}<template v-if="reminder.dueDate">
-                , paling lambat {{ formatDate(reminder.dueDate) }}</template
+                , paling lambat
+                {{ formatJakartaDate(reminder.dueDate) }}</template
               ><template v-else>, sesuai pemberitahuan sekolah</template>
               <span v-if="reminder.note"> ({{ reminder.note }})</span>
             </li>

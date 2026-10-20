@@ -39,7 +39,7 @@ import type {
   LateDocumentRow,
   LateDocumentStateFilter,
 } from '../types'
-import { formatDate } from '../utils'
+import { formatJakartaDate, jakartaDaysUntil } from '../utils'
 
 const { can } = useRoleGuard()
 const preview = useFilePreview()
@@ -74,6 +74,22 @@ const URGENCY_TEXT_CLASS: Record<LateDocumentRow['urgency'], string> = {
   OVERDUE: 'text-red-700 dark:text-red-400',
 }
 
+const BADGE_URGENCY_CLASS: Record<LateDocumentRow['urgency'], string> = {
+  ON_TIME: '',
+  LATE: 'border-amber-400 text-amber-700 dark:text-amber-400',
+  OVERDUE: '',
+}
+
+function stateVariant(row: LateDocumentRow) {
+  if (row.state === 'APPROVED') return 'default'
+  return row.urgency === 'OVERDUE' ? 'destructive' : 'outline'
+}
+
+function gradeText(row: LateDocumentRow) {
+  const grade = row.gradeLevel ? ` · Kelas ${row.gradeLevel}` : ''
+  return `${row.registrationNumber} · ${row.waveName}${grade}`
+}
+
 const stateFilter = ref<LateDocumentStateFilter>('OPEN')
 const typeFilter = ref('ALL')
 const waveFilter = ref('ALL')
@@ -98,6 +114,17 @@ let latestRequest = 0
 const uploadRow = ref<LateDocumentRow | null>(null)
 const decideRow = ref<LateDocumentRow | null>(null)
 const acting = ref(false)
+
+const datesNotice = computed(() => {
+  const start = datesMissing.value.includes('start')
+  const end = datesMissing.value.includes('end')
+  if (start && end) {
+    return 'Tanggal awal dan akhir semester belum diisi di Akademik, penanda warna belum tersedia.'
+  }
+  return start
+    ? 'Tanggal awal semester belum diisi di Akademik, penanda warna belum tersedia.'
+    : 'Tanggal akhir semester belum diisi di Akademik, penanda merah belum tersedia.'
+})
 
 const tiles = computed(() => [
   {
@@ -129,9 +156,7 @@ const tiles = computed(() => [
 
 function limitNote(row: LateDocumentRow) {
   if (!row.limitDate) return null
-  const days = Math.round(
-    (new Date(row.limitDate).getTime() - Date.now()) / 86_400_000,
-  )
+  const days = jakartaDaysUntil(row.limitDate)
   if (days > 0) return `${days} hari lagi`
   if (days === 0) return 'hari ini'
   return `lewat ${-days} hari`
@@ -238,14 +263,25 @@ const columns = computed<ColumnDef<LateDocumentRow>[]>(() => [
         h(
           'p',
           { class: 'text-xs text-muted-foreground' },
-          `${row.original.registrationNumber} · ${row.original.waveName}`,
+          gradeText(row.original),
         ),
       ]),
   },
   {
-    accessorKey: 'documentTypeName',
+    id: 'document',
     header: 'Berkas',
     meta: { align: 'left' },
+    cell: ({ row }) =>
+      h('div', { class: 'min-w-0' }, [
+        h('p', row.original.documentTypeName),
+        row.original.note
+          ? h(
+              'p',
+              { class: 'text-xs text-muted-foreground' },
+              `Catatan: ${row.original.note}`,
+            )
+          : null,
+      ]),
   },
   {
     id: 'limit',
@@ -254,10 +290,14 @@ const columns = computed<ColumnDef<LateDocumentRow>[]>(() => [
     cell: ({ row }) =>
       row.original.limitDate
         ? h('div', { class: URGENCY_TEXT_CLASS[row.original.urgency] }, [
-            h('p', formatDate(row.original.limitDate)),
+            h('p', formatJakartaDate(row.original.limitDate)),
             h('p', { class: 'text-xs' }, limitNote(row.original) ?? ''),
           ])
-        : '-',
+        : h(
+            'p',
+            { class: URGENCY_TEXT_CLASS[row.original.urgency] },
+            row.original.urgency === 'OVERDUE' ? 'Lewat akhir semester' : '-',
+          ),
   },
   {
     id: 'state',
@@ -266,7 +306,10 @@ const columns = computed<ColumnDef<LateDocumentRow>[]>(() => [
     cell: ({ row }) =>
       h(
         Badge,
-        { variant: row.original.state === 'APPROVED' ? 'default' : 'outline' },
+        {
+          variant: stateVariant(row.original),
+          class: BADGE_URGENCY_CLASS[row.original.urgency],
+        },
         () => STATE_LABELS[row.original.state],
       ),
   },
@@ -278,6 +321,23 @@ const columns = computed<ColumnDef<LateDocumentRow>[]>(() => [
     enableSorting: false,
     cell: ({ row }) => {
       const item = row.original
+      const actions =
+        Number(!!item.fileId) +
+        Number(canDecideRow(item)) +
+        Number(canUploadRow(item))
+      if (actions === 0) return null
+      if (actions === 1) {
+        const [label, run] = canDecideRow(item)
+          ? ['Periksa', () => (decideRow.value = item)]
+          : canUploadRow(item)
+            ? ['Unggah', () => (uploadRow.value = item)]
+            : ['Lihat berkas', () => openFile(item)]
+        return h(
+          Button,
+          { variant: 'outline', size: 'sm', onClick: run },
+          () => label,
+        )
+      }
       return h(ActionCell, {
         viewLabel: item.fileId ? 'Lihat berkas' : undefined,
         manageLabel: canDecideRow(item) ? 'Periksa' : undefined,
@@ -325,8 +385,7 @@ onMounted(async () => {
 
         <Alert v-if="datesMissing.length">
           <AlertDescription>
-            Tanggal awal semester belum diisi di Akademik, penanda warna belum
-            tersedia.
+            {{ datesNotice }}
           </AlertDescription>
         </Alert>
 
@@ -482,11 +541,12 @@ onMounted(async () => {
                       {{ row.applicantName }}
                     </p>
                     <p class="text-muted-foreground">
-                      {{ row.registrationNumber }} · {{ row.waveName }}
+                      {{ gradeText(row) }}
                     </p>
                   </div>
                   <Badge
-                    :variant="row.state === 'APPROVED' ? 'default' : 'outline'"
+                    :variant="stateVariant(row)"
+                    :class="BADGE_URGENCY_CLASS[row.urgency]"
                   >
                     {{ STATE_LABELS[row.state] }}
                   </Badge>
@@ -497,7 +557,7 @@ onMounted(async () => {
                     v-if="row.limitDate"
                     :class="URGENCY_TEXT_CLASS[row.urgency]"
                   >
-                    · batas {{ formatDate(row.limitDate) }} ({{
+                    · batas {{ formatJakartaDate(row.limitDate) }} ({{
                       limitNote(row)
                     }})
                   </span>

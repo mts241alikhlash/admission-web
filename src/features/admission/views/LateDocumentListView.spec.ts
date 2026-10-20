@@ -298,3 +298,31 @@ it('goes back to page 1 when a filter changes', async () => {
     expect.objectContaining({ page: 1, search: 'Siti' }),
   )
 })
+
+it('marks an OVERDUE row without a limit date on the desktop table', async () => {
+  service.fetchList.mockResolvedValue(
+    page([{ ...base, urgency: 'OVERDUE', limitDate: null }]),
+  )
+  const wrapper = mountView()
+  await flushPromises()
+
+  const table = wrapper.get('table')
+  expect(table.text()).toContain('Lewat akhir semester')
+  expect(table.html()).toContain('destructive')
+})
+
+it('names the missing date in the notice', async () => {
+  service.fetchList.mockResolvedValue(page([base], { datesMissing: ['end'] }))
+  const wrapper = mountView()
+  await flushPromises()
+
+  expect(wrapper.text()).toContain('Tanggal akhir semester belum diisi')
+})
+
+it('shows no action for a read-only user', async () => {
+  access.granted = new Set(['admission-late-documents.read'])
+  const wrapper = mountView()
+  await flushPromises()
+
+  expect(wrapper.get('table').findAll('tbody button')).toHaveLength(1)
+})

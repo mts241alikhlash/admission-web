@@ -197,3 +197,14 @@ it('shows the yellow box with the date and hides it when nothing is left', () =>
   }
   expect(mountView().find('[data-test="late-reminders"]').exists()).toBe(false)
 })
+
+it('hides the yellow box while the applicant can still edit', () => {
+  state.dashboardError = null
+  state.application = {
+    ...draft,
+    status: 'DRAFT',
+    documentTypes: [{ id: 'ijazah', name: 'Ijazah SD', requirement: 'LATER' }],
+    documents: [],
+  }
+  expect(mountView().find('[data-test="late-reminders"]').exists()).toBe(false)
+})
