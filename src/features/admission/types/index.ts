@@ -18,6 +18,19 @@ export interface BankAccountSavePayload {
 }
 export type AdmissionDocumentTypeAdmin =
   Schemas['AdmissionDocumentTypeResponseDto']
+export type DocumentRequirement = 'REQUIRED' | 'LATER' | 'OPTIONAL'
+export type LateDocumentRow = Schemas['AdmissionLateDocumentRowResponseDto']
+export type LateDocumentList = Schemas['AdmissionLateDocumentListResponseDto']
+export type LateDocumentState = LateDocumentRow['state']
+export type LateDocumentStateFilter = 'OPEN' | LateDocumentState
+export interface LateDocumentQuery {
+  page: number
+  limit: number
+  search?: string
+  documentTypeId?: string
+  waveId?: string
+  state?: LateDocumentStateFilter
+}
 export type AdmissionPaymentQueueRow =
   Schemas['AdmissionPaymentQueueRowResponseDto']
 export type AdmissionPaymentQueue = Schemas['AdmissionPaymentQueueResponseDto']

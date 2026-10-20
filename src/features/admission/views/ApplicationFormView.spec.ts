@@ -68,6 +68,8 @@ const application: AdmissionApplication = {
       code: 'KK',
       name: 'Kartu Keluarga',
       isRequired: true,
+      requirement: 'REQUIRED',
+      lateDueMonths: null,
       sortOrder: 1,
       isActive: true,
     },
