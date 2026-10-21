@@ -2,7 +2,7 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { DataTable, ActionCell } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Card, CardHeader } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import {
   AlertDialog,
@@ -57,7 +57,7 @@ function requirementLabel(type: AdmissionDocumentTypeAdmin) {
 }
 
 const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
-  { accessorKey: 'name', header: 'Nama' },
+  { accessorKey: 'name', header: 'Nama', meta: { strong: true } },
   {
     accessorKey: 'code',
     header: 'Kode',
@@ -144,24 +144,26 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg"> Jenis Berkas </CardTitle>
+      <CardHeader
+        standard
+        class="justify-end min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <Button
           v-if="canCreate"
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           @click="openForm(null)"
         >
           <Plus class="mr-1.5 size-4" />
-          Tambah Jenis Berkas
+          Tambah
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 px-4 py-5 sm:px-6">
+      <div class="space-y-4 p-0 sm:px-0">
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
@@ -170,7 +172,6 @@ onMounted(load)
           <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="load()"
           >
             Coba lagi
@@ -210,7 +211,7 @@ onMounted(load)
               >
                 <div class="flex items-start justify-between gap-2">
                   <div>
-                    <p class="break-words font-semibold">{{ type.name }}</p>
+                    <p class="break-words font-medium">{{ type.name }}</p>
                     <p class="text-xs text-muted-foreground">{{ type.code }}</p>
                   </div>
                   <div class="flex items-center gap-1.5">

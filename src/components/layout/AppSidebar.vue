@@ -7,22 +7,18 @@ import NavMain from './NavMain.vue'
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  SidebarFooter,
+  SidebarToggle,
 } from '@mts241alikhlash/ui/sidebar'
 import { onMounted, ref } from 'vue'
 
 const props = withDefaults(defineProps<SidebarProps>(), {
-  variant: 'sidebar',
+  variant: 'inset',
   collapsible: 'icon',
 })
 
 const { user, syncAuthenticatedUserProfile } = useAuthSession()
 const { filteredSections } = useMenuVisibility()
-const logoSrc = '/logo.webp'
-const appTitle = '241 Admission'
 
 const scrollContainer = ref<HTMLDivElement | null>(null)
 const STORAGE_KEY = 'sidebar-scroll-position'
@@ -46,34 +42,6 @@ function handleScroll(e: Event) {
 
 <template>
   <Sidebar v-bind="props">
-    <SidebarHeader>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            size="lg"
-            as-child
-          >
-            <RouterLink to="/dashboard">
-              <img
-                :src="logoSrc"
-                :alt="appTitle"
-                class="size-8 rounded-lg object-contain"
-              />
-              <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold text-base">{{
-                  appTitle
-                }}</span>
-                <span
-                  class="truncate text-xs text-muted-foreground font-medium"
-                >
-                  Penerimaan Santri Baru
-                </span>
-              </div>
-            </RouterLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarHeader>
     <SidebarContent>
       <div
         ref="scrollContainer"
@@ -83,5 +51,8 @@ function handleScroll(e: Event) {
         <NavMain :sections="filteredSections" />
       </div>
     </SidebarContent>
+    <SidebarFooter>
+      <SidebarToggle />
+    </SidebarFooter>
   </Sidebar>
 </template>

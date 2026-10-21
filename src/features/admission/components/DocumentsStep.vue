@@ -74,6 +74,7 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
   {
     accessorKey: 'name',
     header: 'Jenis Dokumen',
+    meta: { strong: true },
     cell: ({ row }) => {
       const note = laterNote(row.original)
       return h('div', { class: 'min-w-0 space-y-1' }, [
@@ -202,9 +203,9 @@ async function upload() {
             :data-test="`group-${group.key}`"
             class="space-y-2 pb-4 last:pb-0"
           >
-            <h3 class="text-sm font-semibold">{{ group.title }}</h3>
+            <h3 class="text-sm font-medium">{{ group.title }}</h3>
             <DataTable
-              class="hidden md:block"
+              class="hidden md:flex"
               :columns="columns"
               :data="group.items"
               item-label="dokumen"
@@ -274,7 +275,7 @@ async function upload() {
                 <Button
                   v-if="editable"
                   variant="outline"
-                  class="min-h-11 w-full"
+                  class="w-full"
                   @click="activeDocType = docType"
                 >
                   {{
@@ -294,16 +295,14 @@ async function upload() {
       :open="!!activeDocType"
       @update:open="!$event && closeDialog()"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>Unggah {{ activeDocType?.name }}</DialogTitle>
           <DialogDescription class="sr-only"
             >Pilih berkas dokumen pendaftaran.</DialogDescription
           >
         </DialogHeader>
-        <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <div class="min-h-0 flex-1 overflow-y-auto dialog-body">
           <label
             v-if="!selectedFile"
             class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/25 p-8 text-center transition-colors hover:bg-muted/50 focus-within:ring-2 focus-within:ring-ring"
@@ -353,7 +352,10 @@ async function upload() {
             </Button>
           </div>
         </div>
-        <DialogFooter class="shrink-0 gap-2 border-t px-6 py-4 sm:justify-end">
+        <DialogFooter
+          standard
+          class="gap-2 sm:justify-end"
+        >
           <Button
             variant="outline"
             :disabled="!!uploadingDoc"

@@ -4,7 +4,7 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { DataTable, ActionCell } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Card, CardHeader } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
@@ -118,9 +118,10 @@ const columns = computed<ColumnDef<AdmissionDownloadAdmin>[]>(() => [
   {
     accessorKey: 'title',
     header: 'Judul',
+    meta: { strong: true },
     cell: ({ row }) =>
       h('div', { class: 'space-y-0.5' }, [
-        h('p', { class: 'font-medium' }, row.original.title),
+        h('p', {}, row.original.title),
         row.original.description
           ? h(
               'p',
@@ -256,24 +257,26 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg"> Unduhan </CardTitle>
+      <CardHeader
+        standard
+        class="justify-end min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <Button
           v-if="canCreate"
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           @click="openForm(null)"
         >
           <Plus class="mr-1.5 size-4" />
-          Tambah Berkas
+          Tambah
         </Button>
       </CardHeader>
 
-      <div class="space-y-4 px-4 py-5 sm:px-6">
+      <div class="space-y-4 p-0 sm:px-0">
         <p class="text-sm text-muted-foreground">
           Berkas PDF yang bisa diunduh calon pendaftar dari halaman depan,
           misalnya brosur dan formulir kosong. Hanya berkas yang aktif yang
@@ -287,7 +290,6 @@ onMounted(load)
           <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="load()"
           >
             Coba lagi
@@ -295,7 +297,7 @@ onMounted(load)
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:block"
+            class="hidden md:flex"
             :columns="columns"
             :data="downloads"
             :total-items="downloads.length"
@@ -319,7 +321,7 @@ onMounted(load)
               :key="download.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
-              <p class="break-words font-semibold">{{ download.title }}</p>
+              <p class="break-words font-medium">{{ download.title }}</p>
               <p
                 v-if="download.description"
                 class="break-words text-sm text-muted-foreground"
@@ -342,7 +344,6 @@ onMounted(load)
                     :key="button.label"
                     variant="outline"
                     size="icon"
-                    class="size-11"
                     :disabled="button.disabled"
                     :aria-label="button.label"
                     @click="move(index, button.step)"
@@ -356,7 +357,6 @@ onMounted(load)
                 <Button
                   v-if="canUpdate"
                   variant="outline"
-                  class="min-h-11"
                   :aria-label="`Ubah ${download.title}`"
                   @click="openForm(download)"
                   >Ubah</Button
@@ -364,7 +364,6 @@ onMounted(load)
                 <Button
                   v-if="canDelete"
                   variant="outline"
-                  class="min-h-11"
                   :aria-label="`Hapus ${download.title}`"
                   @click="pendingDelete = download"
                   >Hapus</Button
@@ -377,10 +376,8 @@ onMounted(load)
     </Card>
 
     <Dialog v-model:open="isFormOpen">
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>
             {{ editing ? 'Ubah Berkas' : 'Tambah Berkas' }}
           </DialogTitle>
@@ -391,7 +388,7 @@ onMounted(load)
         <ScrollArea class="min-h-0 flex-1">
           <form
             id="download-form"
-            class="space-y-4 px-6 py-4"
+            class="space-y-4 dialog-body"
             @submit.prevent="save"
           >
             <FloatingField
@@ -484,7 +481,8 @@ onMounted(load)
           </form>
         </ScrollArea>
         <DialogFooter
-          class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+          standard
+          class="sm:justify-between"
         >
           <Button
             type="button"

@@ -9,12 +9,7 @@ import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Checkbox } from '@mts241alikhlash/ui/checkbox'
 import { Input } from '@mts241alikhlash/ui/input'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@mts241alikhlash/ui/card'
+import { Card, CardContent, CardHeader } from '@mts241alikhlash/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
 import {
@@ -26,6 +21,7 @@ import {
 } from '@mts241alikhlash/ui/select'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -373,7 +369,7 @@ const columns = computed<ColumnDef<AdmissionEnrollmentRow>[]>(() => {
     {
       accessorKey: 'applicantName',
       header: 'Nama Pendaftar',
-      meta: { align: 'left' },
+      meta: { align: 'left', strong: true },
       cell: ({ row }) =>
         h(
           'button',
@@ -501,19 +497,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader
-        data-test="header"
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle size="lg"> Daftar Ulang </CardTitle>
-      </CardHeader>
-
-      <div class="space-y-4 px-4 py-5 sm:px-6">
+      <div class="space-y-4 p-0 sm:px-0">
         <Tabs
           v-model="tab"
           variant="line"
@@ -556,7 +545,6 @@ onMounted(async () => {
                   <Select v-model="waveFilter">
                     <SelectTrigger
                       :id="waveFilterId"
-                      size="sm"
                       class="w-full"
                     >
                       <SelectValue />
@@ -584,14 +572,14 @@ onMounted(async () => {
                     data-test="open-nis-manage"
                     variant="outline"
                     size="sm"
-                    class="h-8 min-h-8 text-xs font-medium"
+                    class="font-medium"
                     @click="nisManageOpen = true"
                   >
                     Penomoran NIS
                     <Badge
                       v-if="currentYear.locked"
                       variant="secondary"
-                      class="ml-1.5 text-[10px]"
+                      class="ml-1.5"
                     >
                       Dikunci
                     </Badge>
@@ -611,7 +599,7 @@ onMounted(async () => {
                 data-test="process-result"
                 class="space-y-1 rounded-md border p-3 text-sm"
               >
-                <p class="font-semibold">
+                <p class="font-medium">
                   {{ processResult.enrolled }} diproses,
                   {{ processResult.problems.length }} bermasalah.
                 </p>
@@ -653,7 +641,6 @@ onMounted(async () => {
                 <p class="text-sm">{{ listError }}</p>
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   @click="load()"
                 >
                   Coba lagi
@@ -710,7 +697,7 @@ onMounted(async () => {
                           class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
                         >
                           <div class="min-w-0">
-                            <p class="break-words font-semibold">
+                            <p class="break-words font-medium">
                               {{ row.applicantName }}
                             </p>
                             <p class="text-muted-foreground">
@@ -763,7 +750,6 @@ onMounted(async () => {
                       >
                         <Button
                           variant="outline"
-                          class="min-h-11 sm:min-h-0"
                           :disabled="acting"
                           @click="openPlacement(row)"
                         >
@@ -790,7 +776,6 @@ onMounted(async () => {
                       </span>
                     </div>
                     <Button
-                      class="min-h-11 sm:min-h-0"
                       :disabled="acting || selected.length > MAX_PROCESS"
                       @click="processOpen = true"
                     >
@@ -819,15 +804,13 @@ onMounted(async () => {
       :open="processOpen"
       @update:open="(isOpen) => (processOpen = isOpen)"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
+      <DialogContent size="md">
         <form
           data-test="process-form"
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitProcess"
         >
-          <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+          <DialogHeader standard>
             <DialogTitle>Proses jadi santri</DialogTitle>
             <DialogDescription class="sr-only">
               {{ selected.length }} pendaftar akan diproses menjadi santri dan
@@ -836,7 +819,7 @@ onMounted(async () => {
           </DialogHeader>
           <div class="space-y-4 px-6 py-5">
             <div class="space-y-1 rounded-lg border bg-muted/10 p-3 text-sm">
-              <p class="font-semibold text-foreground">
+              <p class="font-medium text-foreground">
                 {{ selected.length }} pendaftar dipilih
               </p>
               <p class="text-muted-foreground">
@@ -853,7 +836,8 @@ onMounted(async () => {
             </p>
           </div>
           <DialogFooter
-            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+            standard
+            class="sm:justify-between"
           >
             <Button
               type="button"
@@ -878,8 +862,8 @@ onMounted(async () => {
       :open="placementRow !== null"
       @update:open="(isOpen) => !isOpen && (placementRow = null)"
     >
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>Jenis dan tingkat kelas</DialogTitle>
           <DialogDescription>
             {{ placementRow?.applicantName }}. Tingkat kelas menentukan dua
@@ -888,44 +872,49 @@ onMounted(async () => {
         </DialogHeader>
         <form
           data-test="placement-form"
-          class="space-y-3"
+          class="flex min-h-0 flex-1 flex-col"
           @submit.prevent="submitPlacement"
         >
-          <Select v-model="placementType">
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="Jenis pendaftaran" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                v-for="(label, type) in ADMISSION_TYPE_LABELS"
-                :key="type"
-                :value="type"
-              >
-                {{ label }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Select v-model="placementGrade">
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="Tingkat kelas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem
-                v-for="grade in grades"
-                :key="grade.id"
-                :value="grade.id"
-              >
-                {{ grade.name ?? `Kelas ${grade.level}` }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <p
-            v-if="placementError"
-            class="text-sm text-destructive"
+          <DialogBody class="space-y-3">
+            <Select v-model="placementType">
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="Jenis pendaftaran" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="(label, type) in ADMISSION_TYPE_LABELS"
+                  :key="type"
+                  :value="type"
+                >
+                  {{ label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select v-model="placementGrade">
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="Tingkat kelas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="grade in grades"
+                  :key="grade.id"
+                  :value="grade.id"
+                >
+                  {{ grade.name ?? `Kelas ${grade.level}` }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p
+              v-if="placementError"
+              class="text-sm text-destructive"
+            >
+              {{ placementError }}
+            </p>
+          </DialogBody>
+          <DialogFooter
+            standard
+            class="sm:justify-between"
           >
-            {{ placementError }}
-          </p>
-          <DialogFooter class="sm:justify-between">
             <Button
               type="button"
               variant="outline"
@@ -951,63 +940,65 @@ onMounted(async () => {
     >
       <DialogContent
         data-test="nis-dialog"
-        class="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
+        size="md"
       >
-        <DialogHeader>
+        <DialogHeader standard>
           <DialogTitle>Susun NIS</DialogTitle>
           <DialogDescription>
             Urutan abjad menurut nama, satu urutan untuk seluruh tingkat kelas
             di tahun ajaran ini.
           </DialogDescription>
         </DialogHeader>
-        <p
-          v-if="nisLoading"
-          class="text-sm text-muted-foreground"
-        >
-          Memuat pratinjau…
-        </p>
-        <p
-          v-else-if="nisError"
-          role="alert"
-          class="text-sm text-destructive"
-        >
-          {{ nisError }}
-        </p>
-        <div
-          v-else-if="nisPreview"
-          class="space-y-3 text-sm"
-        >
-          <p>
-            <strong>{{ nisPreview.changes }} NIS berubah</strong>,
-            {{ nisPreview.created }} NIS baru.
-          </p>
-          <ul
-            v-if="nisPreview.rows.length"
-            class="max-h-48 list-disc space-y-1 overflow-y-auto pl-5"
+        <DialogBody>
+          <p
+            v-if="nisLoading"
+            class="text-sm text-muted-foreground"
           >
-            <li
-              v-for="item in nisPreview.rows"
-              :key="item.applicationId"
+            Memuat pratinjau…
+          </p>
+          <p
+            v-else-if="nisError"
+            role="alert"
+            class="text-sm text-destructive"
+          >
+            {{ nisError }}
+          </p>
+          <div
+            v-else-if="nisPreview"
+            class="space-y-3 text-sm"
+          >
+            <p>
+              <strong>{{ nisPreview.changes }} NIS berubah</strong>,
+              {{ nisPreview.created }} NIS baru.
+            </p>
+            <ul
+              v-if="nisPreview.rows.length"
+              class="max-h-48 list-disc space-y-1 overflow-y-auto pl-5"
             >
-              {{ item.applicantName }}:
-              <template v-if="item.previous">
-                {{ item.previous }} → {{ item.nis }}
-              </template>
-              <template v-else>{{ item.nis }} (baru)</template>
-            </li>
-          </ul>
-          <div v-if="nisPreview.skipped.length">
-            <p class="font-semibold">Dilewati</p>
-            <ul class="list-disc pl-5">
               <li
-                v-for="item in nisPreview.skipped"
+                v-for="item in nisPreview.rows"
                 :key="item.applicationId"
               >
-                {{ item.applicantName }}: {{ item.reason }}
+                {{ item.applicantName }}:
+                <template v-if="item.previous">
+                  {{ item.previous }} → {{ item.nis }}
+                </template>
+                <template v-else>{{ item.nis }} (baru)</template>
               </li>
             </ul>
+            <div v-if="nisPreview.skipped.length">
+              <p class="font-medium">Dilewati</p>
+              <ul class="list-disc pl-5">
+                <li
+                  v-for="item in nisPreview.skipped"
+                  :key="item.applicationId"
+                >
+                  {{ item.applicantName }}: {{ item.reason }}
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter class="sm:justify-between">
           <Button
             type="button"
@@ -1034,9 +1025,9 @@ onMounted(async () => {
     >
       <DialogContent
         data-test="lock-dialog"
-        class="sm:max-w-md"
+        size="md"
       >
-        <DialogHeader>
+        <DialogHeader standard>
           <DialogTitle>Kunci NIS</DialogTitle>
           <DialogDescription>
             Setelah dikunci, NIS tahun ajaran ini tidak bisa disusun ulang dan
@@ -1044,7 +1035,10 @@ onMounted(async () => {
             tidak bisa dibatalkan.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter class="sm:justify-between">
+        <DialogFooter
+          standard
+          class="sm:justify-between"
+        >
           <Button
             type="button"
             variant="outline"
@@ -1072,15 +1066,14 @@ onMounted(async () => {
     >
       <DialogContent
         data-test="nis-panel"
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+        size="md"
       >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+        <DialogHeader standard>
           <div class="flex items-center justify-between gap-2">
             <DialogTitle>Penomoran NIS</DialogTitle>
             <Badge
               v-if="currentYear.locked"
               variant="secondary"
-              class="text-xs"
             >
               NIS dikunci
             </Badge>
@@ -1093,7 +1086,7 @@ onMounted(async () => {
 
         <div class="space-y-4 px-6 py-5 text-sm">
           <div class="space-y-1.5">
-            <p class="font-semibold text-foreground">
+            <p class="font-medium text-foreground">
               NIS tahun ajaran {{ currentYear.academicYearName ?? '-' }}
             </p>
             <div
@@ -1101,10 +1094,7 @@ onMounted(async () => {
               class="w-full pt-1"
             >
               <Select v-model="yearId">
-                <SelectTrigger
-                  size="sm"
-                  class="w-full"
-                >
+                <SelectTrigger class="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1124,7 +1114,7 @@ onMounted(async () => {
             v-if="syncPending > 0"
             class="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive"
           >
-            <p class="font-semibold">
+            <p class="font-medium">
               {{ syncPending }} santri belum diperbarui NIS-nya.
             </p>
             <p class="mt-0.5">
@@ -1152,7 +1142,8 @@ onMounted(async () => {
         </div>
 
         <DialogFooter
-          class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+          standard
+          class="sm:justify-between"
         >
           <Button
             type="button"
@@ -1175,7 +1166,6 @@ onMounted(async () => {
             <Button
               v-if="!currentYear.locked"
               variant="outline"
-              class="min-h-11 sm:min-h-0"
               :disabled="acting"
               @click="
                 () => {
@@ -1187,7 +1177,6 @@ onMounted(async () => {
               Kunci NIS
             </Button>
             <Button
-              class="min-h-11 sm:min-h-0"
               :disabled="acting"
               @click="openNis"
             >

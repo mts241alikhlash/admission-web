@@ -107,6 +107,7 @@ useBreadcrumbs(() => {
       <Tabs
         v-model="activeTab"
         class="w-full"
+        variant="line"
       >
         <div class="grid grid-cols-1 lg:grid-cols-4">
           <div

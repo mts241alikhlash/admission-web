@@ -149,9 +149,12 @@ watch(debouncedSearch, loadApplicants)
   <div class="space-y-6 p-4 sm:p-6">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
+      <CardHeader
+        standard
+        class="min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <div class="flex items-center gap-3">
           <BackButton
             label="Kembali ke pembayaran"
@@ -287,7 +290,7 @@ watch(debouncedSearch, loadApplicants)
           </div>
           <div>
             <p class="text-xs text-muted-foreground">Nominal</p>
-            <p class="mt-1 font-semibold">
+            <p class="mt-1 font-medium">
               {{ selected ? formatIDR(selected.amount) : '-' }}
             </p>
           </div>

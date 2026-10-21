@@ -48,7 +48,7 @@ it('adds an account with the digits of its number and reloads the list', async (
 
   await wrapper
     .findAll('button')
-    .find((button) => button.text().includes('Tambah Rekening'))!
+    .find((button) => button.text() === 'Tambah')!
     .trigger('click')
   await wrapper.get('input[name="bankName"]').setValue('BSI')
   await wrapper.get('input[name="accountNumber"]').setValue('7123-456 789')
@@ -73,7 +73,7 @@ it('refuses an account number that is too short', async () => {
   await flushPromises()
   await wrapper
     .findAll('button')
-    .find((button) => button.text().includes('Tambah Rekening'))!
+    .find((button) => button.text() === 'Tambah')!
     .trigger('click')
   await wrapper.get('input[name="bankName"]').setValue('BSI')
   await wrapper.get('input[name="accountNumber"]').setValue('12')

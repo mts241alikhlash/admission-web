@@ -4,9 +4,10 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Card } from '@mts241alikhlash/ui/card'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -193,7 +194,7 @@ const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
   {
     accessorKey: 'fullName',
     header: 'Nama',
-    meta: { align: 'left' },
+    meta: { align: 'left', strong: true },
   },
   {
     id: 'wave',
@@ -306,95 +307,34 @@ function fillForm() {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg"> Daftar Pendaftar </CardTitle>
+      <div class="mb-3 flex justify-end md:hidden">
         <Button
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           @click="openRegister"
         >
           <Plus class="mr-1.5 size-4" />
-          Tambah Pendaftar
+          Tambah
         </Button>
-      </CardHeader>
+      </div>
 
       <div
         ref="listStart"
-        class="space-y-4 px-4 py-5 sm:px-6"
+        class="space-y-4 p-0 sm:px-0"
       >
-        <div class="hidden gap-3 md:flex md:items-end md:justify-between">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <FloatingLabelField
-              label="Status"
-              :for="statusFilterId"
-              class="w-full sm:w-48"
-              floating
-            >
-              <Select v-model="statusFilter">
-                <SelectTrigger
-                  :id="statusFilterId"
-                  size="sm"
-                  class="w-full"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Semua</SelectItem>
-                  <SelectItem
-                    v-for="(label, status) in STATUS_LABELS"
-                    :key="status"
-                    :value="status"
-                  >
-                    {{ label }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </FloatingLabelField>
-            <FloatingLabelField
-              label="Gelombang"
-              :for="waveFilterId"
-              class="w-full sm:w-48"
-              floating
-            >
-              <Select v-model="waveFilter">
-                <SelectTrigger
-                  :id="waveFilterId"
-                  size="sm"
-                  class="w-full"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Semua</SelectItem>
-                  <SelectItem
-                    v-for="wave in waves"
-                    :key="wave.id"
-                    :value="wave.id"
-                  >
-                    {{ wave.name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </FloatingLabelField>
-          </div>
-          <SearchInput
-            v-model="searchQuery"
-            label="Cari pendaftar"
-          />
-        </div>
         <div class="flex items-center gap-2 md:hidden">
           <SearchInput
             v-model="searchQuery"
             label="Cari pendaftar"
-            class="min-w-0 flex-1 [&_input]:h-11"
+            class="min-w-0 flex-1"
           />
           <Button
             variant="outline"
-            class="relative min-h-11 shrink-0"
+            class="relative shrink-0"
             @click="filterOpen = true"
           >
             <Filter class="mr-1.5 size-4" />
@@ -414,7 +354,6 @@ function fillForm() {
           <Button
             v-if="statusFilter !== 'ALL'"
             variant="outline"
-            class="min-h-11"
             @click="statusFilter = 'ALL'"
           >
             Hapus filter status: {{ STATUS_LABELS[statusFilter] }}
@@ -422,7 +361,6 @@ function fillForm() {
           <Button
             v-if="waveFilter !== 'ALL'"
             variant="outline"
-            class="min-h-11"
             @click="waveFilter = 'ALL'"
           >
             Hapus filter gelombang:
@@ -440,7 +378,6 @@ function fillForm() {
           <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="refresh()"
           >
             Coba lagi
@@ -448,7 +385,7 @@ function fillForm() {
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:block"
+            class="hidden md:flex"
             :columns="columns"
             :data="applications"
             :page="page"
@@ -458,7 +395,82 @@ function fillForm() {
             item-label="pendaftar"
             @update:page="goToPage"
             @update:page-size="changePageSize"
-          />
+          >
+            <template #header-left>
+              <Button
+                class="shrink-0"
+                @click="openRegister"
+              >
+                <Plus class="mr-1.5 size-4" />
+                Tambah
+              </Button>
+            </template>
+            <template #header-right>
+              <div
+                class="flex items-end sm:gap-0 sm:[&>*:not(:first-child)]:-ml-px sm:[&>*:not(:first-child)_:is(button,input)]:rounded-l-none sm:[&>*:not(:last-child)_:is(button,input)]:rounded-r-none sm:[&>*:focus-within]:z-10"
+              >
+                <div
+                  class="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-0 sm:[&>*:not(:first-child)]:-ml-px sm:[&>*:not(:first-child)_:is(button,input)]:rounded-l-none sm:[&>*:not(:last-child)_:is(button,input)]:rounded-r-none sm:[&>*:focus-within]:z-10"
+                >
+                  <FloatingLabelField
+                    label="Status"
+                    :for="statusFilterId"
+                    class="w-fit min-w-28"
+                    floating
+                  >
+                    <Select v-model="statusFilter">
+                      <SelectTrigger
+                        :id="statusFilterId"
+                        class="w-full"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Semua</SelectItem>
+                        <SelectItem
+                          v-for="(label, status) in STATUS_LABELS"
+                          :key="status"
+                          :value="status"
+                        >
+                          {{ label }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FloatingLabelField>
+                  <FloatingLabelField
+                    label="Gelombang"
+                    :for="waveFilterId"
+                    class="w-fit min-w-28"
+                    floating
+                  >
+                    <Select v-model="waveFilter">
+                      <SelectTrigger
+                        :id="waveFilterId"
+                        class="w-full"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Semua</SelectItem>
+                        <SelectItem
+                          v-for="wave in waves"
+                          :key="wave.id"
+                          :value="wave.id"
+                        >
+                          {{ wave.name }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FloatingLabelField>
+                </div>
+                <SearchInput
+                  v-model="searchQuery"
+                  class="sm:w-40"
+                  label="Cari pendaftar"
+                />
+              </div>
+            </template>
+          </DataTable>
           <p
             v-if="loading || filtersPending"
             class="text-center text-sm text-muted-foreground md:hidden"
@@ -479,7 +491,6 @@ function fillForm() {
             <Button
               v-if="activeFiltersCount || searchQuery"
               variant="outline"
-              class="min-h-11"
               @click="resetAllFilters"
               >Atur Ulang</Button
             >
@@ -533,14 +544,14 @@ function fillForm() {
     </Card>
 
     <Dialog v-model:open="filterOpen">
-      <DialogContent class="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader class="border-b px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>Filter Pendaftar</DialogTitle>
           <DialogDescription class="sr-only">
             Pilih status dan gelombang pendaftaran.
           </DialogDescription>
         </DialogHeader>
-        <div class="space-y-4 p-6">
+        <DialogBody class="space-y-4">
           <FloatingLabelField
             label="Status"
             :for="mobileStatusFilterId"
@@ -589,17 +600,20 @@ function fillForm() {
               </SelectContent>
             </Select>
           </FloatingLabelField>
-        </div>
-        <DialogFooter class="flex-row gap-2 border-t px-6 py-4">
+        </DialogBody>
+        <DialogFooter
+          standard
+          class="flex-row gap-2"
+        >
           <Button
             variant="outline"
-            class="min-h-11 flex-1"
+            class="flex-1"
             @click="resetFilters"
           >
             Atur Ulang
           </Button>
           <Button
-            class="min-h-11 flex-1"
+            class="flex-1"
             @click="filterOpen = false"
           >
             Tutup

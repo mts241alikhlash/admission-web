@@ -13,7 +13,7 @@ const router = useRouter()
         type="button"
         size="sm"
         variant="outline"
-        class="min-h-11 bg-white"
+        class="bg-white"
         @click="router.push('/admin/landing')"
       >
         Kembali ke pengaturan

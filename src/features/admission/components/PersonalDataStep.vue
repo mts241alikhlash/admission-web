@@ -12,7 +12,7 @@ import {
 } from '@mts241alikhlash/ui/select'
 import { FormControl } from '@mts241alikhlash/ui/form'
 import FloatingField from './AdmissionField.vue'
-import { DatePicker } from '@mts241alikhlash/ui'
+import { DatePicker, FormattedNumberInput } from '@mts241alikhlash/ui'
 import { personalSchema } from '../schemas/applicationFormSchemas'
 import { useFormOptions } from '../composables/useFormOptions'
 import OptionSelect from './OptionSelect.vue'
@@ -192,17 +192,18 @@ defineExpose({ validate })
     </FloatingField>
 
     <FloatingField
-      v-slot="{ componentField }"
+      v-slot="{ value, setValue }"
       name="siblingCount"
       label="Jumlah Saudara"
     >
       <FormControl>
-        <Input
-          v-digits
-          v-bind="componentField"
-          inputmode="numeric"
-          maxlength="2"
+        <FormattedNumberInput
+          name="siblingCount"
+          :model-value="value"
+          suffix=" orang"
+          :max-digits="2"
           :disabled="!editable"
+          @update:model-value="setValue"
         />
       </FormControl>
     </FloatingField>

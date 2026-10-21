@@ -8,12 +8,7 @@ import { ActionCell, DataTable, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Checkbox } from '@mts241alikhlash/ui/checkbox'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@mts241alikhlash/ui/card'
+import { Card, CardContent, CardHeader } from '@mts241alikhlash/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
 import { Textarea } from '@mts241alikhlash/ui/textarea'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
@@ -278,7 +273,7 @@ const columns = computed<ColumnDef<AdmissionDecisionRow>[]>(() => {
     {
       accessorKey: 'applicantName',
       header: 'Nama Pendaftar',
-      meta: { align: 'left' },
+      meta: { align: 'left', strong: true },
     },
     {
       accessorKey: 'waveName',
@@ -360,19 +355,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader
-        data-test="header"
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle size="lg">Keputusan</CardTitle>
-      </CardHeader>
-
-      <div class="space-y-4 px-4 py-5 sm:px-6">
+      <div class="space-y-4 p-0 sm:px-0">
         <Tabs
           v-model="tab"
           variant="line"
@@ -415,7 +403,6 @@ onMounted(async () => {
                   <Select v-model="waveFilter">
                     <SelectTrigger
                       :id="waveFilterId"
-                      size="sm"
                       class="w-full"
                     >
                       <SelectValue />
@@ -443,7 +430,7 @@ onMounted(async () => {
                 data-test="many-result"
                 class="space-y-1 rounded-md border p-3 text-sm"
               >
-                <p class="font-semibold">
+                <p class="font-medium">
                   {{ manyResult.accepted }} diterima,
                   {{ manyResult.skipped.length }}
                   dilewati.
@@ -486,7 +473,6 @@ onMounted(async () => {
                 <p class="text-sm">{{ listError }}</p>
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   @click="load()"
                 >
                   Coba lagi
@@ -507,7 +493,7 @@ onMounted(async () => {
                 </p>
                 <template v-else>
                   <DataTable
-                    class="hidden md:block"
+                    class="hidden md:flex"
                     :columns="columns"
                     :data="rows"
                     :page="page"
@@ -539,7 +525,7 @@ onMounted(async () => {
                           class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
                         >
                           <div class="min-w-0">
-                            <p class="break-words font-semibold">
+                            <p class="break-words font-medium">
                               {{ row.applicantName }}
                             </p>
                             <p class="text-muted-foreground">
@@ -572,7 +558,6 @@ onMounted(async () => {
                         <div class="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
-                            class="min-h-11 sm:min-h-0"
                             data-test="open-detail"
                             @click="
                               router.push(
@@ -585,14 +570,12 @@ onMounted(async () => {
                           <template v-if="canDecide && tab === 'waiting'">
                             <Button
                               variant="destructive"
-                              class="min-h-11 sm:min-h-0"
                               :disabled="acting"
                               @click="open('reject', row)"
                             >
                               Tolak
                             </Button>
                             <Button
-                              class="min-h-11 sm:min-h-0"
                               :disabled="acting"
                               @click="open('accept', row)"
                             >
@@ -602,7 +585,6 @@ onMounted(async () => {
                           <Button
                             v-if="canDecide && row.status === 'ACCEPTED'"
                             variant="outline"
-                            class="min-h-11 sm:min-h-0"
                             :disabled="acting"
                             @click="open('cancel-acceptance', row)"
                           >
@@ -611,7 +593,6 @@ onMounted(async () => {
                           <Button
                             v-if="canDecide && row.status === 'REJECTED'"
                             variant="outline"
-                            class="min-h-11 sm:min-h-0"
                             :disabled="acting"
                             @click="open('cancel-rejection', row)"
                           >
@@ -631,7 +612,6 @@ onMounted(async () => {
                       >{{ selected.length }} dipilih</span
                     >
                     <Button
-                      class="min-h-11 sm:min-h-0"
                       :disabled="acting"
                       @click="open('accept-many')"
                     >
@@ -660,10 +640,8 @@ onMounted(async () => {
       :open="actionKind !== null"
       @update:open="(isOpen) => !isOpen && close()"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>{{
             actionKind ? DIALOG_TITLES[actionKind] : ''
           }}</DialogTitle>
@@ -676,7 +654,7 @@ onMounted(async () => {
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submit"
         >
-          <div class="space-y-4 px-6 py-5">
+          <div class="space-y-4 dialog-body">
             <FloatingLabelField
               :label="reasonRequired ? 'Alasan' : 'Catatan (opsional)'"
               :for="`${dialogId}-note`"
@@ -700,7 +678,8 @@ onMounted(async () => {
             </p>
           </div>
           <DialogFooter
-            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+            standard
+            class="sm:justify-between"
           >
             <Button
               type="button"

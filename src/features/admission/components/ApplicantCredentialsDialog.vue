@@ -55,10 +55,8 @@ async function copyCredentials() {
     :open="open"
     @update:open="emit('update:open', $event)"
   >
-    <DialogContent
-      class="sm:max-w-md flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
-    >
-      <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
+    <DialogContent size="md">
+      <DialogHeader standard>
         <DialogTitle>Akun Pendaftar Dibuat</DialogTitle>
         <DialogDescription class="sr-only">
           Kredensial akun pendaftar yang baru dibuat.
@@ -67,7 +65,7 @@ async function copyCredentials() {
 
       <div
         v-if="credentials"
-        class="min-h-0 space-y-4 overflow-y-auto px-6 py-4"
+        class="min-h-0 space-y-4 overflow-y-auto dialog-body"
       >
         <p class="text-sm text-muted-foreground">
           Serahkan kredensial berikut kepada pendaftar. Kata sandi hanya
@@ -83,7 +81,7 @@ async function copyCredentials() {
               :id="registrationId"
               :model-value="credentials.registrationNumber"
               readonly
-              class="font-mono"
+              class="tabular-nums"
             />
           </FloatingLabelField>
           <FloatingLabelField
@@ -124,7 +122,8 @@ async function copyCredentials() {
       </div>
 
       <DialogFooter
-        class="px-6 py-4 border-t shrink-0 flex sm:justify-between w-full bg-background"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

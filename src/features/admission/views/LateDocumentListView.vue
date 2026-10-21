@@ -7,13 +7,7 @@ import { ActionCell, DataTable, SearchInput } from '@mts241alikhlash/ui'
 import { Alert, AlertDescription } from '@mts241alikhlash/ui/alert'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@mts241alikhlash/ui/card'
+import { Card, CardContent, CardDescription } from '@mts241alikhlash/ui/card'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
 import {
   Select,
@@ -256,10 +250,10 @@ const columns = computed<ColumnDef<LateDocumentRow>[]>(() => [
   {
     id: 'applicant',
     header: 'Pendaftar',
-    meta: { align: 'left' },
+    meta: { align: 'left', strong: true },
     cell: ({ row }) =>
       h('div', { class: 'min-w-0' }, [
-        h('p', { class: 'font-medium' }, row.original.applicantName),
+        h('p', {}, row.original.applicantName),
         h(
           'p',
           { class: 'text-xs text-muted-foreground' },
@@ -367,14 +361,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg">Berkas Susulan</CardTitle>
-      </CardHeader>
       <CardContent
         variant="standard"
         class="space-y-4"
@@ -400,7 +391,7 @@ onMounted(async () => {
             class="rounded-lg border p-3"
             :class="tile.class"
           >
-            <p class="text-2xl font-semibold">{{ tile.value }}</p>
+            <p class="text-2xl font-medium">{{ tile.value }}</p>
             <p class="text-xs text-muted-foreground">{{ tile.label }}</p>
           </div>
         </div>
@@ -414,7 +405,6 @@ onMounted(async () => {
             <Select v-model="stateFilter">
               <SelectTrigger
                 :id="stateFilterId"
-                size="sm"
                 class="w-full"
               >
                 <SelectValue />
@@ -438,7 +428,6 @@ onMounted(async () => {
             <Select v-model="typeFilter">
               <SelectTrigger
                 :id="typeFilterId"
-                size="sm"
                 class="w-full"
               >
                 <SelectValue />
@@ -463,7 +452,6 @@ onMounted(async () => {
             <Select v-model="waveFilter">
               <SelectTrigger
                 :id="waveFilterId"
-                size="sm"
                 class="w-full"
               >
                 <SelectValue />
@@ -494,7 +482,6 @@ onMounted(async () => {
           <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="load()"
           >
             Coba lagi
@@ -515,7 +502,7 @@ onMounted(async () => {
           </p>
           <template v-else>
             <DataTable
-              class="hidden md:block"
+              class="hidden md:flex"
               :columns="columns"
               :data="rows"
               :page="page"
@@ -537,7 +524,7 @@ onMounted(async () => {
               >
                 <div class="flex flex-wrap items-start justify-between gap-2">
                   <div class="min-w-0">
-                    <p class="break-words font-semibold">
+                    <p class="break-words font-medium">
                       {{ row.applicantName }}
                     </p>
                     <p class="text-muted-foreground">
@@ -572,7 +559,6 @@ onMounted(async () => {
                   <Button
                     v-if="row.fileId"
                     variant="outline"
-                    class="min-h-11 sm:min-h-0"
                     data-test="open-file"
                     @click="openFile(row)"
                   >
@@ -581,7 +567,6 @@ onMounted(async () => {
                   </Button>
                   <Button
                     v-if="canUploadRow(row)"
-                    class="min-h-11 sm:min-h-0"
                     data-test="upload"
                     @click="uploadRow = row"
                   >
@@ -589,7 +574,6 @@ onMounted(async () => {
                   </Button>
                   <Button
                     v-if="canDecideRow(row)"
-                    class="min-h-11 sm:min-h-0"
                     data-test="check"
                     @click="decideRow = row"
                   >

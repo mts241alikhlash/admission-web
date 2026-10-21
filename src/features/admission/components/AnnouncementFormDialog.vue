@@ -94,10 +94,8 @@ const onSubmit = handleSubmit((values) => {
     :open="open"
     @update:open="emit('update:open', $event)"
   >
-    <DialogContent
-      class="sm:max-w-md flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
-    >
-      <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
+    <DialogContent size="md">
+      <DialogHeader standard>
         <DialogTitle>
           {{ isEdit ? 'Ubah Pengumuman' : 'Buat Pengumuman' }}
         </DialogTitle>
@@ -107,7 +105,7 @@ const onSubmit = handleSubmit((values) => {
       <ScrollArea class="flex-1 min-h-0">
         <form
           id="announcement-form"
-          class="space-y-2 px-6 py-4"
+          class="space-y-2 dialog-body"
           @submit.prevent="onSubmit"
         >
           <FloatingField
@@ -133,7 +131,7 @@ const onSubmit = handleSubmit((values) => {
             <FormControl>
               <Textarea
                 v-bind="componentField"
-                class="resize-none min-h-10"
+                class="resize-none"
                 :disabled="isSaving"
               />
             </FormControl>
@@ -170,7 +168,8 @@ const onSubmit = handleSubmit((values) => {
       </ScrollArea>
 
       <DialogFooter
-        class="px-6 py-4 border-t shrink-0 flex sm:justify-between w-full bg-background"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

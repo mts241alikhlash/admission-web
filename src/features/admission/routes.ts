@@ -81,10 +81,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admissions.read',
       title: 'Daftar Pendaftar',
       description: 'Kelola dan verifikasi pendaftar santri baru.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Daftar Pendaftar' },
-      ],
+      breadcrumbs: [{ title: 'Daftar Pendaftar' }],
     },
   },
   {
@@ -97,7 +94,6 @@ export const admissionRoutes: RouteRecordRaw[] = [
       title: 'Detail Pendaftar',
       description: 'Verifikasi berkas dan keputusan penerimaan.',
       breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
         { title: 'Pendaftar', href: '/admin/applicants' },
         { title: 'Detail' },
       ],
@@ -113,7 +109,6 @@ export const admissionRoutes: RouteRecordRaw[] = [
       title: 'Formulir Pendaftar',
       description: 'Isi formulir pendaftaran atas nama pendaftar.',
       breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
         { title: 'Pendaftar', href: '/admin/applicants' },
         { title: 'Formulir' },
       ],
@@ -128,10 +123,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-waves.read',
       title: 'Gelombang Pendaftaran',
       description: 'Kelola gelombang penerimaan santri baru.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Gelombang' },
-      ],
+      breadcrumbs: [{ title: 'Gelombang' }],
     },
   },
   {
@@ -143,10 +135,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-bank-accounts.read',
       title: 'Rekening Pembayaran',
       description: 'Kelola rekening tujuan transfer biaya pendaftaran.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Rekening Pembayaran' },
-      ],
+      breadcrumbs: [{ title: 'Rekening Pembayaran' }],
     },
   },
   {
@@ -158,10 +147,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-document-types.read',
       title: 'Jenis Berkas',
       description: 'Kelola berkas yang diunggah pendaftar.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Jenis Berkas' },
-      ],
+      breadcrumbs: [{ title: 'Jenis Berkas' }],
     },
   },
   {
@@ -174,10 +160,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       title: 'Unduhan',
       description:
         'Kelola brosur dan formulir yang bisa diunduh calon pendaftar.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Unduhan' },
-      ],
+      breadcrumbs: [{ title: 'Unduhan' }],
     },
   },
   {
@@ -189,10 +172,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-landing.read',
       title: 'Halaman Depan',
       description: 'Atur teks dan foto halaman depan pendaftaran.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Halaman Depan' },
-      ],
+      breadcrumbs: [{ title: 'Halaman Depan' }],
     },
   },
   {
@@ -205,10 +185,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       title: 'Daftar Ulang',
       description:
         'Susun NIS dan proses pendaftar yang diterima menjadi santri.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Daftar Ulang' },
-      ],
+      breadcrumbs: [{ title: 'Daftar Ulang' }],
     },
   },
   {
@@ -220,10 +197,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-decisions.read',
       title: 'Keputusan',
       description: 'Terima atau tolak pendaftar yang sudah terverifikasi.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Keputusan' },
-      ],
+      breadcrumbs: [{ title: 'Keputusan' }],
     },
   },
   {
@@ -235,10 +209,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-documents.read',
       title: 'Verifikasi Berkas',
       description: 'Periksa berkas yang diunggah pendaftar.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Verifikasi Berkas' },
-      ],
+      breadcrumbs: [{ title: 'Verifikasi Berkas' }],
     },
   },
   {
@@ -250,10 +221,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-late-documents.read',
       title: 'Berkas Susulan',
       description: 'Pantau dan periksa berkas yang menyusul setelah mendaftar.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Berkas Susulan' },
-      ],
+      breadcrumbs: [{ title: 'Berkas Susulan' }],
     },
   },
   {
@@ -266,7 +234,6 @@ export const admissionRoutes: RouteRecordRaw[] = [
       title: 'Periksa Berkas',
       description: 'Setujui atau tolak berkas pendaftar, lalu kirim hasilnya.',
       breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
         { title: 'Verifikasi Berkas', href: '/admin/document-reviews' },
         { title: 'Periksa' },
       ],
@@ -281,10 +248,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-payments.read',
       title: 'Pembayaran',
       description: 'Verifikasi pembayaran biaya pendaftaran.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Pembayaran' },
-      ],
+      breadcrumbs: [{ title: 'Pembayaran' }],
     },
   },
   {
@@ -297,7 +261,6 @@ export const admissionRoutes: RouteRecordRaw[] = [
       title: 'Pembayaran oleh Staf',
       description: 'Catat pembayaran pendaftar yang dibantu oleh staf.',
       breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
         { title: 'Pembayaran', href: '/admin/payments' },
         { title: 'Pembayaran oleh Staf' },
       ],
@@ -312,10 +275,7 @@ export const admissionRoutes: RouteRecordRaw[] = [
       requiredPermission: 'admission-announcements.read',
       title: 'Pengumuman PSB',
       description: 'Kelola pengumuman penerimaan santri baru.',
-      breadcrumbs: [
-        { title: 'Admin PSB', href: '/admin' },
-        { title: 'Pengumuman' },
-      ],
+      breadcrumbs: [{ title: 'Pengumuman' }],
     },
   },
 ]

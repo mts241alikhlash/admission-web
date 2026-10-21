@@ -52,16 +52,14 @@ function reject() {
     :open="!!row"
     @update:open="(open) => !open && emit('update:row', null)"
   >
-    <DialogContent
-      class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-    >
-      <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+    <DialogContent size="md">
+      <DialogHeader standard>
         <DialogTitle>Periksa {{ row?.documentTypeName }}</DialogTitle>
         <DialogDescription>
           {{ row?.applicantName }} · {{ row?.registrationNumber }}
         </DialogDescription>
       </DialogHeader>
-      <div class="space-y-4 px-6 py-5">
+      <div class="space-y-4 dialog-body">
         <Button
           type="button"
           variant="outline"
@@ -86,7 +84,8 @@ function reject() {
         </FloatingLabelField>
       </div>
       <DialogFooter
-        class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

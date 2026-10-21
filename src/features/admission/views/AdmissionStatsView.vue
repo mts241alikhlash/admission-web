@@ -135,16 +135,19 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
+      <CardHeader
+        standard
+        class="min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <CardTitle size="lg"> Penerimaan Santri Baru </CardTitle>
       </CardHeader>
 
-      <CardContent class="space-y-4 px-4 py-5 sm:px-6">
+      <CardContent class="space-y-4 p-0 sm:px-0">
         <div class="hidden flex-col gap-3 md:flex md:flex-row md:items-end">
           <FloatingLabelField
             label="Tahun Ajaran"
@@ -155,7 +158,6 @@ onMounted(async () => {
             <Select v-model="yearFilter">
               <SelectTrigger
                 :id="yearFilterId"
-                size="sm"
                 class="w-full"
               >
                 <SelectValue />
@@ -181,7 +183,6 @@ onMounted(async () => {
             <Select v-model="waveFilter">
               <SelectTrigger
                 :id="waveFilterId"
-                size="sm"
                 class="w-full"
               >
                 <SelectValue />
@@ -205,7 +206,7 @@ onMounted(async () => {
           </p>
           <Button
             variant="outline"
-            class="min-h-11 shrink-0"
+            class="shrink-0"
             @click="filterOpen = true"
             ><Filter class="mr-1.5 size-4" />Filter</Button
           >
@@ -228,7 +229,6 @@ onMounted(async () => {
           <p class="text-sm">{{ error }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="loadStats()"
           >
             Coba lagi
@@ -245,7 +245,7 @@ onMounted(async () => {
                 Total pendaftar
               </p>
               <p
-                class="mt-2 text-5xl font-semibold tabular-nums tracking-tight sm:text-6xl"
+                class="mt-2 text-5xl font-medium tabular-nums tracking-tight sm:text-6xl"
               >
                 {{ stats.total }}
               </p>
@@ -262,7 +262,7 @@ onMounted(async () => {
                 Perlu tindakan
               </p>
               <p
-                class="mt-2 text-5xl font-semibold tabular-nums tracking-tight"
+                class="mt-2 text-5xl font-medium tabular-nums tracking-tight"
                 :class="needsAction > 0 ? 'text-amber-700' : ''"
               >
                 {{ needsAction }}
@@ -301,7 +301,7 @@ onMounted(async () => {
                     {{ STATUS_LABELS[status] }}
                   </p>
                   <p
-                    class="mt-1 text-2xl font-semibold tabular-nums tracking-tight"
+                    class="mt-1 text-2xl font-medium tabular-nums tracking-tight"
                   >
                     {{ countOf(status) }}
                   </p>
@@ -362,7 +362,7 @@ onMounted(async () => {
                       </div>
                       <div class="shrink-0 text-right">
                         <p
-                          class="text-2xl font-semibold tabular-nums leading-none"
+                          class="text-2xl font-medium tabular-nums leading-none"
                         >
                           {{ wave.filled }}
                           <span
@@ -412,10 +412,8 @@ onMounted(async () => {
     </Card>
 
     <Dialog v-model:open="filterOpen">
-      <DialogContent
-        class="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b px-4 py-4 sm:px-6"
+      <DialogContent size="md">
+        <DialogHeader standard
           ><DialogTitle>Filter Statistik</DialogTitle
           ><DialogDescription class="sr-only"
             >Pilih tahun ajaran dan gelombang.</DialogDescription
@@ -423,7 +421,7 @@ onMounted(async () => {
         >
         <div
           data-test="mobile-stats-filter"
-          class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6"
+          class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body sm:px-6"
         >
           <FloatingLabelField
             label="Tahun Ajaran"
@@ -433,7 +431,7 @@ onMounted(async () => {
             <Select v-model="yearFilter"
               ><SelectTrigger
                 :id="mobileYearFilterId"
-                class="min-h-11 w-full"
+                class="w-full"
                 ><SelectValue /></SelectTrigger
               ><SelectContent
                 ><SelectItem value="ALL">Semua</SelectItem
@@ -454,7 +452,7 @@ onMounted(async () => {
             <Select v-model="waveFilter"
               ><SelectTrigger
                 :id="mobileWaveFilterId"
-                class="min-h-11 w-full"
+                class="w-full"
                 ><SelectValue /></SelectTrigger
               ><SelectContent
                 ><SelectItem value="ALL">Semua</SelectItem
@@ -468,9 +466,12 @@ onMounted(async () => {
             >
           </FloatingLabelField>
         </div>
-        <DialogFooter class="flex-row gap-2 border-t px-4 py-4 sm:px-6">
+        <DialogFooter
+          standard
+          class="flex-row gap-2"
+        >
           <Button
-            class="min-h-11 w-full"
+            class="w-full"
             @click="filterOpen = false"
             >Tutup</Button
           >

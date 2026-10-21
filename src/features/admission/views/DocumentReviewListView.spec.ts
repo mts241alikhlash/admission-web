@@ -73,13 +73,13 @@ it('shows Menunggu first with the counts of every tab and the summary of each ap
   )
 })
 
-it('has no primary action in the card header', async () => {
+it('has no add button', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const header = wrapper.get('[data-test="header"]')
-  expect(header.text()).toContain('Verifikasi Berkas')
-  expect(header.findAll('button')).toHaveLength(0)
+  expect(
+    wrapper.findAll('button').filter((button) => button.text() === 'Tambah'),
+  ).toHaveLength(0)
 })
 
 it('opens the review page of an applicant', async () => {

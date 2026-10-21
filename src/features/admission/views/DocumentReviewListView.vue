@@ -7,12 +7,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import { ActionCell, DataTable, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@mts241alikhlash/ui/card'
+import { Card, CardContent, CardHeader } from '@mts241alikhlash/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
 import { FloatingLabelField } from '@mts241alikhlash/ui/form'
 import {
@@ -132,7 +127,7 @@ const columns = computed<ColumnDef<AdmissionDocumentReviewRow>[]>(() => [
   {
     accessorKey: 'applicantName',
     header: 'Nama Pendaftar',
-    meta: { align: 'left' },
+    meta: { align: 'left', strong: true },
   },
   {
     accessorKey: 'waveName',
@@ -149,7 +144,7 @@ const columns = computed<ColumnDef<AdmissionDocumentReviewRow>[]>(() => [
         return h('div', { class: 'space-y-0.5 min-w-0' }, [
           h(
             'p',
-            { class: 'font-semibold text-xs text-destructive' },
+            { class: 'font-medium text-xs text-destructive' },
             `${rejectedCount} berkas ditolak`,
           ),
           row.original.revisionNote
@@ -192,19 +187,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader
-        data-test="header"
-        class="flex flex-col items-start justify-between gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:px-6 sm:py-5"
-      >
-        <CardTitle size="lg"> Verifikasi Berkas </CardTitle>
-      </CardHeader>
-
-      <div class="space-y-4 px-4 py-5 sm:px-6">
+      <div class="space-y-4 p-0 sm:px-0">
         <Tabs
           v-model="tab"
           variant="line"
@@ -247,7 +235,6 @@ onMounted(async () => {
                   <Select v-model="waveFilter">
                     <SelectTrigger
                       :id="waveFilterId"
-                      size="sm"
                       class="w-full"
                     >
                       <SelectValue />
@@ -278,7 +265,6 @@ onMounted(async () => {
                 <p class="text-sm">{{ listError }}</p>
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   @click="load()"
                 >
                   Coba lagi
@@ -299,7 +285,7 @@ onMounted(async () => {
                 </p>
                 <template v-else>
                   <DataTable
-                    class="hidden md:block"
+                    class="hidden md:flex"
                     :columns="columns"
                     :data="rows"
                     :page="page"
@@ -321,7 +307,7 @@ onMounted(async () => {
                         class="flex flex-wrap items-start justify-between gap-2"
                       >
                         <div class="min-w-0">
-                          <p class="break-words font-semibold">
+                          <p class="break-words font-medium">
                             {{ row.applicantName }}
                           </p>
                           <p class="text-muted-foreground">
@@ -347,7 +333,7 @@ onMounted(async () => {
                         </p>
                         <Button
                           data-test="open-review"
-                          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+                          class="w-full sm:w-auto"
                           @click="
                             router.push(
                               `/admin/document-reviews/${row.applicationId}`,

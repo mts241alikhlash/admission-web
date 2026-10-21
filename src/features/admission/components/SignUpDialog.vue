@@ -189,7 +189,6 @@ function handleOpenChange(open: boolean) {
           <FormControl>
             <Input
               v-bind="componentField"
-              class="h-11"
               :disabled="isSubmitting"
             />
           </FormControl>
@@ -205,7 +204,6 @@ function handleOpenChange(open: boolean) {
             <Input
               v-bind="componentField"
               type="email"
-              class="h-11"
               :disabled="isSubmitting"
             />
           </FormControl>
@@ -243,7 +241,7 @@ function handleOpenChange(open: boolean) {
                 v-bind="componentField"
                 :type="showPassword ? 'text' : 'password'"
                 autocomplete="new-password"
-                class="h-11 pr-12"
+                class="pr-12"
                 :disabled="isSubmitting"
               />
             </FormControl>
@@ -276,7 +274,7 @@ function handleOpenChange(open: boolean) {
                 v-bind="componentField"
                 :type="showPasswordConfirm ? 'text' : 'password'"
                 autocomplete="new-password"
-                class="h-11 pr-12"
+                class="pr-12"
                 :disabled="isSubmitting"
               />
             </FormControl>
@@ -309,7 +307,7 @@ function handleOpenChange(open: boolean) {
 
         <Button
           type="submit"
-          class="h-11 w-full cursor-pointer"
+          class="w-full cursor-pointer"
           :disabled="isSubmitting"
         >
           <Loader2
@@ -328,7 +326,7 @@ function handleOpenChange(open: boolean) {
         <Button
           type="button"
           variant="outline"
-          class="h-11 w-full cursor-pointer"
+          class="w-full cursor-pointer"
           :disabled="isSubmitting"
           @click="startGoogleSignUp"
         >

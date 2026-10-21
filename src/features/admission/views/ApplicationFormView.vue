@@ -14,6 +14,7 @@ import {
 } from '@mts241alikhlash/ui/card'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -385,15 +386,15 @@ useBreadcrumbs(() => {
 
   <div
     v-else-if="application"
-    class="p-4 sm:p-6"
+    class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2"
   >
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
-        class="flex-wrap"
+        class="flex-wrap min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
       >
         <div class="flex min-w-0 items-center gap-3">
           <BackButton
@@ -576,22 +577,23 @@ useBreadcrumbs(() => {
       @update:open="!$event && closeIntro()"
     >
       <DialogContent
-        class="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        size="xl"
+        class="max-h-[90dvh]"
       >
-        <DialogHeader class="shrink-0 border-b px-6 py-5 pr-12">
+        <DialogHeader standard>
           <DialogTitle>Ketentuan Pendaftaran</DialogTitle>
           <DialogDescription class="sr-only">
             Informasi gelombang dan ketentuan pendaftaran.
           </DialogDescription>
         </DialogHeader>
-        <div class="min-h-0 overflow-y-auto px-6 py-5">
+        <DialogBody>
           <ApplicationIntro
             :application="application"
             :academic-year-name="academicYearName"
             :requires-agreement="introRequiresAgreement"
             @start="continueFromIntro"
           />
-        </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   </div>
@@ -604,7 +606,7 @@ useBreadcrumbs(() => {
       class="w-full max-w-md rounded-xl border bg-card p-8 text-center shadow-sm"
     >
       <FileText class="mx-auto h-8 w-8 text-muted-foreground" />
-      <h2 class="mt-4 text-lg font-semibold tracking-tight">
+      <h2 class="mt-4 text-lg font-medium tracking-tight">
         Formulir belum tersedia
       </h2>
       <p class="mt-2 text-sm text-muted-foreground text-balance">

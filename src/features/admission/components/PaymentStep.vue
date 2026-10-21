@@ -129,7 +129,7 @@ async function upload() {
             v-if="applicationPayment"
             variant="ghost"
             size="sm"
-            class="size-11 shrink-0 p-0"
+            class="shrink-0 p-0"
             aria-label="Salin nominal"
             @click="copy(String(applicationPayment.amount), 'Nominal')"
           >
@@ -233,7 +233,7 @@ async function upload() {
                     <span class="block font-medium">{{
                       account.bankName
                     }}</span>
-                    <span class="block break-all font-mono">{{
+                    <span class="block break-all tabular-nums">{{
                       account.accountNumber
                     }}</span>
                     <span class="block text-muted-foreground">
@@ -244,7 +244,7 @@ async function upload() {
                 <Button
                   type="button"
                   variant="ghost"
-                  class="size-11 shrink-0 p-0"
+                  class="shrink-0 p-0"
                   :aria-label="`Salin nomor rekening ${account.bankName}`"
                   @click="copy(account.accountNumber, 'Nomor rekening')"
                 >

@@ -38,7 +38,6 @@ const to = computed(() => Math.min(props.page * props.pageSize, props.total))
       >
       <Button
         variant="outline"
-        class="min-h-11"
         data-test="pager-previous"
         :disabled="disabled || page <= 1"
         @click="emit('update:page', page - 1)"
@@ -47,7 +46,6 @@ const to = computed(() => Math.min(props.page * props.pageSize, props.total))
       </Button>
       <Button
         variant="outline"
-        class="min-h-11"
         data-test="pager-next"
         :disabled="disabled || page >= pageCount"
         @click="emit('update:page', page + 1)"

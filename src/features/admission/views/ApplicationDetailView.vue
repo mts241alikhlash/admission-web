@@ -149,7 +149,7 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
   {
     id: 'name',
     header: 'Jenis Dokumen',
-    meta: { align: 'center' },
+    meta: { align: 'center', strong: true },
     cell: ({ row }) =>
       h('span', [
         row.original.docType.isActive
@@ -257,11 +257,11 @@ const achievementColumns = computed<ColumnDef<AdmissionAchievement>[]>(() => [
   {
     id: 'name',
     header: 'Nama Kompetisi',
-    meta: { align: 'left' },
+    meta: { align: 'left', strong: true },
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-left font-medium' },
+        { class: 'text-left' },
         presentValue(row.original.competitionName),
       ),
   },
@@ -336,15 +336,9 @@ const scholarshipColumns = computed<ColumnDef<AdmissionScholarship>[]>(() => [
   {
     id: 'name',
     header: 'Nama Beasiswa',
-    meta: { align: 'left' },
+    meta: { align: 'left', strong: true },
     cell: ({ row }) => {
-      const children = [
-        h(
-          'p',
-          { class: 'font-medium' },
-          presentValue(row.original.scholarshipName),
-        ),
-      ]
+      const children = [h('p', {}, presentValue(row.original.scholarshipName))]
       if (row.original.kipNumber) {
         children.push(
           h(
@@ -374,11 +368,7 @@ const scholarshipColumns = computed<ColumnDef<AdmissionScholarship>[]>(() => [
         row.original.providerTypeId,
       )
       return h('div', { class: 'text-left space-y-0.5' }, [
-        h(
-          'p',
-          { class: 'font-medium' },
-          presentValue(row.original.providerName),
-        ),
+        h('p', {}, presentValue(row.original.providerName)),
         providerType !== '-'
           ? h('p', { class: 'text-xs text-muted-foreground' }, providerType)
           : null,
@@ -634,9 +624,12 @@ useBreadcrumbs(() => {
   >
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
+      <CardHeader
+        standard
+        class="min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <div class="flex min-w-0 items-center gap-3">
           <BackButton
             label="Kembali ke daftar pendaftar"
@@ -646,7 +639,7 @@ useBreadcrumbs(() => {
         </div>
         <Button
           v-if="editable"
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           @click="
             router.push({
               name: 'admin-application-form',
@@ -658,7 +651,7 @@ useBreadcrumbs(() => {
           Lengkapi Data
         </Button>
       </CardHeader>
-      <CardContent class="space-y-4 px-4 py-5 sm:px-6">
+      <CardContent class="space-y-4 p-0 sm:px-0">
         <Alert
           v-if="(application.duplicateNikCount ?? 0) > 0"
           variant="destructive"
@@ -1083,7 +1076,7 @@ useBreadcrumbs(() => {
                     </p>
                     <template v-else>
                       <DataTable
-                        class="hidden md:block"
+                        class="hidden md:flex"
                         :columns="achievementColumns"
                         :data="application.achievements ?? []"
                         item-label="prestasi"
@@ -1109,7 +1102,7 @@ useBreadcrumbs(() => {
                             <Badge
                               v-if="row.rank"
                               variant="secondary"
-                              class="shrink-0 text-xs"
+                              class="shrink-0"
                             >
                               {{ row.rank }}
                             </Badge>
@@ -1190,7 +1183,7 @@ useBreadcrumbs(() => {
                     </p>
                     <template v-else>
                       <DataTable
-                        class="hidden md:block"
+                        class="hidden md:flex"
                         :columns="scholarshipColumns"
                         :data="application.scholarships ?? []"
                         item-label="beasiswa"
@@ -1224,7 +1217,7 @@ useBreadcrumbs(() => {
                             <Badge
                               v-if="row.amount != null"
                               variant="secondary"
-                              class="shrink-0 text-xs font-mono"
+                              class="shrink-0 tabular-nums"
                             >
                               {{ formatIDR(row.amount) }}
                             </Badge>
@@ -1311,7 +1304,7 @@ useBreadcrumbs(() => {
                     </p>
                     <template v-else>
                       <DataTable
-                        class="hidden md:block"
+                        class="hidden md:flex"
                         :columns="documentColumns"
                         :data="documentRows"
                         item-label="dokumen"
@@ -1382,14 +1375,12 @@ useBreadcrumbs(() => {
                           >
                             <Button
                               variant="destructive"
-                              class="min-h-11"
                               :disabled="acting"
                               @click="openDialog('reject-doc', doc.id)"
                             >
                               Tolak
                             </Button>
                             <Button
-                              class="min-h-11"
                               :disabled="acting"
                               @click="handleApproveDocument(doc.id)"
                             >
@@ -1434,7 +1425,6 @@ useBreadcrumbs(() => {
                             application.payment.status
                           ]
                         "
-                        class="text-xs"
                       >
                         {{ PAYMENT_STATUS_LABELS[application.payment.status] }}
                       </Badge>
@@ -1635,10 +1625,8 @@ useBreadcrumbs(() => {
       :open="dialogKind !== null"
       @update:open="(open) => !open && (dialogKind = null)"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>
             {{ dialogKind ? dialogTitles[dialogKind] : '' }}
           </DialogTitle>
@@ -1738,7 +1726,8 @@ useBreadcrumbs(() => {
           </div>
 
           <DialogFooter
-            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+            standard
+            class="sm:justify-between"
           >
             <Button
               type="button"

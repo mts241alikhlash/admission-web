@@ -232,7 +232,7 @@ onMounted(() => {
 
   <div
     v-else-if="dashboardError === 'load-failed'"
-    class="p-4 sm:p-6"
+    class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2"
   >
     <Alert variant="destructive">
       <XCircle />
@@ -269,7 +269,7 @@ onMounted(() => {
           </CardTitle>
           <CardDescription>
             No. Pendaftaran
-            <span class="font-mono font-medium text-foreground">
+            <span class="tabular-nums font-medium text-foreground">
               {{ application.registrationNumber }}
             </span>
             · {{ application.wave?.name }}
@@ -279,7 +279,7 @@ onMounted(() => {
 
       <CardContent class="space-y-6 px-4 py-5 sm:px-6">
         <StatusBadge :status="application.status" />
-        <p class="text-base font-semibold">{{ nextAction }}</p>
+        <p class="text-base font-medium">{{ nextAction }}</p>
 
         <Alert
           v-if="application.waveIsFull"
@@ -334,7 +334,6 @@ onMounted(() => {
         <Button
           v-if="editable"
           as-child
-          class="min-h-11"
         >
           <RouterLink to="/registration/form">
             Lanjutkan Pengisian Formulir
@@ -360,7 +359,7 @@ onMounted(() => {
           data-test="late-reminders"
           class="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100"
         >
-          <h2 class="font-semibold">Berkas yang masih harus diserahkan</h2>
+          <h2 class="font-medium">Berkas yang masih harus diserahkan</h2>
           <ul class="list-disc space-y-1 pl-5">
             <li
               v-for="reminder in reminders"
@@ -380,7 +379,7 @@ onMounted(() => {
         <template v-if="tasks.length">
           <Separator />
           <section class="space-y-3">
-            <h2 class="font-semibold">Langkah yang perlu diselesaikan</h2>
+            <h2 class="font-medium">Langkah yang perlu diselesaikan</h2>
             <ul class="space-y-2">
               <li
                 v-for="task in tasks"
@@ -432,7 +431,7 @@ onMounted(() => {
               <span
                 :class="
                   index + 1 <= currentStep
-                    ? 'font-semibold text-primary'
+                    ? 'font-medium text-primary'
                     : 'text-muted-foreground'
                 "
                 >{{ step.label }}</span
@@ -482,7 +481,7 @@ onMounted(() => {
         <div class="grid gap-3 sm:grid-cols-3">
           <div class="space-y-2 rounded-lg border p-4 text-sm">
             <p class="text-muted-foreground">Kelengkapan Berkas</p>
-            <p class="font-semibold">
+            <p class="font-medium">
               {{ requiredDocs.done }} dari {{ requiredDocs.total }} berkas
             </p>
             <Progress
@@ -495,13 +494,13 @@ onMounted(() => {
             <p class="text-muted-foreground">Pembayaran</p>
             <p
               v-if="application.payment && application.payment.amount === 0"
-              class="font-semibold"
+              class="font-medium"
             >
               Tanpa biaya
             </p>
             <p
               v-else
-              class="font-semibold"
+              class="font-medium"
             >
               {{
                 application.payment
@@ -518,7 +517,7 @@ onMounted(() => {
           </div>
           <div class="space-y-1 rounded-lg border p-4 text-sm">
             <p class="text-muted-foreground">Tanggal Pengiriman</p>
-            <p class="font-semibold">
+            <p class="font-medium">
               {{
                 application.submittedAt
                   ? formatDateTime(application.submittedAt)
@@ -677,7 +676,7 @@ onMounted(() => {
     <Card class="w-full max-w-md text-center">
       <CardContent class="space-y-4 p-8">
         <CircleDashed class="mx-auto size-8 text-muted-foreground" />
-        <h2 class="text-lg font-semibold tracking-tight">
+        <h2 class="text-lg font-medium tracking-tight">
           Belum ada data pendaftaran
         </h2>
         <p class="text-sm text-balance text-muted-foreground">

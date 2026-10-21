@@ -51,7 +51,6 @@ defineExpose({ reset: form.reset, dirty: form.dirty })
     <div class="flex flex-wrap gap-2 border-t pt-4">
       <Button
         type="button"
-        class="min-h-11"
         :disabled="disabled || !form.dirty.value || form.saving.value"
         @click="save"
       >
@@ -60,7 +59,6 @@ defineExpose({ reset: form.reset, dirty: form.dirty })
       <Button
         type="button"
         variant="outline"
-        class="min-h-11"
         :disabled="disabled || form.saving.value"
         @click="form.fillBuiltIn()"
       >
