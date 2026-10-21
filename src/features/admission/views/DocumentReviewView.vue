@@ -279,7 +279,7 @@ onMounted(() => fetchReview(true))
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <p
       v-if="loading"
       class="text-sm text-muted-foreground"
@@ -302,7 +302,6 @@ onMounted(() => fetchReview(true))
       <Button
         v-if="error === 'load-failed'"
         variant="outline"
-        class="min-h-11"
         @click="fetchReview(true)"
       >
         Coba lagi
@@ -310,7 +309,6 @@ onMounted(() => fetchReview(true))
       <Button
         v-else
         variant="outline"
-        class="min-h-11"
         @click="router.push('/admin/document-reviews')"
       >
         Kembali ke Verifikasi Berkas
@@ -320,9 +318,12 @@ onMounted(() => fetchReview(true))
     <Card
       v-else-if="review"
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
+      <CardHeader
+        standard
+        class="min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <div class="flex items-center gap-3">
           <div class="flex min-w-0 items-center gap-3">
             <BackButton
@@ -334,7 +335,7 @@ onMounted(() => fetchReview(true))
         </div>
       </CardHeader>
 
-      <CardContent class="space-y-4 px-4 py-5 sm:px-6">
+      <CardContent class="space-y-4 p-0 sm:px-0">
         <div class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
           <Card
             gap="none"
@@ -342,7 +343,7 @@ onMounted(() => fetchReview(true))
           >
             <div class="border-b bg-muted/10 p-4 shrink-0 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="truncate font-bold text-sm text-foreground">
+                <h2 class="truncate font-semibold text-sm text-foreground">
                   {{ review.applicantName }}
                 </h2>
                 <button
@@ -379,7 +380,7 @@ onMounted(() => fetchReview(true))
                 class="border-border bg-card px-3 py-2.5 shadow-none"
               >
                 <Info class="size-4 text-muted-foreground" />
-                <AlertTitle class="text-xs font-semibold"
+                <AlertTitle class="text-xs font-medium"
                   >Mode Hanya Baca</AlertTitle
                 >
                 <AlertDescription
@@ -396,7 +397,7 @@ onMounted(() => fetchReview(true))
                 class="border-destructive/30 bg-destructive/5 px-3 py-2.5"
               >
                 <TriangleAlert class="size-4" />
-                <AlertTitle class="text-xs font-semibold"
+                <AlertTitle class="text-xs font-medium"
                   >Catatan Revisi Sebelumnya</AlertTitle
                 >
                 <AlertDescription
@@ -451,7 +452,7 @@ onMounted(() => fetchReview(true))
                       >
                         <div class="flex min-w-0 items-center gap-1">
                           <p
-                            class="truncate font-semibold text-sm"
+                            class="truncate font-medium text-sm"
                             :class="[
                               activeSlot?.documentTypeId === item.documentTypeId
                                 ? 'text-primary'
@@ -504,7 +505,7 @@ onMounted(() => fetchReview(true))
                           v-if="item.document"
                           type="button"
                           data-test="open-file"
-                          class="ml-auto inline-flex min-h-11 shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-semibold text-primary hover:bg-primary/10 sm:min-h-0 lg:hidden"
+                          class="ml-auto inline-flex min-h-11 shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/10 sm:min-h-0 lg:hidden"
                           @click.stop="handleOpenFile(item)"
                         >
                           <Eye class="size-3.5" />
@@ -530,7 +531,7 @@ onMounted(() => fetchReview(true))
                       v-if="item.document.status !== 'REJECTED'"
                       variant="destructive"
                       size="sm"
-                      class="min-h-11 flex-1 sm:min-h-0 sm:flex-none"
+                      class="flex-1 sm:flex-none"
                       data-test="reject"
                       :disabled="acting"
                       @click="openReject(item)"
@@ -540,7 +541,7 @@ onMounted(() => fetchReview(true))
                     <Button
                       v-if="item.document.status !== 'APPROVED'"
                       size="sm"
-                      class="min-h-11 flex-1 sm:min-h-0 sm:flex-none"
+                      class="flex-1 sm:flex-none"
                       data-test="approve"
                       :disabled="acting"
                       @click="approve(item)"
@@ -593,7 +594,6 @@ onMounted(() => fetchReview(true))
                   <Button
                     variant="outline"
                     size="sm"
-                    class="h-8 px-2 text-xs"
                     title="Unduh berkas"
                     @click="downloadActiveFile"
                   >
@@ -603,7 +603,6 @@ onMounted(() => fetchReview(true))
                   <Button
                     variant="outline"
                     size="sm"
-                    class="h-8 px-2 text-xs"
                     title="Perbesar berkas"
                     @click="preview.show(activeSlot.document.file)"
                   >
@@ -620,7 +619,7 @@ onMounted(() => fetchReview(true))
                       v-if="activeSlot.document.status !== 'REJECTED'"
                       variant="outline"
                       size="sm"
-                      class="h-8 border-destructive/40 px-2.5 text-xs text-destructive hover:bg-destructive/10"
+                      class="border-destructive/40 px-2.5 text-destructive hover:bg-destructive/10"
                       :disabled="acting"
                       @click="openReject(activeSlot)"
                     >
@@ -630,7 +629,7 @@ onMounted(() => fetchReview(true))
                     <Button
                       v-if="activeSlot.document.status !== 'APPROVED'"
                       size="sm"
-                      class="h-8 bg-emerald-600 px-2.5 text-xs text-white hover:bg-emerald-700"
+                      class="bg-emerald-600 px-2.5 text-white hover:bg-emerald-700"
                       :disabled="acting"
                       @click="approve(activeSlot)"
                     >
@@ -720,7 +719,6 @@ onMounted(() => fetchReview(true))
         <div class="flex flex-wrap items-center gap-2 sm:justify-end">
           <Button
             variant="outline"
-            class="min-h-11 sm:min-h-0"
             data-test="request-data-fix"
             :disabled="acting"
             @click="openNote"
@@ -728,7 +726,6 @@ onMounted(() => fetchReview(true))
             Minta perbaikan data
           </Button>
           <Button
-            class="min-h-11 sm:min-h-0"
             data-test="send"
             :disabled="acting || !canSend"
             @click="sendOpen = true"
@@ -743,10 +740,8 @@ onMounted(() => fetchReview(true))
       :open="rejectSlot !== null"
       @update:open="(open) => !open && (rejectSlot = null)"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>Tolak {{ rejectSlot?.name }}</DialogTitle>
           <DialogDescription class="sr-only">
             Alasan disimpan dan dikirim ke pendaftar bersama hasil pemeriksaan.
@@ -757,7 +752,7 @@ onMounted(() => fetchReview(true))
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitReject"
         >
-          <div class="space-y-4 px-6 py-5">
+          <div class="space-y-4 dialog-body">
             <FloatingLabelField
               label="Alasan Penolakan"
               :for="`${dialogId}-reject`"
@@ -781,7 +776,8 @@ onMounted(() => fetchReview(true))
             </p>
           </div>
           <DialogFooter
-            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+            standard
+            class="sm:justify-between"
           >
             <Button
               type="button"
@@ -807,10 +803,8 @@ onMounted(() => fetchReview(true))
       :open="sendOpen"
       @update:open="(open) => (sendOpen = open)"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>Kirim hasil pemeriksaan?</DialogTitle>
           <DialogDescription class="sr-only">
             Konfirmasi pengiriman hasil pemeriksaan berkas ke pendaftar.
@@ -818,7 +812,7 @@ onMounted(() => fetchReview(true))
         </DialogHeader>
         <div
           data-test="send-confirm"
-          class="px-6 py-5 text-sm leading-relaxed"
+          class="dialog-body text-sm leading-relaxed"
         >
           Pendaftar diberi tahu satu kali dan keputusan berkas tidak bisa diubah
           lagi.
@@ -831,7 +825,8 @@ onMounted(() => fetchReview(true))
           </template>
         </div>
         <DialogFooter
-          class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+          standard
+          class="sm:justify-between"
         >
           <Button
             type="button"
@@ -857,10 +852,8 @@ onMounted(() => fetchReview(true))
       :open="noteOpen"
       @update:open="(open) => (noteOpen = open)"
     >
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>Minta Perbaikan Data</DialogTitle>
           <DialogDescription class="sr-only">
             Formulir dikembalikan ke pendaftar dengan catatan ini, bersama
@@ -872,7 +865,7 @@ onMounted(() => fetchReview(true))
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitNote"
         >
-          <div class="space-y-4 px-6 py-5">
+          <div class="space-y-4 dialog-body">
             <FloatingLabelField
               label="Catatan Perbaikan"
               :for="`${dialogId}-data-note`"
@@ -896,7 +889,8 @@ onMounted(() => fetchReview(true))
             </p>
           </div>
           <DialogFooter
-            class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+            standard
+            class="sm:justify-between"
           >
             <Button
               type="button"

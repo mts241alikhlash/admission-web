@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FormattedNumberInput } from '@mts241alikhlash/ui'
 import { computed, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -92,10 +93,8 @@ const onSubmit = handleSubmit((formValues) => {
     :open="open"
     @update:open="(val) => (val ? emit('update:open', true) : closeDialog())"
   >
-    <DialogContent
-      class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-    >
-      <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+    <DialogContent size="md">
+      <DialogHeader standard>
         <DialogTitle>
           {{ isEdit ? 'Ubah Jenis Berkas' : 'Tambah Jenis Berkas' }}
         </DialogTitle>
@@ -106,7 +105,7 @@ const onSubmit = handleSubmit((formValues) => {
       <ScrollArea class="min-h-0 flex-1">
         <form
           id="document-type-form"
-          class="space-y-4 px-6 py-4"
+          class="space-y-4 dialog-body"
           @submit.prevent="onSubmit"
         >
           <FloatingField
@@ -150,19 +149,20 @@ const onSubmit = handleSubmit((formValues) => {
 
           <FloatingField
             v-if="values.requirement === 'LATER'"
-            v-slot="{ componentField }"
+            v-slot="{ value, setValue }"
             name="lateDueMonths"
-            label="Batas (bulan sejak awal tahun ajaran)"
+            label="Batas sejak awal tahun ajaran"
             required
           >
             <FormControl>
-              <Input
-                v-bind="componentField"
-                type="number"
-                min="1"
-                max="12"
-                inputmode="numeric"
+              <FormattedNumberInput
+                name="lateDueMonths"
+                :model-value="value"
+                suffix=" bulan"
+                numeric
+                :max-digits="2"
                 :disabled="isSaving"
+                @update:model-value="setValue"
               />
             </FormControl>
           </FloatingField>
@@ -200,7 +200,8 @@ const onSubmit = handleSubmit((formValues) => {
         </form>
       </ScrollArea>
       <DialogFooter
-        class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

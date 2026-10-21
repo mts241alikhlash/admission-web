@@ -116,11 +116,13 @@ it('shows Menunggu first with the counts of every tab and each summary', async (
   expect(rowOf(wrapper).text()).toContain('3 disetujui dari 3 berkas')
 })
 
-it('has no primary action in the card header', async () => {
+it('has no add button', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  expect(wrapper.get('[data-test="header"]').findAll('button')).toHaveLength(0)
+  expect(
+    wrapper.findAll('button').filter((button) => button.text() === 'Tambah'),
+  ).toHaveLength(0)
 })
 
 it('opens the applicant detail', async () => {

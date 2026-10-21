@@ -149,10 +149,8 @@ watch(debouncedSearch, loadApplicants)
     :open="open"
     @update:open="emit('update:open', $event)"
   >
-    <DialogContent
-      class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
-    >
-      <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+    <DialogContent size="xl">
+      <DialogHeader standard>
         <DialogTitle>Pembayaran oleh Staf</DialogTitle>
         <DialogDescription>
           Catat pembayaran pendaftar yang dibantu oleh staf. Pembayaran akan
@@ -162,7 +160,7 @@ watch(debouncedSearch, loadApplicants)
       <ScrollArea class="min-h-0 flex-1">
         <form
           id="add-payment-form"
-          class="space-y-4 px-6 py-4"
+          class="space-y-4 dialog-body"
           @submit.prevent="save"
         >
           <fieldset class="space-y-2">
@@ -234,7 +232,9 @@ watch(debouncedSearch, loadApplicants)
               />
               <span>
                 <span class="block font-medium">{{ account.bankName }}</span>
-                <span class="block font-mono">{{ account.accountNumber }}</span>
+                <span class="block tabular-nums">{{
+                  account.accountNumber
+                }}</span>
                 <span class="block text-muted-foreground">
                   a.n. {{ account.accountHolder }}
                 </span>
@@ -328,7 +328,8 @@ watch(debouncedSearch, loadApplicants)
         </form>
       </ScrollArea>
       <DialogFooter
-        class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

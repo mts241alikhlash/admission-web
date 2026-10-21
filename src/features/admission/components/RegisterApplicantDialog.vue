@@ -133,10 +133,8 @@ function handleOpenChange(open: boolean) {
     :open="open"
     @update:open="handleOpenChange"
   >
-    <DialogContent
-      class="sm:max-w-2xl flex flex-col gap-0 p-0 overflow-hidden max-h-[calc(100dvh-2rem)]"
-    >
-      <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
+    <DialogContent size="xl">
+      <DialogHeader standard>
         <DialogTitle>Tambah Pendaftar</DialogTitle>
         <DialogDescription class="sr-only">
           Buat akun untuk calon santri. Setelah akun dibuat, Anda akan
@@ -147,7 +145,7 @@ function handleOpenChange(open: boolean) {
       <ScrollArea class="flex-1 min-h-0">
         <form
           id="register-applicant-form"
-          class="grid grid-cols-1 items-start gap-x-4 gap-y-2 px-6 py-4 sm:grid-cols-2"
+          class="grid grid-cols-1 items-start gap-x-4 gap-y-2 dialog-body sm:grid-cols-2"
           @submit.prevent="onSubmit"
         >
           <FloatingField
@@ -284,7 +282,8 @@ function handleOpenChange(open: boolean) {
       </ScrollArea>
 
       <DialogFooter
-        class="px-6 py-4 border-t shrink-0 flex sm:justify-between w-full bg-background"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

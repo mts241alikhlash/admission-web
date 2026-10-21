@@ -40,10 +40,8 @@ function pick(event: Event) {
     :open="!!row"
     @update:open="(open) => !open && emit('update:row', null)"
   >
-    <DialogContent
-      class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-    >
-      <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+    <DialogContent size="md">
+      <DialogHeader standard>
         <DialogTitle>Unggah {{ row?.documentTypeName }}</DialogTitle>
         <DialogDescription>
           {{ row?.applicantName }} · {{ row?.registrationNumber }}
@@ -54,7 +52,7 @@ function pick(event: Event) {
         class="flex flex-1 flex-col justify-between"
         @submit.prevent="file && emit('upload', file)"
       >
-        <div class="space-y-2 px-6 py-5">
+        <div class="space-y-2 dialog-body">
           <label
             class="text-sm font-medium"
             for="late-document-file"
@@ -71,7 +69,8 @@ function pick(event: Event) {
           />
         </div>
         <DialogFooter
-          class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+          standard
+          class="sm:justify-between"
         >
           <Button
             type="button"

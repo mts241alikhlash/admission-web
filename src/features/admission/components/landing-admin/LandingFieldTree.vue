@@ -134,7 +134,7 @@ function itemTitle(
             type="button"
             variant="outline"
             size="icon"
-            class="size-11 shrink-0"
+            class="shrink-0"
             :aria-label="`Hapus baris ${index + 1} ${field.label}`"
             :disabled="disabled"
             @click="removeLine(field.name, index)"
@@ -157,7 +157,6 @@ function itemTitle(
         <Button
           type="button"
           variant="outline"
-          class="min-h-11"
           :data-test="`add-line-${at(field.name)}`"
           :disabled="
             disabled ||
@@ -190,7 +189,7 @@ function itemTitle(
         v-else-if="field.kind === 'group'"
         class="space-y-4 rounded-lg border p-4"
       >
-        <legend class="px-1 text-sm font-semibold">{{ field.label }}</legend>
+        <legend class="px-1 text-sm font-medium">{{ field.label }}</legend>
         <LandingFieldTree
           :fields="field.fields"
           :model="record(field.name)"
@@ -209,7 +208,7 @@ function itemTitle(
         class="space-y-3"
       >
         <div class="flex items-center justify-between gap-3">
-          <p class="text-sm font-semibold">
+          <p class="text-sm font-medium">
             {{ field.label }}
             <span class="font-normal text-muted-foreground"
               >({{ list(field.name).length }} dari maks. {{ field.max }})</span
@@ -230,7 +229,7 @@ function itemTitle(
           class="space-y-4 rounded-lg border p-4"
         >
           <div class="flex items-center justify-between gap-2">
-            <p class="min-w-0 break-words text-sm font-semibold">
+            <p class="min-w-0 break-words text-sm font-medium">
               {{ field.itemLabel }} {{ index + 1 }}:
               {{ itemTitle(field, item) }}
             </p>
@@ -239,7 +238,6 @@ function itemTitle(
                 type="button"
                 variant="outline"
                 size="icon"
-                class="size-11"
                 :aria-label="`Naikkan ${field.itemLabel} ${index + 1}`"
                 :disabled="disabled || index === 0"
                 @click="emit('move', at(field.name), index, -1)"
@@ -253,7 +251,6 @@ function itemTitle(
                 type="button"
                 variant="outline"
                 size="icon"
-                class="size-11"
                 :aria-label="`Turunkan ${field.itemLabel} ${index + 1}`"
                 :disabled="disabled || index === list(field.name).length - 1"
                 @click="emit('move', at(field.name), index, 1)"
@@ -267,7 +264,6 @@ function itemTitle(
                 type="button"
                 variant="outline"
                 size="icon"
-                class="size-11"
                 :aria-label="`Hapus ${field.itemLabel} ${index + 1}`"
                 :disabled="disabled || list(field.name).length <= field.min"
                 @click="emit('remove', at(field.name), index)"
@@ -294,7 +290,6 @@ function itemTitle(
         <Button
           type="button"
           variant="outline"
-          class="min-h-11"
           data-test="add-item"
           :disabled="disabled || list(field.name).length >= field.max"
           @click="emit('add', at(field.name), field.blank())"

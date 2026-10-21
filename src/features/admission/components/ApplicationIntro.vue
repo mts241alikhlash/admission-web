@@ -34,7 +34,7 @@ const requiredDocuments = computed(() =>
           <p class="text-xs font-medium text-muted-foreground">
             Gelombang Pendaftaran
           </p>
-          <p class="text-base font-semibold break-words">
+          <p class="text-base font-medium break-words">
             {{ application.wave?.name }}
             <span
               v-if="academicYearName"
@@ -53,7 +53,7 @@ const requiredDocuments = computed(() =>
         </section>
 
         <section class="space-y-3">
-          <h2 class="text-base font-semibold">Ketentuan Pendaftaran</h2>
+          <h2 class="text-base font-medium">Ketentuan Pendaftaran</h2>
           <p
             v-if="application.wave?.description"
             class="whitespace-pre-line"

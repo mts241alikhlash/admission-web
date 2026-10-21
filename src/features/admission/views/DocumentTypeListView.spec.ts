@@ -149,7 +149,7 @@ it('adds a type and reloads the list', async () => {
 
   await wrapper
     .findAll('button')
-    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .find((b) => b.text() === 'Tambah')!
     .trigger('click')
   await wrapper.get('input[name="name"]').setValue('Surat Keterangan Sehat')
   await wrapper.get('form').trigger('submit')
@@ -204,7 +204,7 @@ it('refuses a blank name and shows the reason', async () => {
 
   await wrapper
     .findAll('button')
-    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .find((b) => b.text() === 'Tambah')!
     .trigger('click')
   await wrapper.get('input[name="name"]').setValue('   ')
   await wrapper.get('form').trigger('submit')
@@ -325,7 +325,7 @@ it('shows the limit field only for Susulan', async () => {
 
   await wrapper
     .findAll('button')
-    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .find((b) => b.text() === 'Tambah')!
     .trigger('click')
   expect(wrapper.find('input[name="lateDueMonths"]').exists()).toBe(false)
 
@@ -346,7 +346,7 @@ it('saves requirement and limit', async () => {
 
   await wrapper
     .findAll('button')
-    .find((b) => b.text().includes('Tambah Jenis Berkas'))!
+    .find((b) => b.text() === 'Tambah')!
     .trigger('click')
   await wrapper.get('input[name="name"]').setValue('Ijazah SD')
   const select = wrapper

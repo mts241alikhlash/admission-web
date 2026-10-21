@@ -105,7 +105,7 @@ onBeforeUnmount(() => {
     <DialogContent
       class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
     >
-      <DialogHeader class="shrink-0 border-b px-6 py-4">
+      <DialogHeader standard>
         <DialogTitle class="break-all">{{ file?.originalName }}</DialogTitle>
         <DialogDescription class="sr-only">Pratinjau berkas</DialogDescription>
       </DialogHeader>
@@ -150,7 +150,10 @@ onBeforeUnmount(() => {
           membukanya.
         </p>
       </div>
-      <DialogFooter class="shrink-0 border-t px-6 py-4 sm:justify-between">
+      <DialogFooter
+        standard
+        class="sm:justify-between"
+      >
         <Button
           type="button"
           variant="outline"

@@ -195,11 +195,13 @@ it('shows Siap diproses first with the counts and each applicant’s data', asyn
   expect(first.text()).toContain('262707001')
 })
 
-it('has no primary action in the card header', async () => {
+it('has no add button', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  expect(wrapper.get('[data-test="header"]').findAll('button')).toHaveLength(0)
+  expect(
+    wrapper.findAll('button').filter((button) => button.text() === 'Tambah'),
+  ).toHaveLength(0)
 })
 
 it('marks an applicant without placement or NIS', async () => {

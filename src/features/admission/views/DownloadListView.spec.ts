@@ -126,7 +126,7 @@ async function pick(wrapper: ReturnType<typeof mountView>, file: File) {
 async function openAdd(wrapper: ReturnType<typeof mountView>) {
   await wrapper
     .findAll('button')
-    .find((b) => b.text().includes('Tambah Berkas'))!
+    .find((b) => b.text() === 'Tambah')!
     .trigger('click')
 }
 

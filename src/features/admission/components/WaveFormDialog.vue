@@ -1,24 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { FormattedNumberInput, DateRangePicker } from '@mts241alikhlash/ui'
+import { computed, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
 import { toTypedSchema } from '@vee-validate/zod'
-import { parseDate } from '@internationalized/date'
-import type { DateValue } from '@internationalized/date'
-import { format } from 'date-fns'
-import { id as idLocale } from 'date-fns/locale'
-import type { DateRange } from 'reka-ui'
-import { cn } from '@mts241alikhlash/web-shared/utils/utils'
-import { RangeCalendar } from '@mts241alikhlash/ui/range-calendar'
 import { Checkbox } from '@mts241alikhlash/ui/checkbox'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Input } from '@mts241alikhlash/ui/input'
 import { Textarea } from '@mts241alikhlash/ui/textarea'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@mts241alikhlash/ui/popover'
 import {
   Dialog,
   DialogContent,
@@ -36,14 +25,12 @@ import {
 } from '@mts241alikhlash/ui/select'
 import { FormControl } from '@mts241alikhlash/ui/form'
 import FloatingField from './AdmissionField.vue'
-import { CalendarIcon, Loader2 } from '@lucide/vue'
-import CurrencyInput from './CurrencyInput.vue'
+import { Loader2 } from '@lucide/vue'
 import type {
   AdmissionAcademicYear,
   AdmissionWaveSummary,
   WaveSavePayload,
 } from '../types'
-import { vDigits } from '../vDigits'
 
 const props = defineProps<{
   open: boolean
@@ -103,47 +90,20 @@ const { handleSubmit, resetForm, values, setFieldValue } =
     validationSchema: formSchema,
   })
 
-const dateRangeOpen = ref(false)
-
 function closeDialog() {
   resetForm()
-  dateRangeOpen.value = false
   emit('update:open', false)
 }
 
-const dateRangeValue = computed<DateRange>({
-  get() {
-    const s = values.startDate ?? ''
-    const e = values.endDate ?? ''
-    return {
-      start: s ? parseDate(s.split('T')[0]) : undefined,
-      end: e ? parseDate(e.split('T')[0]) : undefined,
-    }
-  },
-  set(val: DateRange) {
-    setFieldValue('startDate', val.start ? val.start.toString() : '')
-    setFieldValue('endDate', val.end ? val.end.toString() : '')
-  },
-})
-
-function handleRangeUpdate(val: DateRange) {
-  dateRangeValue.value = val
-  if (val.start && val.end) dateRangeOpen.value = false
+interface DateRangeValue {
+  start: string
+  end: string
 }
 
-function formatDateLabel(dv?: DateValue): string {
-  if (!dv) return ''
-  return format(new Date(dv.toString()), 'dd MMM yyyy', { locale: idLocale })
+function handleRangeUpdate(range: DateRangeValue) {
+  setFieldValue('startDate', range.start)
+  setFieldValue('endDate', range.end)
 }
-
-const dateRangeLabel = computed(() => {
-  const s = dateRangeValue.value.start
-  const e = dateRangeValue.value.end
-  if (!s && !e) return ''
-  if (s && !e) return formatDateLabel(s)
-  if (s && e) return `${formatDateLabel(s)} – ${formatDateLabel(e)}`
-  return ''
-})
 
 function resolveAcademicYearId(wave: AdmissionWaveSummary | null): string {
   if (wave) {
@@ -216,10 +176,8 @@ const onSubmit = handleSubmit((formValues) => {
       (value) => (value ? emit('update:open', true) : closeDialog())
     "
   >
-    <DialogContent
-      class="sm:max-w-2xl max-h-[calc(100dvh-2rem)] flex flex-col gap-0 p-0 overflow-hidden"
-    >
-      <DialogHeader class="px-6 py-5 border-b shrink-0 bg-muted/20">
+    <DialogContent size="xl">
+      <DialogHeader standard>
         <DialogTitle>
           {{ isEdit ? 'Ubah Gelombang' : 'Tambah Gelombang' }}
         </DialogTitle>
@@ -229,7 +187,7 @@ const onSubmit = handleSubmit((formValues) => {
       <div class="min-h-0 overflow-y-auto">
         <form
           id="wave-form"
-          class="space-y-2 px-6 py-4"
+          class="space-y-2 dialog-body"
           @submit.prevent="onSubmit"
         >
           <div
@@ -297,64 +255,35 @@ const onSubmit = handleSubmit((formValues) => {
               required
               always-float
             >
-              <Popover v-model:open="dateRangeOpen">
-                <FormControl>
-                  <PopoverTrigger as-child>
-                    <Button
-                      aria-label="Rentang Tanggal"
-                      variant="outline"
-                      :disabled="isSaving"
-                      :class="
-                        cn(
-                          'h-10 w-full justify-start text-left font-normal',
-                          !dateRangeLabel && 'text-muted-foreground',
-                        )
-                      "
-                    >
-                      {{ dateRangeLabel || 'Pilih rentang tanggal' }}
-                      <CalendarIcon
-                        class="ml-auto size-4 shrink-0 text-muted-foreground"
-                      />
-                    </Button>
-                  </PopoverTrigger>
-                </FormControl>
-                <PopoverContent
-                  class="w-auto p-0"
-                  align="start"
-                >
-                  <RangeCalendar
-                    :model-value="dateRangeValue"
-                    locale="id-ID"
-                    initial-focus
-                    @update:model-value="handleRangeUpdate"
-                  />
-                </PopoverContent>
-              </Popover>
+              <FormControl>
+                <DateRangePicker
+                  aria-label="Rentang Tanggal"
+                  :model-value="{
+                    start: values.startDate ?? '',
+                    end: values.endDate ?? '',
+                  }"
+                  :disabled="isSaving"
+                  @update:model-value="handleRangeUpdate"
+                />
+              </FormControl>
             </FloatingField>
 
             <FloatingField
-              v-slot="{ componentField }"
+              v-slot="{ value, setValue }"
               name="quota"
               label="Kuota"
               required
             >
-              <div class="relative">
-                <FormControl>
-                  <Input
-                    v-digits
-                    v-bind="componentField"
-                    inputmode="numeric"
-                    maxlength="5"
-                    class="pr-20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    :disabled="isSaving"
-                  />
-                </FormControl>
-                <span
-                  class="pointer-events-none absolute inset-y-0 right-0 flex items-center border-l border-input px-3 text-sm text-muted-foreground"
-                >
-                  Orang
-                </span>
-              </div>
+              <FormControl>
+                <FormattedNumberInput
+                  name="quota"
+                  :model-value="value"
+                  suffix=" orang"
+                  :max-digits="5"
+                  :disabled="isSaving"
+                  @update:model-value="setValue"
+                />
+              </FormControl>
             </FloatingField>
 
             <FloatingField
@@ -363,21 +292,18 @@ const onSubmit = handleSubmit((formValues) => {
               label="Biaya Pendaftaran"
               required
             >
-              <div class="relative">
-                <FormControl>
-                  <CurrencyInput
-                    :model-value="value ?? 0"
-                    class="pr-20"
-                    :disabled="isSaving"
-                    @update:model-value="setValue"
-                  />
-                </FormControl>
-                <span
-                  class="pointer-events-none absolute inset-y-0 right-0 flex items-center border-l border-input px-3 text-sm text-muted-foreground"
-                >
-                  Rupiah
-                </span>
-              </div>
+              <FormControl>
+                <FormattedNumberInput
+                  name="registrationFee"
+                  :model-value="value ?? 0"
+                  prefix="Rp. "
+                  suffix=",-"
+                  thousands
+                  numeric
+                  :disabled="isSaving"
+                  @update:model-value="setValue"
+                />
+              </FormControl>
             </FloatingField>
 
             <FloatingField
@@ -417,7 +343,8 @@ const onSubmit = handleSubmit((formValues) => {
       </div>
 
       <DialogFooter
-        class="px-6 py-4 border-t shrink-0 flex sm:justify-between w-full bg-background"
+        standard
+        class="sm:justify-between"
       >
         <Button
           type="button"

@@ -2,7 +2,7 @@
 import { computed, h, onMounted, ref, useId, watch } from 'vue'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Card } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Filter, Plus } from '@lucide/vue'
 import {
@@ -108,7 +108,7 @@ const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
   {
     accessorKey: 'name',
     header: 'Nama',
-    meta: { align: 'left' },
+    meta: { align: 'left', strong: true },
   },
   {
     id: 'academicYear',
@@ -199,89 +199,31 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg"> Gelombang Pendaftaran </CardTitle>
+      <div class="mb-3 flex justify-end md:hidden">
         <Button
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           @click="openCreateForm"
         >
           <Plus class="mr-1.5 size-4" />
-          Tambah Gelombang
+          Tambah
         </Button>
-      </CardHeader>
+      </div>
 
-      <div class="space-y-4 px-4 py-5 sm:px-6">
-        <div
-          class="hidden flex-col gap-3 md:flex md:flex-row md:items-end md:justify-between"
-        >
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <FloatingLabelField
-              label="Status"
-              :for="statusFilterId"
-              class="w-full sm:w-48"
-              floating
-            >
-              <Select v-model="statusFilter">
-                <SelectTrigger
-                  :id="statusFilterId"
-                  size="sm"
-                  class="w-full"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Semua</SelectItem>
-                  <SelectItem value="true">Aktif</SelectItem>
-                  <SelectItem value="false">Nonaktif</SelectItem>
-                </SelectContent>
-              </Select>
-            </FloatingLabelField>
-            <FloatingLabelField
-              label="Tahun Ajaran"
-              :for="yearFilterId"
-              class="w-full sm:w-48"
-              floating
-            >
-              <Select v-model="yearFilter">
-                <SelectTrigger
-                  :id="yearFilterId"
-                  size="sm"
-                  class="w-full"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Semua</SelectItem>
-                  <SelectItem
-                    v-for="year in yearOptions"
-                    :key="year.id"
-                    :value="year.id"
-                  >
-                    {{ year.name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </FloatingLabelField>
-          </div>
-          <SearchInput
-            v-model="search"
-            label="Cari gelombang"
-          />
-        </div>
+      <div class="space-y-4 p-0 sm:px-0">
         <div class="flex items-center gap-2 md:hidden">
           <SearchInput
             v-model="search"
             label="Cari gelombang"
-            class="min-w-0 flex-1 [&_input]:h-11"
+            class="min-w-0 flex-1"
           />
           <Button
             variant="outline"
-            class="min-h-11 shrink-0"
+            class="shrink-0"
             @click="filterOpen = true"
             ><Filter class="mr-1.5 size-4" />Filter</Button
           >
@@ -293,14 +235,12 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
           <Button
             v-if="statusFilter !== 'ALL'"
             variant="outline"
-            class="min-h-11"
             @click="statusFilter = 'ALL'"
             >Hapus filter status</Button
           >
           <Button
             v-if="yearFilter !== 'ALL'"
             variant="outline"
-            class="min-h-11"
             @click="yearFilter = 'ALL'"
             >Hapus filter tahun ajaran</Button
           >
@@ -313,7 +253,6 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
           <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="refresh()"
           >
             Coba lagi
@@ -321,7 +260,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:block"
+            class="hidden md:flex"
             :columns="columns"
             :data="waves"
             :page="page"
@@ -331,7 +270,77 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
             item-label="gelombang"
             @update:page="goToPage"
             @update:page-size="changePageSize"
-          />
+          >
+            <template #header-left>
+              <Button
+                class="shrink-0"
+                @click="openCreateForm"
+              >
+                <Plus class="mr-1.5 size-4" />
+                Tambah
+              </Button>
+            </template>
+            <template #header-right>
+              <div
+                class="flex items-end sm:gap-0 sm:[&>*:not(:first-child)]:-ml-px sm:[&>*:not(:first-child)_:is(button,input)]:rounded-l-none sm:[&>*:not(:last-child)_:is(button,input)]:rounded-r-none sm:[&>*:focus-within]:z-10"
+              >
+                <div
+                  class="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-0 sm:[&>*:not(:first-child)]:-ml-px sm:[&>*:not(:first-child)_:is(button,input)]:rounded-l-none sm:[&>*:not(:last-child)_:is(button,input)]:rounded-r-none sm:[&>*:focus-within]:z-10"
+                >
+                  <FloatingLabelField
+                    label="Status"
+                    :for="statusFilterId"
+                    class="w-fit min-w-28"
+                    floating
+                  >
+                    <Select v-model="statusFilter">
+                      <SelectTrigger
+                        :id="statusFilterId"
+                        class="w-full"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Semua</SelectItem>
+                        <SelectItem value="true">Aktif</SelectItem>
+                        <SelectItem value="false">Nonaktif</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FloatingLabelField>
+                  <FloatingLabelField
+                    label="Tahun Ajaran"
+                    :for="yearFilterId"
+                    class="w-fit min-w-28"
+                    floating
+                  >
+                    <Select v-model="yearFilter">
+                      <SelectTrigger
+                        :id="yearFilterId"
+                        class="w-full"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Semua</SelectItem>
+                        <SelectItem
+                          v-for="year in yearOptions"
+                          :key="year.id"
+                          :value="year.id"
+                        >
+                          {{ year.name }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FloatingLabelField>
+                </div>
+                <SearchInput
+                  v-model="search"
+                  class="sm:w-40"
+                  label="Cari gelombang"
+                />
+              </div>
+            </template>
+          </DataTable>
           <p
             v-if="!loading && !filtersPending && !waves.length"
             class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
@@ -354,7 +363,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
               :key="wave.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
-              <p class="break-words font-semibold">{{ wave.name }}</p>
+              <p class="break-words font-medium">{{ wave.name }}</p>
               <p class="text-sm text-muted-foreground">
                 Tahun Ajaran {{ wave.academicYear?.name ?? '-' }}
               </p>
@@ -372,14 +381,12 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
               <div class="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   aria-label="Ubah gelombang"
                   @click="openEditForm(wave)"
                   >Ubah</Button
                 >
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   aria-label="Hapus gelombang"
                   @click="pendingDeleteId = wave.id"
                   >Hapus</Button
@@ -401,16 +408,16 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
     </Card>
 
     <Dialog v-model:open="filterOpen">
-      <DialogContent
-        class="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b px-4 py-4 sm:px-6"
+      <DialogContent size="md">
+        <DialogHeader standard
           ><DialogTitle>Filter Gelombang</DialogTitle
           ><DialogDescription class="sr-only"
             >Pilih status dan tahun ajaran.</DialogDescription
           ></DialogHeader
         >
-        <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+        <div
+          class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body sm:px-6"
+        >
           <FloatingLabelField
             label="Status"
             :for="mobileStatusFilterId"
@@ -419,7 +426,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
             <Select v-model="statusFilter"
               ><SelectTrigger
                 :id="mobileStatusFilterId"
-                class="min-h-11 w-full"
+                class="w-full"
                 ><SelectValue /></SelectTrigger
               ><SelectContent
                 ><SelectItem value="ALL">Semua</SelectItem
@@ -436,7 +443,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
             <Select v-model="yearFilter"
               ><SelectTrigger
                 :id="mobileYearFilterId"
-                class="min-h-11 w-full"
+                class="w-full"
                 ><SelectValue /></SelectTrigger
               ><SelectContent
                 ><SelectItem value="ALL">Semua</SelectItem
@@ -450,15 +457,18 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
             >
           </FloatingLabelField>
         </div>
-        <DialogFooter class="flex-row gap-2 border-t px-4 py-4 sm:px-6">
+        <DialogFooter
+          standard
+          class="flex-row gap-2"
+        >
           <Button
             variant="outline"
-            class="min-h-11 flex-1"
+            class="flex-1"
             @click="resetFilters"
             >Atur Ulang</Button
           >
           <Button
-            class="min-h-11 flex-1"
+            class="flex-1"
             @click="filterOpen = false"
             >Tutup</Button
           >

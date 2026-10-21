@@ -20,7 +20,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { ActionCell, DataTable } from '@mts241alikhlash/ui'
+import {
+  ActionCell,
+  DataTable,
+  FormattedNumberInput,
+} from '@mts241alikhlash/ui'
 import { Input } from '@mts241alikhlash/ui/input'
 import { FormControl } from '@mts241alikhlash/ui/form'
 import FloatingField from './AdmissionField.vue'
@@ -373,10 +377,8 @@ defineExpose({ validate: validateStep })
             closeEditor()
           "
         >
-          <DialogContent
-            class="flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
-          >
-            <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+          <DialogContent size="xl">
+            <DialogHeader standard>
               <DialogTitle>{{
                 original === null ? 'Tambah Prestasi' : 'Edit Prestasi'
               }}</DialogTitle>
@@ -538,7 +540,8 @@ defineExpose({ validate: validateStep })
               </div>
             </div>
             <DialogFooter
-              class="mt-auto w-full shrink-0 gap-2 border-t bg-background px-6 py-4 sm:justify-end"
+              standard
+              class="mt-auto gap-2 sm:justify-end"
             >
               <Button
                 variant="outline"
@@ -595,10 +598,8 @@ defineExpose({ validate: validateStep })
             closeEditor()
           "
         >
-          <DialogContent
-            class="flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
-          >
-            <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+          <DialogContent size="xl">
+            <DialogHeader standard>
               <DialogTitle>{{
                 original === null ? 'Tambah Beasiswa' : 'Edit Beasiswa'
               }}</DialogTitle>
@@ -716,17 +717,20 @@ defineExpose({ validate: validateStep })
                   </FloatingField>
 
                   <FloatingField
-                    v-slot="{ componentField }"
+                    v-slot="{ value, setValue }"
                     :name="`scholarships[${index}].amount`"
-                    label="Jumlah (Rp)"
+                    label="Jumlah"
                   >
                     <FormControl>
-                      <Input
-                        v-digits
-                        v-bind="componentField"
-                        inputmode="numeric"
-                        maxlength="12"
+                      <FormattedNumberInput
+                        :name="`scholarships[${index}].amount`"
+                        :model-value="value"
+                        prefix="Rp. "
+                        suffix=",-"
+                        thousands
+                        :max-digits="12"
                         :disabled="!editable"
+                        @update:model-value="setValue"
                       />
                     </FormControl>
                   </FloatingField>
@@ -792,7 +796,8 @@ defineExpose({ validate: validateStep })
               </div>
             </div>
             <DialogFooter
-              class="mt-auto w-full shrink-0 gap-2 border-t bg-background px-6 py-4 sm:justify-end"
+              standard
+              class="mt-auto gap-2 sm:justify-end"
             >
               <Button
                 variant="outline"

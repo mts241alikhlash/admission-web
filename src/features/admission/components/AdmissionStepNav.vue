@@ -35,7 +35,7 @@ function visibleOnMobile(index: number) {
           type="button"
           :disabled="disabled"
           :aria-current="index === currentStep ? 'step' : undefined"
-          class="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          class="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           :class="
             index === currentStep
               ? 'border-primary bg-primary text-primary-foreground'
@@ -64,7 +64,7 @@ function visibleOnMobile(index: number) {
       <p class="text-xs font-medium text-muted-foreground">
         Langkah {{ currentStep + 1 }} dari {{ steps.length }}
       </p>
-      <h2 class="text-sm font-bold">{{ steps[currentStep] }}</h2>
+      <h2 class="text-sm font-semibold">{{ steps[currentStep] }}</h2>
     </div>
   </div>
 </template>

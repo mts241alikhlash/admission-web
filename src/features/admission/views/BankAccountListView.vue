@@ -4,7 +4,7 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Card } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Input } from '@mts241alikhlash/ui/input'
 import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
@@ -75,7 +75,7 @@ const columns = computed<ColumnDef<AdmissionBankAccount>[]>(() => [
     cell: ({ row }) => row.index + 1,
     enableSorting: false,
   },
-  { accessorKey: 'bankName', header: 'Bank' },
+  { accessorKey: 'bankName', header: 'Bank', meta: { strong: true } },
   { accessorKey: 'accountNumber', header: 'No. Rekening' },
   { accessorKey: 'accountHolder', header: 'Atas Nama' },
   {
@@ -147,23 +147,22 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg"> Rekening Pembayaran </CardTitle>
+      <div class="mb-3 flex justify-end md:hidden">
         <Button
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           @click="openForm(null)"
         >
           <Plus class="mr-1.5 size-4" />
-          Tambah Rekening
+          Tambah
         </Button>
-      </CardHeader>
+      </div>
 
-      <div class="space-y-4 px-4 py-5 sm:px-6">
+      <div class="space-y-4 p-0 sm:px-0">
         <div
           class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >
@@ -176,7 +175,6 @@ onMounted(load)
             <Select v-model="statusFilter">
               <SelectTrigger
                 :id="statusFilterId"
-                size="sm"
                 class="w-full"
               >
                 <SelectValue />
@@ -190,6 +188,7 @@ onMounted(load)
           </FloatingLabelField>
           <SearchInput
             v-model="search"
+            class="md:hidden"
             label="Cari rekening"
           />
         </div>
@@ -201,7 +200,6 @@ onMounted(load)
           <p class="text-sm">{{ listError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="load()"
           >
             Coba lagi
@@ -209,7 +207,7 @@ onMounted(load)
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:block"
+            class="hidden md:flex"
             :columns="columns"
             :data="filteredAccounts"
             :total-items="filteredAccounts.length"
@@ -217,7 +215,24 @@ onMounted(load)
             item-label="rekening"
             hide-per-page
             hide-pagination
-          />
+          >
+            <template #header-left>
+              <Button
+                class="shrink-0"
+                @click="openForm(null)"
+              >
+                <Plus class="mr-1.5 size-4" />
+                Tambah
+              </Button>
+            </template>
+            <template #header-right>
+              <SearchInput
+                v-model="search"
+                class="sm:w-40"
+                label="Cari rekening"
+              />
+            </template>
+          </DataTable>
           <p
             v-if="!loading && !filteredAccounts.length"
             class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
@@ -233,7 +248,7 @@ onMounted(load)
               :key="account.id"
               class="min-w-0 space-y-2 rounded-lg border p-4"
             >
-              <p class="break-words font-semibold">{{ account.bankName }}</p>
+              <p class="break-words font-medium">{{ account.bankName }}</p>
               <p class="text-sm">{{ account.accountNumber }}</p>
               <p class="text-sm">a.n. {{ account.accountHolder }}</p>
               <Badge :variant="account.isActive ? 'default' : 'secondary'">{{
@@ -242,14 +257,12 @@ onMounted(load)
               <div class="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   aria-label="Ubah rekening"
                   @click="openForm(account)"
                   >Ubah</Button
                 >
                 <Button
                   variant="outline"
-                  class="min-h-11"
                   aria-label="Hapus rekening"
                   @click="pendingDelete = account"
                   >Hapus</Button
@@ -262,10 +275,8 @@ onMounted(load)
     </Card>
 
     <Dialog v-model:open="isFormOpen">
-      <DialogContent
-        class="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
-      >
-        <DialogHeader class="shrink-0 border-b bg-muted/20 px-6 py-5">
+      <DialogContent size="md">
+        <DialogHeader standard>
           <DialogTitle>
             {{ editing ? 'Ubah Rekening' : 'Tambah Rekening' }}
           </DialogTitle>
@@ -276,7 +287,7 @@ onMounted(load)
         <ScrollArea class="min-h-0 flex-1">
           <form
             id="bank-account-form"
-            class="space-y-4 px-6 py-4"
+            class="space-y-4 dialog-body"
             @submit.prevent="save"
           >
             <FloatingField
@@ -345,7 +356,8 @@ onMounted(load)
           </form>
         </ScrollArea>
         <DialogFooter
-          class="w-full shrink-0 border-t bg-background px-6 py-4 sm:justify-between"
+          standard
+          class="sm:justify-between"
         >
           <Button
             type="button"

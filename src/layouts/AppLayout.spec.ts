@@ -16,7 +16,6 @@ vi.mock('@/features/platform/auth', () => ({
     changePassword: legacyChangePassword,
   }),
   authApi: { changePassword },
-  AppSwitcher: { template: '<div />' },
 }))
 vi.mock('vue-sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }))
 
@@ -32,6 +31,7 @@ function mountLayout() {
       plugins: [router()],
       stubs: {
         AppSidebar: true,
+        HeaderAppSwitcher: true,
         RouterView: true,
         Dialog: passthrough,
         DialogContent: passthrough,
@@ -58,12 +58,54 @@ describe('header controls', () => {
     wrapper.unmount()
   })
 
-  it('names search and account icon buttons', () => {
+  it('names the search button and the account menu', () => {
     const wrapper = mountLayout()
     expect(wrapper.find('button[aria-label="Cari halaman"]').exists()).toBe(
       true,
     )
-    expect(wrapper.find('button[aria-label="Menu akun"]').exists()).toBe(true)
+    const accountButton = wrapper
+      .findAll('button')
+      .find(
+        (b) =>
+          b.text().includes('Admin') && b.find('[data-slot="avatar"]').exists(),
+      )
+    expect(accountButton).toBeDefined()
+    wrapper.unmount()
+  })
+
+  it('puts the page in an inset card under a full-width top bar', () => {
+    const wrapper = mountLayout()
+    expect(wrapper.find('[data-slot="sidebar-inset"]').exists()).toBe(true)
+    const topBar = wrapper.get('header[data-app-topbar]')
+    expect(topBar.classes()).toContain('fixed')
+    expect(
+      wrapper.get('[data-slot="sidebar-wrapper"]').attributes('style'),
+    ).toContain('--sidebar-offset')
+    wrapper.unmount()
+  })
+
+  it('puts the app switcher on the left and gives every header control the same 32 px size', () => {
+    const wrapper = mountLayout()
+    const topBar = wrapper.get('header[data-app-topbar]')
+    expect(topBar.find('header-app-switcher-stub').exists()).toBe(true)
+    const search = topBar.get('button[aria-label="Cari halaman"]')
+    expect(search.classes()).toContain('size-8')
+    expect(search.classes()).not.toContain('md:size-7')
+    const trigger = topBar.get('button[aria-label="Buka menu"]')
+    expect(trigger.classes()).toContain('size-8')
+    wrapper.unmount()
+  })
+
+  it('shows the breadcrumb inside the inset, not in the top bar', () => {
+    const wrapper = mountLayout()
+    const inset = wrapper.get('[data-slot="sidebar-inset"]')
+    expect(inset.find('[data-slot="breadcrumb"]').exists()).toBe(true)
+    expect(
+      wrapper
+        .get('header[data-app-topbar]')
+        .find('[data-slot="breadcrumb"]')
+        .exists(),
+    ).toBe(false)
     wrapper.unmount()
   })
 

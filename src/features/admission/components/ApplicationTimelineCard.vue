@@ -188,7 +188,7 @@ function circleClass(state: TimelineEvent['state']) {
     case 'complete':
       return 'border-primary bg-primary text-primary-foreground'
     case 'current':
-      return 'border-2 border-primary bg-background text-primary ring-4 ring-primary/15 font-bold shadow-xs'
+      return 'border-2 border-primary bg-background text-primary ring-4 ring-primary/15 font-semibold shadow-xs'
     case 'rejected':
       return 'border-destructive bg-destructive text-destructive-foreground'
     case 'upcoming':
@@ -237,7 +237,7 @@ function circleClass(state: TimelineEvent['state']) {
 
               <div class="mt-3 w-32 sm:w-36 px-1">
                 <h4
-                  class="text-xs font-semibold sm:text-sm leading-snug"
+                  class="text-xs font-medium sm:text-sm leading-snug"
                   :class="
                     event.state === 'rejected'
                       ? 'text-destructive'
@@ -248,7 +248,7 @@ function circleClass(state: TimelineEvent['state']) {
                 </h4>
                 <time
                   v-if="event.time"
-                  class="mt-1 block text-[11px] text-muted-foreground font-mono"
+                  class="mt-1 block text-[11px] text-muted-foreground tabular-nums"
                 >
                   {{ event.time }}
                 </time>
@@ -289,7 +289,7 @@ function circleClass(state: TimelineEvent['state']) {
             class="size-5 shrink-0 mt-0.5 text-primary"
           />
           <div class="min-w-0 flex-1">
-            <p class="font-semibold">{{ event.title }}</p>
+            <p class="font-medium">{{ event.title }}</p>
             <p class="mt-1 leading-relaxed">{{ event.note }}</p>
           </div>
         </div>

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { Button } from '@mts241alikhlash/ui/button'
-import { Card, CardHeader, CardTitle } from '@mts241alikhlash/ui/card'
+import { Card, CardHeader } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@mts241alikhlash/ui/tabs'
 import {
@@ -102,15 +102,17 @@ const publishedLabel = computed(() =>
 </script>
 
 <template>
-  <div class="p-4 sm:p-6">
+  <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
+      class="rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader standard>
-        <CardTitle size="lg"> Halaman Depan </CardTitle>
+      <CardHeader
+        standard
+        class="justify-end min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+      >
         <Button
-          class="min-h-11 w-full sm:min-h-0 sm:w-auto"
+          class="w-full sm:w-auto"
           variant="outline"
           @click="router.push('/admin/landing/preview')"
         >
@@ -118,7 +120,7 @@ const publishedLabel = computed(() =>
         </Button>
       </CardHeader>
 
-      <div class="space-y-5 px-4 py-5 sm:px-6">
+      <div class="space-y-5 p-0 sm:px-0">
         <div
           v-if="loadError"
           class="space-y-3 rounded-md border p-4"
@@ -127,7 +129,6 @@ const publishedLabel = computed(() =>
           <p class="text-sm">{{ loadError }}</p>
           <Button
             variant="outline"
-            class="min-h-11"
             @click="load()"
           >
             Coba lagi
@@ -159,7 +160,6 @@ const publishedLabel = computed(() =>
               <Button
                 v-if="canUpdate"
                 variant="outline"
-                class="min-h-11"
                 :disabled="!overview.hasUnpublishedChanges || busy"
                 @click="ask('discard')"
               >
@@ -167,7 +167,6 @@ const publishedLabel = computed(() =>
               </Button>
               <Button
                 v-if="canPublish"
-                class="min-h-11"
                 :disabled="!overview.hasUnpublishedChanges || busy"
                 @click="ask('publish')"
               >

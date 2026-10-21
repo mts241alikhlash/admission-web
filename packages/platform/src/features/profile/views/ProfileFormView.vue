@@ -73,6 +73,7 @@ useBreadcrumbs(() => {
         <Tabs
           v-model="activeTab"
           class="w-full flex flex-col"
+          variant="line"
         >
           <div class="px-6 pt-4 border-b shrink-0">
             <TabsList class="grid w-full max-w-md grid-cols-2">

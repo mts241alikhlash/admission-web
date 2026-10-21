@@ -88,7 +88,6 @@ const fieldGridClass =
             <Button
               variant="link"
               size="sm"
-              class="min-h-11 px-2"
               @click="onGoToStep(item.step)"
             >
               Lengkapi
@@ -118,7 +117,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold">Data Diri</span>
+            <span class="min-w-0 flex-1 font-medium">Data Diri</span>
             <Button
               v-if="editable"
               variant="link"
@@ -250,7 +249,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold">Orang Tua/Wali</span>
+            <span class="min-w-0 flex-1 font-medium">Orang Tua/Wali</span>
             <Button
               v-if="editable"
               variant="link"
@@ -324,7 +323,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold">Alamat</span>
+            <span class="min-w-0 flex-1 font-medium">Alamat</span>
             <Button
               v-if="editable"
               variant="link"
@@ -376,7 +375,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold">Sekolah Asal</span>
+            <span class="min-w-0 flex-1 font-medium">Sekolah Asal</span>
             <Button
               v-if="editable"
               variant="link"
@@ -416,7 +415,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold"
+            <span class="min-w-0 flex-1 font-medium"
               >Tempat Tinggal & Perjalanan</span
             >
             <Button
@@ -478,9 +477,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold"
-              >Prestasi & Beasiswa</span
-            >
+            <span class="min-w-0 flex-1 font-medium">Prestasi & Beasiswa</span>
             <Button
               v-if="editable"
               variant="link"
@@ -538,9 +535,7 @@ const fieldGridClass =
           <summary
             class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
-            <span class="min-w-0 flex-1 font-semibold"
-              >Berkas & Pembayaran</span
-            >
+            <span class="min-w-0 flex-1 font-medium">Berkas & Pembayaran</span>
             <Button
               v-if="editable"
               variant="link"

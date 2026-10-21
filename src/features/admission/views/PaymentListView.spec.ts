@@ -250,9 +250,7 @@ it('shows no action buttons and no add button without the verify and create perm
   const row = wrapper.get('[data-test="payment-row"]')
   expect(row.findAll('button:not([data-test="open-file"])')).toHaveLength(0)
   expect(
-    wrapper
-      .findAll('button')
-      .filter((b) => b.text().includes('Tambah Pembayaran')),
+    wrapper.findAll('button').filter((b) => b.text() === 'Tambah'),
   ).toHaveLength(0)
 })
 
@@ -292,7 +290,7 @@ it('goes to the add page from the header button', async () => {
 
   await wrapper
     .findAll('button')
-    .find((b) => b.text().includes('Tambah Pembayaran'))!
+    .find((b) => b.text() === 'Tambah')!
     .trigger('click')
 
   expect(router.push).toHaveBeenCalledWith({
