@@ -415,9 +415,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
             >Pilih status dan tahun ajaran.</DialogDescription
           ></DialogHeader
         >
-        <div
-          class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body sm:px-6"
-        >
+        <div class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body">
           <FloatingLabelField
             label="Status"
             :for="mobileStatusFilterId"
@@ -459,19 +457,14 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
         </div>
         <DialogFooter
           standard
-          class="flex-row gap-2"
+          class="justify-between"
         >
           <Button
             variant="outline"
-            class="flex-1"
             @click="resetFilters"
             >Atur Ulang</Button
           >
-          <Button
-            class="flex-1"
-            @click="filterOpen = false"
-            >Tutup</Button
-          >
+          <Button @click="filterOpen = false">Tutup</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

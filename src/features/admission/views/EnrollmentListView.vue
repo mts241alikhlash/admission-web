@@ -837,7 +837,7 @@ onMounted(async () => {
           </div>
           <DialogFooter
             standard
-            class="sm:justify-between"
+            class="justify-between"
           >
             <Button
               type="button"
@@ -913,7 +913,7 @@ onMounted(async () => {
           </DialogBody>
           <DialogFooter
             standard
-            class="sm:justify-between"
+            class="justify-between"
           >
             <Button
               type="button"
@@ -999,7 +999,10 @@ onMounted(async () => {
             </div>
           </div>
         </DialogBody>
-        <DialogFooter class="sm:justify-between">
+        <DialogFooter
+          standard
+          class="justify-between"
+        >
           <Button
             type="button"
             variant="outline"
@@ -1037,7 +1040,7 @@ onMounted(async () => {
         </DialogHeader>
         <DialogFooter
           standard
-          class="sm:justify-between"
+          class="justify-between"
         >
           <Button
             type="button"
@@ -1143,7 +1146,7 @@ onMounted(async () => {
 
         <DialogFooter
           standard
-          class="sm:justify-between"
+          class="justify-between"
         >
           <Button
             type="button"

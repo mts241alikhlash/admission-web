@@ -19,8 +19,8 @@ importers:
         specifier: ^1.52.0
         version: 1.52.0(vue@3.5.42(typescript@5.9.3))
       '@mts241alikhlash/ui':
-        specifier: ^1.10.1
-        version: 1.10.1(@unovis/ts@1.7.0)(debug@4.4.3)(typescript@5.9.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
+        specifier: ^1.10.2
+        version: 1.10.2(@unovis/ts@1.7.0)(debug@4.4.3)(typescript@5.9.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
       '@mts241alikhlash/web-shared':
         specifier: ^1.3.0
         version: 1.3.1(debug@4.4.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))
@@ -486,8 +486,8 @@ packages:
   '@mts241alikhlash/admission-api@3.2.0':
     resolution: {integrity: sha512-3uSDY1/df21RjveWMng//4+sXQ2oksmWGN9QMH327QcRpvCLQP8ewYXlH+WzWymwQ88yWKsIQeuIlAU11k+K/Q==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/admission-api/3.2.0/789ed1ef4945d3f903886e3f66025429988f7bd8}
 
-  '@mts241alikhlash/ui@1.10.1':
-    resolution: {integrity: sha512-PhVBE9RkSPezZyTvRRgQLzcg4WLbJGfxDyVfnBY5n5PTqLpbOLJutro050Ct9MDz++qppYGfGTD+si2YsT6qRQ==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.10.1/779e46d7b2edd35c30c0d1034b81d618cc2ed014}
+  '@mts241alikhlash/ui@1.10.2':
+    resolution: {integrity: sha512-SUuQrHvwtHfmm0vooV5YbksF/8OUuJoXhKzEk00+5hxM9kySSOtRye6RXc8u8pgomgiKFvFY5Dyw+kCk8gBhzA==, tarball: https://npm.pkg.github.com/download/@mts241alikhlash/ui/1.10.2/ddbb413af152a7a513d7176996e522553706fdba}
     hasBin: true
     peerDependencies:
       vue: ^3.5.41
@@ -3343,7 +3343,7 @@ snapshots:
     dependencies:
       openapi-fetch: 0.17.0
 
-  '@mts241alikhlash/ui@1.10.1(@unovis/ts@1.7.0)(debug@4.4.3)(typescript@5.9.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))':
+  '@mts241alikhlash/ui@1.10.2(@unovis/ts@1.7.0)(debug@4.4.3)(typescript@5.9.3)(vue-router@5.3.1(@vue/compiler-sfc@3.5.42)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.42(typescript@5.9.3)))(rolldown@1.2.7)(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0)(stylus@0.57.0)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3)))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@internationalized/date': 3.12.4
       '@lucide/vue': 1.52.0(vue@3.5.42(typescript@5.9.3))

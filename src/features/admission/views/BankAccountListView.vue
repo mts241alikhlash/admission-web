@@ -7,7 +7,6 @@ import { Button } from '@mts241alikhlash/ui/button'
 import { Card } from '@mts241alikhlash/ui/card'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Input } from '@mts241alikhlash/ui/input'
-import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import { FloatingLabelField, FormControl } from '@mts241alikhlash/ui/form'
 import {
   Select,
@@ -284,7 +283,7 @@ onMounted(load)
             Pendaftar mentransfer biaya pendaftaran ke rekening ini.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea class="min-h-0 flex-1">
+        <div class="min-h-0 flex-1 overflow-y-auto">
           <form
             id="bank-account-form"
             class="space-y-4 dialog-body"
@@ -354,10 +353,10 @@ onMounted(load)
               </Select>
             </FloatingField>
           </form>
-        </ScrollArea>
+        </div>
         <DialogFooter
           standard
-          class="sm:justify-between"
+          class="justify-between"
         >
           <Button
             type="button"

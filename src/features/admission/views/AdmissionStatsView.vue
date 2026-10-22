@@ -421,7 +421,7 @@ onMounted(async () => {
         >
         <div
           data-test="mobile-stats-filter"
-          class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body sm:px-6"
+          class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body"
         >
           <FloatingLabelField
             label="Tahun Ajaran"
@@ -466,15 +466,8 @@ onMounted(async () => {
             >
           </FloatingLabelField>
         </div>
-        <DialogFooter
-          standard
-          class="flex-row gap-2"
-        >
-          <Button
-            class="w-full"
-            @click="filterOpen = false"
-            >Tutup</Button
-          >
+        <DialogFooter standard>
+          <Button @click="filterOpen = false">Tutup</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

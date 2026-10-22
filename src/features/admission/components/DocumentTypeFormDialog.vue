@@ -5,7 +5,6 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Input } from '@mts241alikhlash/ui/input'
-import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import { FormControl } from '@mts241alikhlash/ui/form'
 import {
   Dialog,
@@ -102,7 +101,7 @@ const onSubmit = handleSubmit((formValues) => {
           Berkas yang diunggah pendaftar saat mengisi formulir.
         </DialogDescription>
       </DialogHeader>
-      <ScrollArea class="min-h-0 flex-1">
+      <div class="min-h-0 flex-1 overflow-y-auto">
         <form
           id="document-type-form"
           class="space-y-4 dialog-body"
@@ -198,10 +197,10 @@ const onSubmit = handleSubmit((formValues) => {
             bila tidak dipakai lagi; berkas lama tetap tersimpan.
           </p>
         </form>
-      </ScrollArea>
+      </div>
       <DialogFooter
         standard
-        class="sm:justify-between"
+        class="justify-between"
       >
         <Button
           type="button"

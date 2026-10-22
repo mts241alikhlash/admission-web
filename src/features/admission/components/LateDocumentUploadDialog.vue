@@ -52,7 +52,7 @@ function pick(event: Event) {
         class="flex flex-1 flex-col justify-between"
         @submit.prevent="file && emit('upload', file)"
       >
-        <div class="space-y-2 dialog-body">
+        <div class="min-h-0 flex-1 overflow-y-auto space-y-2 dialog-body">
           <label
             class="text-sm font-medium"
             for="late-document-file"
@@ -70,7 +70,7 @@ function pick(event: Event) {
         </div>
         <DialogFooter
           standard
-          class="sm:justify-between"
+          class="justify-between"
         >
           <Button
             type="button"

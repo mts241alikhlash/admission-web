@@ -1727,7 +1727,7 @@ useBreadcrumbs(() => {
 
           <DialogFooter
             standard
-            class="sm:justify-between"
+            class="justify-between"
           >
             <Button
               type="button"

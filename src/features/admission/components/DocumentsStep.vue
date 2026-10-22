@@ -354,7 +354,7 @@ async function upload() {
         </div>
         <DialogFooter
           standard
-          class="gap-2 sm:justify-end"
+          class="justify-between"
         >
           <Button
             variant="outline"

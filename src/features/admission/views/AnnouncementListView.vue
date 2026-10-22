@@ -450,19 +450,14 @@ async function confirmPendingAction() {
         </div>
         <DialogFooter
           standard
-          class="flex-row gap-2"
+          class="justify-between"
         >
           <Button
             variant="outline"
-            class="flex-1"
             @click="resetFilters"
             >Atur Ulang</Button
           >
-          <Button
-            class="flex-1"
-            @click="filterOpen = false"
-            >Tutup</Button
-          >
+          <Button @click="filterOpen = false">Tutup</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
