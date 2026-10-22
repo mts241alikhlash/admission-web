@@ -31,7 +31,6 @@ import {
 import { useRoleGuard } from '@/features/platform/auth'
 import StatusBadge from '../components/StatusBadge.vue'
 import { applicationService } from '../services/applicationService'
-import ServerPager from '../components/ServerPager.vue'
 import { enrollmentService } from '../services/enrollmentService'
 import { publicAdmissionService } from '../services/publicAdmissionService'
 import { useApplicationStore } from '../stores/applicationStore'
@@ -324,8 +323,6 @@ watch([tab, debouncedSearch, waveFilter], () => {
 })
 
 const columns = computed<ColumnDef<AdmissionEnrollmentRow>[]>(() => {
-  const isDone = tab.value === 'done'
-
   const selectCol: ColumnDef<AdmissionEnrollmentRow>[] =
     canProcess.value && selectable.value
       ? [
@@ -385,23 +382,35 @@ const columns = computed<ColumnDef<AdmissionEnrollmentRow>[]>(() => {
     },
   ]
 
-  const nisCol: ColumnDef<AdmissionEnrollmentRow>[] = isDone
-    ? [
-        {
-          id: 'nis',
-          header: 'NIS',
-          meta: { align: 'center' },
-          cell: ({ row }) => row.original.nis ?? '-',
-        },
-      ]
-    : []
+  const nisCol: ColumnDef<AdmissionEnrollmentRow>[] = [
+    {
+      id: 'nis',
+      header: 'NIS',
+      meta: { align: 'center' },
+      cell: ({ row }) => row.original.nis ?? '-',
+    },
+  ]
 
   const detailCols: ColumnDef<AdmissionEnrollmentRow>[] = [
     {
       id: 'nisn',
       header: 'NISN',
       meta: { align: 'center' },
-      cell: ({ row }) => row.original.nisn ?? '-',
+      cell: ({ row }) =>
+        canProcess.value && selectable.value && !row.original.nisn
+          ? h(Input, {
+              modelValue: nisnInput.value[row.original.applicationId] ?? '',
+              'onUpdate:modelValue': (value: string | number) => {
+                nisnInput.value[row.original.applicationId] = String(value)
+              },
+              'data-test': 'nisn-input',
+              inputmode: 'numeric',
+              maxlength: 20,
+              placeholder: 'Isi NISN',
+              'aria-label': `NISN ${row.original.applicantName}`,
+              class: 'w-36',
+            })
+          : (row.original.nisn ?? '-'),
     },
     {
       accessorKey: 'waveName',
@@ -500,7 +509,7 @@ onMounted(async () => {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <div class="space-y-4 p-0 sm:px-0">
         <Tabs
@@ -508,10 +517,7 @@ onMounted(async () => {
           variant="line"
           class="min-w-0 gap-0"
         >
-          <Card
-            gap="none"
-            class="overflow-hidden rounded-xl border bg-card shadow-xs"
-          >
+          <Card gap="none">
             <CardHeader class="p-0 shrink-0">
               <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
                 <TabsTrigger
@@ -597,7 +603,7 @@ onMounted(async () => {
               <div
                 v-if="processResult"
                 data-test="process-result"
-                class="space-y-1 rounded-md border p-3 text-sm"
+                class="space-y-1 rounded-md border p-3 text-[length:var(--text-control,0.75rem)]"
               >
                 <p class="font-medium">
                   {{ processResult.enrolled }} diproses,
@@ -622,7 +628,7 @@ onMounted(async () => {
               >
                 <label
                   data-test="select-all"
-                  class="flex min-h-11 items-center gap-2 text-sm sm:min-h-0"
+                  class="flex min-h-11 items-center gap-2 text-[length:var(--text-control,0.75rem)] sm:min-h-0"
                 >
                   <Checkbox
                     :model-value="allSelected"
@@ -638,7 +644,9 @@ onMounted(async () => {
                 class="space-y-3 rounded-md border p-4"
                 role="alert"
               >
-                <p class="text-sm">{{ listError }}</p>
+                <p class="text-[length:var(--text-control,0.75rem)]">
+                  {{ listError }}
+                </p>
                 <Button
                   variant="outline"
                   @click="load()"
@@ -649,19 +657,20 @@ onMounted(async () => {
               <template v-else>
                 <p
                   v-if="loading && !rows.length"
-                  class="text-center text-sm text-muted-foreground"
+                  class="text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Memuat antrean daftar ulang…
                 </p>
                 <p
                   v-else-if="!rows.length"
-                  class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+                  class="rounded-md border p-4 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   {{ emptyText }}
                 </p>
                 <template v-else>
                   <DataTable
-                    class="hidden md:block [&_th:has([role=checkbox])]:!px-2 [&_td:has([role=checkbox])]:!px-2"
+                    mobile="cards"
+                    class="[&_th:has([role=checkbox])]:!px-2 [&_td:has([role=checkbox])]:!px-2"
                     :columns="columns"
                     :data="rows"
                     :page="page"
@@ -672,92 +681,6 @@ onMounted(async () => {
                     @update:page="goToPage"
                     @update:page-size="changePageSize"
                   />
-                  <ul class="space-y-2 md:hidden">
-                    <li
-                      v-for="row in rows"
-                      :key="row.applicationId"
-                      data-test="enrollment-row"
-                      class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-                    >
-                      <div class="flex items-start gap-3">
-                        <label
-                          v-if="canProcess && selectable"
-                          data-test="row-select"
-                          class="-m-2.5 flex size-11 shrink-0 items-center justify-center sm:m-0 sm:mt-1 sm:size-auto"
-                        >
-                          <Checkbox
-                            :model-value="selected.includes(row.applicationId)"
-                            :aria-label="`Pilih ${row.applicantName}`"
-                            @update:model-value="
-                              (checked) => toggle(row.applicationId, checked)
-                            "
-                          />
-                        </label>
-                        <div
-                          class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
-                        >
-                          <div class="min-w-0">
-                            <p class="break-words font-medium">
-                              {{ row.applicantName }}
-                            </p>
-                            <p class="text-muted-foreground">
-                              {{ row.registrationNumber }} · {{ row.waveName }}
-                            </p>
-                          </div>
-                          <StatusBadge :status="row.status" />
-                        </div>
-                      </div>
-                      <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2">
-                        <div>
-                          <dt class="text-muted-foreground">
-                            Jenis dan tingkat
-                          </dt>
-                          <dd>
-                            <template
-                              v-if="row.admissionType && row.targetGradeLevel"
-                            >
-                              {{ ADMISSION_TYPE_LABELS[row.admissionType] }} ·
-                              {{ gradeLabel(row) }}
-                            </template>
-                            <template v-else
-                              >Jenis dan tingkat belum diisi</template
-                            >
-                          </dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">NIS</dt>
-                          <dd>{{ row.nis ?? 'NIS belum disusun' }}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">NISN</dt>
-                          <dd>
-                            <Input
-                              v-if="canProcess && selectable && !row.nisn"
-                              v-model="nisnInput[row.applicationId]"
-                              data-test="nisn-input"
-                              inputmode="numeric"
-                              maxlength="20"
-                              placeholder="Isi NISN"
-                              :aria-label="`NISN ${row.applicantName}`"
-                            />
-                            <template v-else>{{ row.nisn ?? '-' }}</template>
-                          </dd>
-                        </div>
-                      </dl>
-                      <div
-                        v-if="canProcess && row.status === 'ACCEPTED'"
-                        class="flex flex-wrap justify-end gap-2"
-                      >
-                        <Button
-                          variant="outline"
-                          :disabled="acting"
-                          @click="openPlacement(row)"
-                        >
-                          Atur jenis dan kelas
-                        </Button>
-                      </div>
-                    </li>
-                  </ul>
 
                   <div
                     v-if="selected.length"
@@ -765,12 +688,13 @@ onMounted(async () => {
                     class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 sm:px-4"
                   >
                     <div class="flex items-center gap-2">
-                      <span class="text-sm font-medium"
+                      <span
+                        class="text-[length:var(--text-control,0.75rem)] font-medium"
                         >{{ selected.length }} dipilih</span
                       >
                       <span
                         v-if="selected.length > MAX_PROCESS"
-                        class="text-sm text-destructive"
+                        class="text-[length:var(--text-control,0.75rem)] text-destructive"
                       >
                         Maksimal {{ MAX_PROCESS }} pendaftar sekali proses
                       </span>
@@ -782,16 +706,6 @@ onMounted(async () => {
                       Proses jadi santri
                     </Button>
                   </div>
-
-                  <ServerPager
-                    class="md:hidden"
-                    :page="page"
-                    :page-size="pageSize"
-                    :total="total"
-                    item-label="pendaftar"
-                    :disabled="loading"
-                    @update:page="goToPage"
-                  />
                 </template>
               </template>
             </CardContent>
@@ -818,7 +732,9 @@ onMounted(async () => {
             </DialogDescription>
           </DialogHeader>
           <div class="space-y-4 px-6 py-5">
-            <div class="space-y-1 rounded-lg border bg-muted/10 p-3 text-sm">
+            <div
+              class="space-y-1 rounded-lg border bg-muted/10 p-3 text-[length:var(--text-control,0.75rem)]"
+            >
               <p class="font-medium text-foreground">
                 {{ selected.length }} pendaftar dipilih
               </p>
@@ -830,7 +746,7 @@ onMounted(async () => {
             <p
               v-if="nisnError"
               role="alert"
-              class="text-sm text-destructive"
+              class="text-[length:var(--text-control,0.75rem)] text-destructive"
             >
               {{ nisnError }}
             </p>
@@ -906,7 +822,7 @@ onMounted(async () => {
             </Select>
             <p
               v-if="placementError"
-              class="text-sm text-destructive"
+              class="text-[length:var(--text-control,0.75rem)] text-destructive"
             >
               {{ placementError }}
             </p>
@@ -952,20 +868,20 @@ onMounted(async () => {
         <DialogBody>
           <p
             v-if="nisLoading"
-            class="text-sm text-muted-foreground"
+            class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
           >
             Memuat pratinjau…
           </p>
           <p
             v-else-if="nisError"
             role="alert"
-            class="text-sm text-destructive"
+            class="text-[length:var(--text-control,0.75rem)] text-destructive"
           >
             {{ nisError }}
           </p>
           <div
             v-else-if="nisPreview"
-            class="space-y-3 text-sm"
+            class="space-y-3 text-[length:var(--text-control,0.75rem)]"
           >
             <p>
               <strong>{{ nisPreview.changes }} NIS berubah</strong>,
@@ -1087,7 +1003,9 @@ onMounted(async () => {
           </DialogDescription>
         </DialogHeader>
 
-        <div class="space-y-4 px-6 py-5 text-sm">
+        <div
+          class="space-y-4 px-6 py-5 text-[length:var(--text-control,0.75rem)]"
+        >
           <div class="space-y-1.5">
             <p class="font-medium text-foreground">
               NIS tahun ajaran {{ currentYear.academicYearName ?? '-' }}

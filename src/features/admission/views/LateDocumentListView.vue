@@ -16,12 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@mts241alikhlash/ui/select'
-import { Eye } from '@lucide/vue'
 import { useRoleGuard } from '@/features/platform/auth'
 import FilePreviewDialog from '../components/FilePreviewDialog.vue'
 import LateDocumentDecisionDialog from '../components/LateDocumentDecisionDialog.vue'
 import LateDocumentUploadDialog from '../components/LateDocumentUploadDialog.vue'
-import ServerPager from '../components/ServerPager.vue'
 import { useFilePreview } from '../composables/useFilePreview'
 import { applicationService } from '../services/applicationService'
 import { documentTypeService } from '../services/documentTypeService'
@@ -296,7 +294,10 @@ const columns = computed<ColumnDef<LateDocumentRow>[]>(() => [
   {
     id: 'state',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: LateDocumentRow) => STATE_LABELS[row.state],
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -364,7 +365,7 @@ onMounted(async () => {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardContent
         variant="standard"
@@ -479,7 +480,9 @@ onMounted(async () => {
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="load()"
@@ -490,19 +493,19 @@ onMounted(async () => {
         <template v-else>
           <p
             v-if="loading && !rows.length"
-            class="text-center text-sm text-muted-foreground"
+            class="text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
           >
             Memuat berkas susulan…
           </p>
           <p
             v-else-if="!rows.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+            class="rounded-md border p-4 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
           >
             Tidak ada berkas susulan.
           </p>
           <template v-else>
             <DataTable
-              class="hidden md:flex"
+              mobile="cards"
               :columns="columns"
               :data="rows"
               :page="page"
@@ -512,84 +515,6 @@ onMounted(async () => {
               item-label="berkas"
               @update:page="goToPage"
               @update:page-size="changePageSize"
-            />
-            <ul class="space-y-2 md:hidden">
-              <li
-                v-for="row in rows"
-                :key="`${row.applicationId}-${row.documentTypeId}`"
-                data-test="late-row"
-                :data-urgency="row.urgency"
-                class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-                :class="URGENCY_ROW_CLASS[row.urgency]"
-              >
-                <div class="flex flex-wrap items-start justify-between gap-2">
-                  <div class="min-w-0">
-                    <p class="break-words font-medium">
-                      {{ row.applicantName }}
-                    </p>
-                    <p class="text-muted-foreground">
-                      {{ gradeText(row) }}
-                    </p>
-                  </div>
-                  <Badge
-                    :variant="stateVariant(row)"
-                    :class="BADGE_URGENCY_CLASS[row.urgency]"
-                  >
-                    {{ STATE_LABELS[row.state] }}
-                  </Badge>
-                </div>
-                <p>
-                  {{ row.documentTypeName }}
-                  <span
-                    v-if="row.limitDate"
-                    :class="URGENCY_TEXT_CLASS[row.urgency]"
-                  >
-                    · batas {{ formatJakartaDate(row.limitDate) }} ({{
-                      limitNote(row)
-                    }})
-                  </span>
-                </p>
-                <p
-                  v-if="row.note"
-                  class="text-muted-foreground"
-                >
-                  Catatan: {{ row.note }}
-                </p>
-                <div class="flex flex-wrap items-center gap-2">
-                  <Button
-                    v-if="row.fileId"
-                    variant="outline"
-                    data-test="open-file"
-                    @click="openFile(row)"
-                  >
-                    <Eye class="mr-1.5 size-4" />
-                    Lihat berkas
-                  </Button>
-                  <Button
-                    v-if="canUploadRow(row)"
-                    data-test="upload"
-                    @click="uploadRow = row"
-                  >
-                    Unggah
-                  </Button>
-                  <Button
-                    v-if="canDecideRow(row)"
-                    data-test="check"
-                    @click="decideRow = row"
-                  >
-                    Periksa
-                  </Button>
-                </div>
-              </li>
-            </ul>
-            <ServerPager
-              class="md:hidden"
-              :page="page"
-              :page-size="pageSize"
-              :total="total"
-              item-label="berkas"
-              :disabled="loading"
-              @update:page="goToPage"
             />
           </template>
         </template>

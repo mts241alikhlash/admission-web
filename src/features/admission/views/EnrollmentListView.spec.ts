@@ -4,6 +4,13 @@ import { defineComponent, h } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
+import {
+  cardRow,
+  chooseRowAction,
+  menuLabels,
+  nextCardPage,
+  openRowMenu,
+} from '@/test/dataTableCards'
 import EnrollmentListView from './EnrollmentListView.vue'
 
 const service = vi.hoisted(() => ({
@@ -112,7 +119,7 @@ function mountView() {
 const tab = (wrapper: ReturnType<typeof mountView>, label: string) =>
   wrapper.findAll('[role="tab"]').find((t) => t.text().includes(label))!
 const rowOf = (wrapper: ReturnType<typeof mountView>, index = 0) =>
-  wrapper.findAll('[data-test="enrollment-row"]')[index]
+  cardRow(wrapper, index)
 const buttonOf = (parent: Pick<VueWrapper, 'findAll'>, text: string) =>
   parent.findAll('button').find((b) => b.text() === text)!
 
@@ -217,8 +224,9 @@ it('marks an applicant without placement or NIS', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  expect(rowOf(wrapper).text()).toContain('Jenis dan tingkat belum diisi')
-  expect(rowOf(wrapper).text()).toContain('NIS belum disusun')
+  expect(rowOf(wrapper).text()).toContain('Jenis:-')
+  expect(rowOf(wrapper).text()).toContain('Kelas:-')
+  expect(rowOf(wrapper).text()).toContain('NIS:-')
 })
 
 it('lets TU type a missing NISN and sends it when processing', async () => {
@@ -319,7 +327,7 @@ it('sets the missing placement of an applicant', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await buttonOf(rowOf(wrapper), 'Atur jenis dan kelas').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Atur jenis dan kelas')
   const selects = wrapper.get('[data-test="placement-form"]').findAll('select')
   await selects[0].setValue('TRANSFER')
   await selects[1].setValue('g8')
@@ -441,7 +449,9 @@ it('shows the queue and nothing else without process and nis permissions', async
 
   expect(wrapper.findAll('[role="checkbox"]')).toHaveLength(0)
   expect(wrapper.find('[data-test="nis-panel"]').exists()).toBe(false)
-  expect(rowOf(wrapper).findAll('button')).toHaveLength(0)
+  expect(rowOf(wrapper).findAll('[role="checkbox"]')).toHaveLength(0)
+  await openRowMenu(rowOf(wrapper))
+  expect(menuLabels()).toEqual(['Lihat detail'])
   expect(rowOf(wrapper).text()).toContain('Ahmad Fauzi')
 })
 
@@ -582,15 +592,12 @@ it('offers no sync while nobody has been enrolled yet', async () => {
   ).toBeUndefined()
 })
 
-it('puts each row checkbox in a touch target of at least 44 px', async () => {
+it('draws the row checkbox at the left of each card', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const target = rowOf(wrapper).get('label[data-test="row-select"]')
-  expect(target.classes()).toEqual(
-    expect.arrayContaining(['size-11', 'sm:size-auto']),
-  )
-  expect(target.find('[role="checkbox"]').exists()).toBe(true)
+  const first = rowOf(wrapper).element.firstElementChild!
+  expect(first.querySelector('[role="checkbox"]')).not.toBeNull()
 })
 
 it('offers no placement button on a held applicant', async () => {
@@ -600,7 +607,8 @@ it('offers no placement button on a held applicant', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  expect(rowOf(wrapper).text()).not.toContain('Atur jenis dan kelas')
+  await openRowMenu(rowOf(wrapper))
+  expect(menuLabels()).not.toContain('Atur jenis dan kelas')
 })
 
 it('renders DataTable with expected columns and without numbering column', async () => {
@@ -617,6 +625,7 @@ it('renders DataTable with expected columns and without numbering column', async
   expect(headers.filter(Boolean)).toEqual([
     'No. Pendaftaran',
     'Nama Pendaftar',
+    'NIS',
     'NISN',
     'Gelombang',
     'Jenis',
@@ -638,7 +647,7 @@ it('loads the next page from the server and replaces the rows', async () => {
     total: 25,
   })
 
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenLastCalledWith(

@@ -9,6 +9,13 @@ import type {
 } from '../types'
 import ApplicationListView from './ApplicationListView.vue'
 import { useApplicationStore } from '../stores/applicationStore'
+import {
+  CARDS,
+  cardRow,
+  cardRows,
+  nextCardPage,
+  previousCardPage,
+} from '@/test/dataTableCards'
 
 const { rows, waves, filters, fetchWaves, push } = vi.hoisted(() => ({
   rows: [] as AdmissionApplicationListItem[],
@@ -113,16 +120,6 @@ const item = defineComponent({
   props: { value: String },
   template: '<option :value="value"><slot /></option>',
 })
-const dataTable = defineComponent({
-  props: {
-    columns: Array,
-    data: Array,
-    isLoading: Boolean,
-    totalItems: Number,
-  },
-  template:
-    '<div data-test="desktop-table" :class="$attrs.class"><slot name="header-right" /></div>',
-})
 
 const stubs = {
   RouterLink: defineComponent({
@@ -131,9 +128,11 @@ const stubs = {
   }),
   Button: button,
   Card: passthrough,
+  Tooltip: passthrough,
+  TooltipTrigger: passthrough,
+  TooltipContent: passthrough,
   CardHeader: passthrough,
   CardTitle: passthrough,
-  DataTable: dataTable,
   FloatingLabelField: floatingField,
   SearchInput: searchInput,
   Plus: true,
@@ -174,14 +173,11 @@ describe('ApplicationListView', () => {
     const wrapper = mount(ApplicationListView, { global: { stubs } })
     await flushPromises()
 
-    const mobile = wrapper.get('[data-test="mobile-applications"]')
+    const mobile = wrapper.get(CARDS)
     expect(mobile.text()).toContain('Contoh Panjang')
     expect(mobile.text()).toContain('REG-001')
-    expect(mobile.text()).toContain('Pendaftaran: Draft')
-    expect(mobile.find('a[href="/admin/applicants/app-1"]').exists()).toBe(true)
-    expect(wrapper.get('[data-test="desktop-table"]').classes()).toContain(
-      'hidden',
-    )
+    expect(mobile.text()).toContain('Pendaftaran:Draft')
+    expect(cardRow(wrapper).find('[role="link"]').exists()).toBe(true)
 
     const search = wrapper.get('input[aria-label="Cari pendaftar"]')
 
@@ -209,10 +205,7 @@ describe('ApplicationListView', () => {
   it('asks for the next page and goes back to the first when a filter changes', async () => {
     listState.totalItems.value = 50
     const wrapper = mount(ApplicationListView, { global: { stubs } })
-    const next = () =>
-      wrapper
-        .findAll('button')
-        .find((button) => button.text() === 'Selanjutnya')!
+    const next = () => nextCardPage(wrapper)
 
     await next().trigger('click')
     await next().trigger('click')
@@ -246,21 +239,14 @@ describe('ApplicationListView', () => {
     )
     listState.totalItems.value = total
     const wrapper = mount(ApplicationListView, { global: { stubs } })
-    expect(
-      wrapper.findAll('[data-test="mobile-applications"] li'),
-    ).toHaveLength(shown)
+    expect(cardRows(wrapper)).toHaveLength(shown)
     if (total > 10) {
-      expect(wrapper.text()).toContain(
-        `Halaman 1 dari ${Math.ceil(total / 10)}`,
+      expect(wrapper.get(CARDS).text()).toContain(
+        `1 / ${Math.ceil(total / 10)}`,
       )
-      expect(
-        wrapper
-          .findAll('button')
-          .find((button) => button.text() === 'Sebelumnya')
-          ?.attributes('disabled'),
-      ).toBeDefined()
+      expect(previousCardPage(wrapper).attributes('disabled')).toBeDefined()
     } else {
-      expect(wrapper.text()).not.toContain('Halaman 1 dari')
+      expect(wrapper.get(CARDS).text()).not.toMatch(/\d+ \/ \d+/)
     }
     wrapper.unmount()
   })
@@ -269,10 +255,8 @@ describe('ApplicationListView', () => {
     const wrapper = mount(ApplicationListView, { global: { stubs } })
     listState.filtersPending.value = true
     await flushPromises()
-    expect(wrapper.find('[data-test="mobile-applications"]').exists()).toBe(
-      false,
-    )
-    expect(wrapper.text()).toContain('Memuat pendaftar')
+    expect(cardRows(wrapper)).toHaveLength(0)
+    expect(wrapper.find('[data-slot="skeleton"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -285,18 +269,15 @@ describe('ApplicationListView', () => {
     listState.totalItems.value = 30
     const wrapper = mount(ApplicationListView, { global: { stubs } })
     await wrapper.get('input[aria-label="Cari pendaftar"]').setValue('Budi')
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text() === 'Selanjutnya')!
-      .trigger('click')
-    await wrapper.get('[data-test="mobile-applications"] a').trigger('click')
+    await nextCardPage(wrapper).trigger('click')
+    await cardRow(wrapper).get('[role="link"]').trigger('click')
     expect(useApplicationStore().listContext.returning).toBe(true)
     wrapper.unmount()
     const returned = mount(ApplicationListView, { global: { stubs } })
     await flushPromises()
     expect(filters.search.value).toBe('Budi')
     expect(filters.page.value).toBe(2)
-    expect(returned.text()).toContain('11–20')
+    expect(returned.get(CARDS).text()).toContain('2 / 3')
     returned.unmount()
   })
 
@@ -323,7 +304,7 @@ describe('ApplicationListView', () => {
     listState.totalItems.value = 11
     listState.loading.value = false
     await flushPromises()
-    expect(wrapper.text()).toContain('Halaman 2 dari 2')
+    expect(wrapper.get(CARDS).text()).toContain('2 / 2')
     wrapper.unmount()
   })
 
@@ -361,7 +342,9 @@ describe('ApplicationListView', () => {
   it('preserves list context when opening a detail from desktop table', async () => {
     const wrapper = mount(ApplicationListView, { global: { stubs } })
     await wrapper.get('input[aria-label="Cari pendaftar"]').setValue('Nama')
-    const columns = wrapper.getComponent(dataTable).props('columns') as {
+    const columns = wrapper
+      .getComponent({ name: 'DataTable' })
+      .props('columns') as {
       id: string
       cell: (context: { row: { original: AdmissionApplicationListItem } }) => {
         props: { onView: () => void }

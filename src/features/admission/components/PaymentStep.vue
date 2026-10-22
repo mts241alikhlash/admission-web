@@ -3,32 +3,19 @@ import { computed, ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { toast } from 'vue-sonner'
-import { Copy, TriangleAlert, UploadCloud } from '@lucide/vue'
-import { DatePicker } from '@mts241alikhlash/ui'
+import { Copy, FileText, TriangleAlert } from '@lucide/vue'
+import { DatePicker, FileDropzone } from '@mts241alikhlash/ui'
 import { Alert, AlertDescription, AlertTitle } from '@mts241alikhlash/ui/alert'
-import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@mts241alikhlash/ui/card'
 import { Input } from '@mts241alikhlash/ui/input'
 import { FormControl, FormField } from '@mts241alikhlash/ui/form'
 import FloatingField from './AdmissionField.vue'
 import { paymentSchema } from '../schemas/applicationFormSchemas'
 import { useFormOptions } from '../composables/useFormOptions'
 import { PAYMENT_STATUS_LABELS } from '../types'
-import type { AdmissionPayment } from '../types'
+import type { AdmissionPayment, PreviewFile } from '../types'
 import type { PaymentForm } from '../composables/useApplicationFormState'
-import {
-  formatDate,
-  formatIDR,
-  jakartaToday,
-  PAYMENT_STATUS_BADGE_VARIANTS,
-} from '../utils'
+import { formatDate, formatIDR, jakartaToday } from '../utils'
 
 const props = defineProps<{
   applicationPayment: AdmissionPayment | null
@@ -38,12 +25,12 @@ const props = defineProps<{
   uploadingPayment: boolean
   onFileChange: (event: Event) => void
   onUpload: () => void
+  onPreview?: (file: PreviewFile) => void
 }>()
 
 const payment = defineModel<PaymentForm>({ required: true })
 const today = jakartaToday()
 const fileError = ref('')
-const fileInput = ref<HTMLInputElement | null>(null)
 
 const { options } = useFormOptions()
 const accounts = computed(() => options.value?.bankAccounts ?? [])
@@ -65,7 +52,6 @@ const GUIDANCE: Record<string, string> = {
     'Bukti transfer sedang diperiksa panitia. Jika ada yang keliru, unggah ulang bukti yang benar.',
   REJECTED:
     'Bukti transfer ditolak. Perbaiki sesuai catatan panitia, lalu unggah ulang.',
-  VERIFIED: 'Pembayaran sudah diverifikasi. Tidak ada yang perlu dilakukan.',
 }
 
 const canUpload = computed(() => props.editable && status.value !== 'VERIFIED')
@@ -91,12 +77,6 @@ function pickFile(event: Event) {
   input.value = ''
 }
 
-function dropFile(event: DragEvent) {
-  if (!fileInput.value || !event.dataTransfer || props.uploadingPayment) return
-  fileInput.value.files = event.dataTransfer.files
-  fileInput.value.dispatchEvent(new Event('change', { bubbles: true }))
-}
-
 async function upload() {
   const { valid } = await validate()
   fileError.value = props.paymentFile ? '' : 'Pilih berkas bukti transfer.'
@@ -106,70 +86,98 @@ async function upload() {
 
 <template>
   <div class="space-y-4">
-    <Card
-      gap="none"
-      class="overflow-hidden"
-    >
-      <CardHeader
-        standard
-        class="flex-wrap"
+    <section class="space-y-3 text-[length:var(--text-control,0.75rem)]">
+      <p
+        v-if="GUIDANCE[status]"
+        class="text-muted-foreground"
       >
-        <CardTitle size="md">Pembayaran Pendaftaran</CardTitle>
-        <Badge :variant="PAYMENT_STATUS_BADGE_VARIANTS[status]">
-          {{ PAYMENT_STATUS_LABELS[status] }}
-        </Badge>
-      </CardHeader>
-      <CardContent class="space-y-4 px-4 py-4 text-sm">
-        <div class="flex flex-wrap items-center gap-2">
-          <span>Biaya pendaftaran</span>
-          <strong>{{
-            applicationPayment ? formatIDR(applicationPayment.amount) : '-'
-          }}</strong>
-          <Button
-            v-if="applicationPayment"
-            variant="ghost"
-            size="sm"
-            class="shrink-0 p-0"
-            aria-label="Salin nominal"
-            @click="copy(String(applicationPayment.amount), 'Nominal')"
-          >
-            <Copy class="size-4" />
-          </Button>
-        </div>
-        <p class="text-muted-foreground">{{ GUIDANCE[status] }}</p>
-        <p
-          v-if="status === 'REJECTED' && applicationPayment?.note"
-          class="font-medium text-destructive"
+        {{ GUIDANCE[status] }}
+      </p>
+      <dl
+        class="grid grid-cols-[max-content_auto_minmax(0,1fr)] gap-x-1.5 gap-y-1"
+      >
+        <dt class="text-muted-foreground">Biaya</dt>
+        <span
+          class="text-muted-foreground"
+          aria-hidden="true"
+          >:</span
         >
-          Catatan panitia: {{ applicationPayment.note }}
-        </p>
-        <div
-          v-if="applicationPayment?.proofFile"
-          class="space-y-1 border-t pt-4"
-          data-test="uploaded-proof"
+        <dd class="font-medium">
+          {{ applicationPayment ? formatIDR(applicationPayment.amount) : '-' }}
+        </dd>
+        <dt class="text-muted-foreground">Status</dt>
+        <span
+          class="text-muted-foreground"
+          aria-hidden="true"
+          >:</span
         >
-          <p class="font-medium">Bukti yang sudah diunggah</p>
-          <p class="break-all">
-            {{ applicationPayment.proofFile.originalName }}
-          </p>
-          <p
-            v-if="applicationPayment.bankAccount"
+        <dd>{{ PAYMENT_STATUS_LABELS[status] }}</dd>
+        <template v-if="status === 'REJECTED' && applicationPayment?.note">
+          <dt class="text-muted-foreground">Catatan</dt>
+          <span
             class="text-muted-foreground"
+            aria-hidden="true"
+            >:</span
           >
-            Ke {{ applicationPayment.bankAccount.bankName }}
-            {{ applicationPayment.bankAccount.accountNumber }} a.n.
-            {{ applicationPayment.bankAccount.accountHolder }}
-          </p>
-          <p class="text-muted-foreground">
-            Dari {{ applicationPayment.bankName }} a.n.
+          <dd class="text-destructive">{{ applicationPayment.note }}</dd>
+        </template>
+        <template v-if="applicationPayment?.proofFile">
+          <dt class="text-muted-foreground">Bukti</dt>
+          <span
+            class="text-muted-foreground"
+            aria-hidden="true"
+            >:</span
+          >
+          <dd data-test="uploaded-proof">
+            <button
+              v-if="onPreview"
+              type="button"
+              data-test="open-file"
+              class="group inline-flex items-center gap-1.5 text-left text-foreground transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+              @click="onPreview(applicationPayment.proofFile)"
+            >
+              <FileText
+                class="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary group-focus-visible:text-primary"
+              />
+              <span class="break-all">{{
+                applicationPayment.proofFile.originalName
+              }}</span>
+            </button>
+            <span
+              v-else
+              class="break-all"
+              >{{ applicationPayment.proofFile.originalName }}</span
+            >
+          </dd>
+          <template v-if="applicationPayment.bankAccount">
+            <dt class="text-muted-foreground">Rekening tujuan</dt>
+            <span
+              class="text-muted-foreground"
+              aria-hidden="true"
+              >:</span
+            >
+            <dd>
+              {{ applicationPayment.bankAccount.bankName }}
+              {{ applicationPayment.bankAccount.accountNumber }} a.n.
+              {{ applicationPayment.bankAccount.accountHolder }}
+            </dd>
+          </template>
+          <dt class="text-muted-foreground">Pengirim</dt>
+          <span
+            class="text-muted-foreground"
+            aria-hidden="true"
+            >:</span
+          >
+          <dd>
+            {{ applicationPayment.bankName }} a.n.
             {{ applicationPayment.senderAccountName }}
             <template v-if="applicationPayment.transferDate">
               · {{ formatDate(applicationPayment.transferDate) }}
             </template>
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+          </dd>
+        </template>
+      </dl>
+    </section>
 
     <Alert
       v-if="canUpload && waveFull"
@@ -182,175 +190,145 @@ async function upload() {
         begitu dibuka.
       </AlertDescription>
     </Alert>
-    <Card
+    <section
       v-else-if="canUpload"
-      gap="none"
-      class="overflow-hidden"
+      class="space-y-3"
     >
-      <CardHeader standard>
-        <div class="flex items-center gap-3">
-          <CardTitle size="md">Unggah Bukti Pembayaran</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent class="space-y-5 px-4 py-4">
-        <FormField
-          v-slot="{ errorMessage }"
-          name="bankAccountId"
-        >
-          <fieldset class="space-y-2">
-            <legend class="text-sm font-medium">
-              Rekening tujuan <span class="text-destructive">*</span>
-            </legend>
-            <p
-              v-if="accounts.length === 0"
-              class="text-sm text-muted-foreground"
-            >
-              Rekening tujuan belum tersedia. Hubungi panitia PSB.
-            </p>
-            <div
-              v-else
-              role="radiogroup"
-              aria-label="Rekening tujuan"
-              class="grid gap-2 sm:grid-cols-2"
-            >
-              <div
-                v-for="account in accounts"
-                :key="account.id"
-                class="flex min-w-0 items-start gap-2"
-              >
-                <label
-                  class="flex min-h-11 min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-                >
-                  <input
-                    type="radio"
-                    name="bankAccountId"
-                    class="mt-1"
-                    :value="account.id"
-                    :checked="values.bankAccountId === account.id"
-                    @change="setFieldValue('bankAccountId', account.id)"
-                  />
-                  <span class="min-w-0 flex-1 space-y-0.5">
-                    <span class="block font-medium">{{
-                      account.bankName
-                    }}</span>
-                    <span class="block break-all tabular-nums">{{
-                      account.accountNumber
-                    }}</span>
-                    <span class="block text-muted-foreground">
-                      a.n. {{ account.accountHolder }}
-                    </span>
-                  </span>
-                </label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  class="shrink-0 p-0"
-                  :aria-label="`Salin nomor rekening ${account.bankName}`"
-                  @click="copy(account.accountNumber, 'Nomor rekening')"
-                >
-                  <Copy class="size-4" />
-                </Button>
-              </div>
-            </div>
-            <p
-              v-if="errorMessage"
-              class="text-sm text-destructive"
-            >
-              {{ errorMessage }}
-            </p>
-          </fieldset>
-        </FormField>
-
-        <div class="grid gap-4 sm:grid-cols-2">
-          <FloatingField
-            v-slot="{ componentField }"
-            name="bankName"
-            label="Bank Pengirim"
-            required
-          >
-            <FormControl>
-              <Input
-                v-bind="componentField"
-                maxlength="100"
-              />
-            </FormControl>
-          </FloatingField>
-          <FloatingField
-            v-slot="{ componentField }"
-            name="senderAccountName"
-            label="Nama Pemilik Rekening Pengirim"
-            required
-          >
-            <FormControl>
-              <Input
-                v-bind="componentField"
-                maxlength="100"
-              />
-            </FormControl>
-          </FloatingField>
-          <FloatingField
-            v-slot="{ value, setValue }"
-            name="transferDate"
-            label="Tanggal Transfer"
-            required
-            always-float
-            class="[&_button]:border-input [&_button]:bg-transparent [&_button:hover]:bg-transparent [&_button:hover]:text-foreground dark:[&_button]:bg-input/30 dark:[&_button:hover]:bg-input/30"
-          >
-            <FormControl>
-              <DatePicker
-                :model-value="value ?? ''"
-                :max-date="today"
-                @update:model-value="setValue"
-              />
-            </FormControl>
-          </FloatingField>
-          <div class="space-y-2 sm:col-span-2">
-            <p class="text-sm font-medium">
-              Bukti Transfer <span class="text-destructive">*</span>
-            </p>
-            <label
-              class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/25 p-6 text-center transition-colors hover:bg-muted/50 focus-within:ring-2 focus-within:ring-ring"
-              @dragover.prevent
-              @drop.prevent="dropFile($event)"
-            >
-              <span class="rounded-full bg-primary/10 p-3 text-primary">
-                <UploadCloud class="size-6" />
-              </span>
-              <span class="text-sm">
-                <span class="block font-medium">{{
-                  paymentFile?.name || 'Klik atau tarik file ke sini'
-                }}</span>
-                <span class="mt-1 block text-xs text-muted-foreground"
-                  >JPG, PNG, atau PDF, maks. 5 MB</span
-                >
-              </span>
-              <input
-                ref="fileInput"
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
-                class="sr-only"
-                aria-label="Pilih bukti transfer"
-                :aria-invalid="!!fileError"
-                :disabled="uploadingPayment"
-                @change="pickFile"
-              />
-            </label>
-            <p
-              v-if="fileError"
-              class="text-sm text-destructive"
-            >
-              {{ fileError }}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter
-        class="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-4"
+      <FormField
+        v-slot="{ errorMessage }"
+        name="bankAccountId"
       >
+        <fieldset class="space-y-2">
+          <legend class="text-[length:var(--text-control,0.75rem)] font-medium">
+            Rekening tujuan <span class="text-destructive">*</span>
+          </legend>
+          <p
+            v-if="accounts.length === 0"
+            class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
+          >
+            Rekening tujuan belum tersedia. Hubungi panitia PSB.
+          </p>
+          <div
+            v-else
+            role="radiogroup"
+            aria-label="Rekening tujuan"
+            class="grid gap-2 sm:grid-cols-2"
+          >
+            <div
+              v-for="account in accounts"
+              :key="account.id"
+              class="flex min-w-0 items-start gap-2"
+            >
+              <label
+                class="flex min-h-11 min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-md border p-3 text-[length:var(--text-control,0.75rem)] has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+              >
+                <input
+                  type="radio"
+                  name="bankAccountId"
+                  class="mt-1"
+                  :value="account.id"
+                  :checked="values.bankAccountId === account.id"
+                  @change="setFieldValue('bankAccountId', account.id)"
+                />
+                <span class="min-w-0 flex-1 space-y-0.5">
+                  <span class="block font-medium">{{ account.bankName }}</span>
+                  <span class="block break-all tabular-nums">{{
+                    account.accountNumber
+                  }}</span>
+                  <span class="block text-muted-foreground">
+                    a.n. {{ account.accountHolder }}
+                  </span>
+                </span>
+              </label>
+              <Button
+                type="button"
+                variant="ghost"
+                class="shrink-0 p-0"
+                :aria-label="`Salin nomor rekening ${account.bankName}`"
+                @click="copy(account.accountNumber, 'Nomor rekening')"
+              >
+                <Copy class="size-4" />
+              </Button>
+            </div>
+          </div>
+          <p
+            v-if="errorMessage"
+            class="text-[length:var(--text-control,0.75rem)] text-destructive"
+          >
+            {{ errorMessage }}
+          </p>
+        </fieldset>
+      </FormField>
+
+      <div class="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+        <FloatingField
+          v-slot="{ componentField }"
+          name="bankName"
+          label="Bank Pengirim"
+          required
+        >
+          <FormControl>
+            <Input
+              v-bind="componentField"
+              maxlength="100"
+            />
+          </FormControl>
+        </FloatingField>
+        <FloatingField
+          v-slot="{ componentField }"
+          name="senderAccountName"
+          label="Nama Pemilik Rekening Pengirim"
+          required
+        >
+          <FormControl>
+            <Input
+              v-bind="componentField"
+              maxlength="100"
+            />
+          </FormControl>
+        </FloatingField>
+        <FloatingField
+          v-slot="{ value, setValue }"
+          name="transferDate"
+          label="Tanggal Transfer"
+          required
+          always-float
+          class="[&_button]:border-input [&_button]:bg-transparent [&_button:hover]:bg-transparent [&_button:hover]:text-foreground dark:[&_button]:bg-input/30 dark:[&_button:hover]:bg-input/30"
+        >
+          <FormControl>
+            <DatePicker
+              :model-value="value ?? ''"
+              :max-date="today"
+              placeholder=""
+              @update:model-value="setValue"
+            />
+          </FormControl>
+        </FloatingField>
+        <div class="space-y-2 sm:col-span-2">
+          <p class="text-[length:var(--text-control,0.75rem)] font-medium">
+            Bukti Transfer <span class="text-destructive">*</span>
+          </p>
+          <FileDropzone
+            :file-name="paymentFile?.name"
+            :disabled="uploadingPayment"
+            :invalid="!!fileError"
+            aria-label="Pilih bukti transfer"
+            hint="JPG, PNG, atau PDF, maks. 5 MB"
+            @change="pickFile"
+          />
+          <p
+            v-if="fileError"
+            class="text-[length:var(--text-control,0.75rem)] text-destructive"
+          >
+            {{ fileError }}
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3">
         <p
           v-if="uploadingPayment"
           role="status"
-          class="text-sm"
+          class="text-[length:var(--text-control,0.75rem)]"
         >
           Mengunggah bukti pembayaran…
         </p>
@@ -362,11 +340,11 @@ async function upload() {
             uploadingPayment
               ? 'Mengunggah…'
               : applicationPayment?.proofFile
-                ? 'Unggah Ulang Bukti'
-                : 'Unggah Bukti Pembayaran'
+                ? 'Unggah Ulang'
+                : 'Unggah'
           }}
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </section>
   </div>
 </template>

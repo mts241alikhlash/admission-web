@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
-import { defineComponent, h, type PropType, type VNode } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import DocumentTypeListView from './DocumentTypeListView.vue'
 import DocumentTypeFormDialog from '../components/DocumentTypeFormDialog.vue'
+import { cardRows, rowActionProps } from '@/test/dataTableCards'
 
 const service = vi.hoisted(() => ({
   fetchAll: vi.fn(),
@@ -67,49 +67,6 @@ const types = [
 ]
 
 type Row = (typeof types)[number]
-interface Column {
-  header?: string
-  accessorKey?: keyof Row
-  cell?: (context: { row: { original: Row; index: number } }) => VNode
-}
-
-const DataTableStub = defineComponent({
-  props: {
-    columns: { type: Array as PropType<Column[]>, required: true },
-    data: { type: Array as PropType<Row[]>, required: true },
-  },
-  setup: (props) => () =>
-    h('div', { 'data-test': 'desktop-document-types' }, [
-      h(
-        'div',
-        { 'data-test': 'headers' },
-        props.columns.map((column) => h('span', column.header)),
-      ),
-      ...props.data.map((original, index) =>
-        h(
-          'div',
-          { class: 'row' },
-          props.columns.map((column) =>
-            h(
-              'span',
-              column.cell
-                ? column.cell({ row: { original, index } })
-                : String(original[column.accessorKey!]),
-            ),
-          ),
-        ),
-      ),
-    ]),
-})
-const ActionCellStub = defineComponent({
-  props: { hideDelete: Boolean, hideEdit: Boolean },
-  setup: (props) => () =>
-    h('span', {
-      'data-test': 'actions',
-      'data-hide-delete': String(props.hideDelete),
-      'data-hide-edit': String(props.hideEdit),
-    }),
-})
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -120,8 +77,9 @@ function mountView() {
   return mount(DocumentTypeListView, {
     global: {
       stubs: {
-        DataTable: DataTableStub,
-        ActionCell: ActionCellStub,
+        Tooltip: passthrough,
+        TooltipTrigger: passthrough,
+        TooltipContent: passthrough,
         Dialog: passthrough,
         DialogContent: passthrough,
         DialogHeader: passthrough,
@@ -170,31 +128,12 @@ it('offers delete only for an unused type', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const items = wrapper.get('[data-test="mobile-document-types"]').findAll('li')
-  expect(
-    items[0].find('button[aria-label="Hapus Kartu Keluarga"]').exists(),
-  ).toBe(false)
-  expect(items[0].text()).toContain('Dipakai 4')
-  expect(items[1].find('button[aria-label="Hapus Pas Foto"]').exists()).toBe(
-    true,
-  )
+  expect(rowActionProps<Row>(wrapper, types[0]).hideDelete).toBe(true)
+  expect(rowActionProps<Row>(wrapper, types[1]).hideDelete).toBe(false)
+  const items = cardRows(wrapper)
+  expect(items).toHaveLength(3)
   expect(items[2].text()).toContain('Nonaktif')
   expect(items[2].text()).toContain('Opsional')
-})
-
-it('hides delete in the desktop actions of a used type', async () => {
-  service.fetchAll.mockResolvedValue({ types })
-  const wrapper = mountView()
-  await flushPromises()
-
-  const actions = wrapper
-    .get('[data-test="desktop-document-types"]')
-    .findAll('[data-test="actions"]')
-  expect(actions.map((a) => a.attributes('data-hide-delete'))).toEqual([
-    'true',
-    'false',
-    'false',
-  ])
 })
 
 it('refuses a blank name and shows the reason', async () => {
@@ -221,10 +160,7 @@ it('suggests deactivating when editing a type that has uploads', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="mobile-document-types"]')
-    .get('button[aria-label="Ubah Kartu Keluarga"]')
-    .trigger('click')
+  rowActionProps<Row>(wrapper, types[0]).onEdit()
   await flushPromises()
 
   expect(wrapper.text()).toContain('Sudah diunggah 4 kali')
@@ -236,17 +172,14 @@ it('offers nothing to change without create, update or delete rights', async () 
   const wrapper = mountView()
   await flushPromises()
 
-  const items = wrapper.get('[data-test="mobile-document-types"]').findAll('li')
-  expect(items).toHaveLength(3)
-  expect(items[1].findAll('button')).toHaveLength(0)
+  expect(cardRows(wrapper)).toHaveLength(3)
   expect(
     wrapper.findAll('button').filter((b) => b.text().includes('Tambah')),
   ).toHaveLength(0)
-  const actions = wrapper.findAll('[data-test="actions"]')
-  expect(actions.length).toBeGreaterThan(0)
-  for (const action of actions) {
-    expect(action.attributes('data-hide-edit')).toBe('true')
-    expect(action.attributes('data-hide-delete')).toBe('true')
+  for (const type of types) {
+    const props = rowActionProps<Row>(wrapper, type)
+    expect(props.hideEdit).toBe(true)
+    expect(props.hideDelete).toBe(true)
   }
 })
 
@@ -256,14 +189,19 @@ it('lets a user who may only update edit but not delete', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const second = wrapper
-    .get('[data-test="mobile-document-types"]')
-    .findAll('li')[1]
-  expect(second.find('button[aria-label="Ubah Pas Foto"]').exists()).toBe(true)
-  expect(second.find('button[aria-label="Hapus Pas Foto"]').exists()).toBe(
-    false,
-  )
+  const props = rowActionProps<Row>(wrapper, types[1])
+  expect(props.hideEdit).toBe(false)
+  expect(props.hideDelete).toBe(true)
 })
+
+const headersOf = (wrapper: ReturnType<typeof mountView>) =>
+  (
+    wrapper.getComponent({ name: 'DataTable' }).props('columns') as {
+      header?: unknown
+    }[]
+  )
+    .map((column) => column.header)
+    .filter((header) => typeof header === 'string')
 
 it('has no reorder controls', async () => {
   service.fetchAll.mockResolvedValue({ types })
@@ -272,8 +210,7 @@ it('has no reorder controls', async () => {
 
   expect(wrapper.find('button[aria-label^="Naikkan"]').exists()).toBe(false)
   expect(wrapper.find('button[aria-label^="Turunkan"]').exists()).toBe(false)
-  const headers = wrapper.get('[data-test="headers"]').findAll('span')
-  expect(headers.map((h) => h.text())).not.toContain('Urutan')
+  expect(headersOf(wrapper)).not.toContain('Urutan')
 })
 
 it('shows name and code in separate columns with a clear header for the upload requirement', async () => {
@@ -281,20 +218,16 @@ it('shows name and code in separate columns with a clear header for the upload r
   const wrapper = mountView()
   await flushPromises()
 
-  const headers = wrapper.get('[data-test="headers"]').findAll('span')
-  expect(headers.map((h) => h.text())).toEqual([
+  expect(headersOf(wrapper)).toEqual([
     'Nama',
     'Kode',
     'Kewajiban',
     'Status',
     'Aksi',
   ])
-  const firstRow = wrapper
-    .get('[data-test="desktop-document-types"]')
-    .findAll('.row')[0]
-    .findAll(':scope > span')
-  expect(firstRow[0].text()).toBe('Kartu Keluarga')
-  expect(firstRow[1].text()).toBe('FAMILY_CARD')
+  const cells = wrapper.findAll('tbody tr')[0].findAll('td')
+  expect(cells[0].text()).toBe('Kartu Keluarga')
+  expect(cells[1].text()).toBe('FAMILY_CARD')
 })
 
 it('shows the requirement badge and the limit for Susulan', async () => {
@@ -312,10 +245,7 @@ it('shows the requirement badge and the limit for Susulan', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const item = wrapper
-    .get('[data-test="mobile-document-types"]')
-    .findAll('li')[0]
-  expect(item.text()).toContain('Susulan · 3 bln')
+  expect(cardRows(wrapper)[0].text()).toContain('Susulan · 3 bln')
 })
 
 it('shows the limit field only for Susulan', async () => {

@@ -17,17 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@mts241alikhlash/ui/select'
-import StatusBadge from '../components/StatusBadge.vue'
 import { applicationService } from '../services/applicationService'
-import ServerPager from '../components/ServerPager.vue'
 import { documentReviewService } from '../services/documentReviewService'
 import { useApplicationStore } from '../stores/applicationStore'
-import type {
-  AdmissionDocumentReviewRow,
-  AdmissionStatus,
-  DocumentReviewTab,
-} from '../types'
-import { documentSummaryText, formatDate } from '../utils'
+import type { AdmissionDocumentReviewRow, DocumentReviewTab } from '../types'
+import { documentSummaryText } from '../utils'
 
 const router = useRouter()
 const { waves } = storeToRefs(useApplicationStore())
@@ -137,7 +131,15 @@ const columns = computed<ColumnDef<AdmissionDocumentReviewRow>[]>(() => [
   {
     id: 'documents',
     header: () => (tab.value === 'revision' ? 'Catatan Perbaikan' : 'Berkas'),
-    meta: { align: tab.value === 'revision' ? 'left' : 'center' },
+    meta:
+      tab.value === 'revision'
+        ? { align: 'left', mobileLabel: 'Catatan' }
+        : {
+            align: 'center',
+            mobileLabel: 'Berkas',
+            mobileValue: (row: AdmissionDocumentReviewRow) =>
+              documentSummaryText(row.summary),
+          },
     cell: ({ row }) => {
       if (tab.value === 'revision') {
         const rejectedCount = row.original.summary.rejected
@@ -190,7 +192,7 @@ onMounted(async () => {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <div class="space-y-4 p-0 sm:px-0">
         <Tabs
@@ -198,10 +200,7 @@ onMounted(async () => {
           variant="line"
           class="min-w-0 gap-0"
         >
-          <Card
-            gap="none"
-            class="overflow-hidden rounded-xl border bg-card shadow-xs"
-          >
+          <Card gap="none">
             <CardHeader class="p-0 shrink-0">
               <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
                 <TabsTrigger
@@ -262,7 +261,9 @@ onMounted(async () => {
                 class="space-y-3 rounded-md border p-4"
                 role="alert"
               >
-                <p class="text-sm">{{ listError }}</p>
+                <p class="text-[length:var(--text-control,0.75rem)]">
+                  {{ listError }}
+                </p>
                 <Button
                   variant="outline"
                   @click="load()"
@@ -273,19 +274,19 @@ onMounted(async () => {
               <template v-else>
                 <p
                   v-if="loading && !rows.length"
-                  class="text-center text-sm text-muted-foreground"
+                  class="text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Memuat antrean berkas…
                 </p>
                 <p
                   v-else-if="!rows.length"
-                  class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+                  class="rounded-md border p-4 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   {{ emptyText() }}
                 </p>
                 <template v-else>
                   <DataTable
-                    class="hidden md:flex"
+                    mobile="cards"
                     :columns="columns"
                     :data="rows"
                     :page="page"
@@ -295,64 +296,6 @@ onMounted(async () => {
                     item-label="pendaftar"
                     @update:page="goToPage"
                     @update:page-size="changePageSize"
-                  />
-                  <ul class="space-y-2 md:hidden">
-                    <li
-                      v-for="row in rows"
-                      :key="row.applicationId"
-                      data-test="review-row"
-                      class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-                    >
-                      <div
-                        class="flex flex-wrap items-start justify-between gap-2"
-                      >
-                        <div class="min-w-0">
-                          <p class="break-words font-medium">
-                            {{ row.applicantName }}
-                          </p>
-                          <p class="text-muted-foreground">
-                            {{ row.registrationNumber }} · {{ row.waveName }}
-                          </p>
-                        </div>
-                        <StatusBadge :status="row.status as AdmissionStatus" />
-                      </div>
-                      <p>{{ documentSummaryText(row.summary) }}</p>
-                      <div
-                        v-if="row.revisionNote"
-                        class="rounded-md border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive"
-                      >
-                        {{ row.revisionNote }}
-                      </div>
-                      <div
-                        class="flex flex-wrap items-center justify-between gap-2"
-                      >
-                        <p class="text-muted-foreground">
-                          <template v-if="row.submittedAt">
-                            Dikirim {{ formatDate(row.submittedAt) }}
-                          </template>
-                        </p>
-                        <Button
-                          data-test="open-review"
-                          class="w-full sm:w-auto"
-                          @click="
-                            router.push(
-                              `/admin/document-reviews/${row.applicationId}`,
-                            )
-                          "
-                        >
-                          Periksa
-                        </Button>
-                      </div>
-                    </li>
-                  </ul>
-                  <ServerPager
-                    class="md:hidden"
-                    :page="page"
-                    :page-size="pageSize"
-                    :total="total"
-                    item-label="pendaftar"
-                    :disabled="loading"
-                    @update:page="goToPage"
                   />
                 </template>
               </template>

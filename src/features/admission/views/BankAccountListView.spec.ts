@@ -18,8 +18,9 @@ function mountView() {
   return mount(BankAccountListView, {
     global: {
       stubs: {
-        DataTable: true,
-        ActionCell: true,
+        Tooltip: passthrough,
+        TooltipTrigger: passthrough,
+        TooltipContent: passthrough,
         Dialog: passthrough,
         DialogContent: passthrough,
         DialogHeader: passthrough,

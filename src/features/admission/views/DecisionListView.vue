@@ -28,17 +28,11 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import { useRoleGuard } from '@/features/platform/auth'
-import StatusBadge from '../components/StatusBadge.vue'
 import { applicationService } from '../services/applicationService'
-import ServerPager from '../components/ServerPager.vue'
 import { decisionService } from '../services/decisionService'
 import { useApplicationStore } from '../stores/applicationStore'
-import type {
-  AdmissionDecisionRow,
-  AdmissionStatus,
-  DecisionTab,
-} from '../types'
-import { documentSummaryText, formatDate } from '../utils'
+import type { AdmissionDecisionRow, DecisionTab } from '../types'
+import { formatDate } from '../utils'
 
 type ActionKind =
   'accept' | 'reject' | 'accept-many' | 'cancel-acceptance' | 'cancel-rejection'
@@ -358,7 +352,7 @@ onMounted(async () => {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <div class="space-y-4 p-0 sm:px-0">
         <Tabs
@@ -366,10 +360,7 @@ onMounted(async () => {
           variant="line"
           class="min-w-0 gap-0"
         >
-          <Card
-            gap="none"
-            class="overflow-hidden rounded-xl border bg-card shadow-xs"
-          >
+          <Card gap="none">
             <CardHeader class="p-0 shrink-0">
               <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
                 <TabsTrigger
@@ -428,7 +419,7 @@ onMounted(async () => {
               <div
                 v-if="manyResult"
                 data-test="many-result"
-                class="space-y-1 rounded-md border p-3 text-sm"
+                class="space-y-1 rounded-md border p-3 text-[length:var(--text-control,0.75rem)]"
               >
                 <p class="font-medium">
                   {{ manyResult.accepted }} diterima,
@@ -454,7 +445,7 @@ onMounted(async () => {
               >
                 <label
                   data-test="select-all"
-                  class="flex min-h-11 items-center gap-2 text-sm sm:min-h-0"
+                  class="flex min-h-11 items-center gap-2 text-[length:var(--text-control,0.75rem)] sm:min-h-0"
                 >
                   <Checkbox
                     :model-value="allSelected"
@@ -470,7 +461,9 @@ onMounted(async () => {
                 class="space-y-3 rounded-md border p-4"
                 role="alert"
               >
-                <p class="text-sm">{{ listError }}</p>
+                <p class="text-[length:var(--text-control,0.75rem)]">
+                  {{ listError }}
+                </p>
                 <Button
                   variant="outline"
                   @click="load()"
@@ -481,19 +474,19 @@ onMounted(async () => {
               <template v-else>
                 <p
                   v-if="loading && !rows.length"
-                  class="text-center text-sm text-muted-foreground"
+                  class="text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Memuat antrean keputusan…
                 </p>
                 <p
                   v-else-if="!rows.length"
-                  class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+                  class="rounded-md border p-4 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   {{ emptyText }}
                 </p>
                 <template v-else>
                   <DataTable
-                    class="hidden md:flex"
+                    mobile="cards"
                     :columns="columns"
                     :data="rows"
                     :page="page"
@@ -504,111 +497,14 @@ onMounted(async () => {
                     @update:page="goToPage"
                     @update:page-size="changePageSize"
                   />
-                  <ul class="space-y-2 md:hidden">
-                    <li
-                      v-for="row in rows"
-                      :key="row.applicationId"
-                      data-test="decision-row"
-                      class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-                    >
-                      <div class="flex items-start gap-3">
-                        <Checkbox
-                          v-if="canDecide && tab === 'waiting'"
-                          :model-value="selected.includes(row.applicationId)"
-                          :aria-label="`Pilih ${row.applicantName}`"
-                          class="mt-1"
-                          @update:model-value="
-                            (checked) => toggle(row.applicationId, checked)
-                          "
-                        />
-                        <div
-                          class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-2"
-                        >
-                          <div class="min-w-0">
-                            <p class="break-words font-medium">
-                              {{ row.applicantName }}
-                            </p>
-                            <p class="text-muted-foreground">
-                              {{ row.registrationNumber }} · {{ row.waveName }}
-                            </p>
-                          </div>
-                          <StatusBadge
-                            :status="row.status as AdmissionStatus"
-                          />
-                        </div>
-                      </div>
-                      <p>{{ documentSummaryText(row.summary) }}</p>
-                      <p
-                        v-if="row.decisionNote"
-                        class="text-muted-foreground"
-                      >
-                        Catatan: {{ row.decisionNote }}
-                      </p>
-                      <div
-                        class="flex flex-wrap items-center justify-between gap-2"
-                      >
-                        <p class="text-muted-foreground">
-                          <template v-if="row.decidedAt">
-                            Diputuskan {{ formatDate(row.decidedAt) }}
-                          </template>
-                          <template v-else-if="row.verifiedAt">
-                            Terverifikasi {{ formatDate(row.verifiedAt) }}
-                          </template>
-                        </p>
-                        <div class="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            data-test="open-detail"
-                            @click="
-                              router.push(
-                                `/admin/applicants/${row.applicationId}`,
-                              )
-                            "
-                          >
-                            Lihat detail
-                          </Button>
-                          <template v-if="canDecide && tab === 'waiting'">
-                            <Button
-                              variant="destructive"
-                              :disabled="acting"
-                              @click="open('reject', row)"
-                            >
-                              Tolak
-                            </Button>
-                            <Button
-                              :disabled="acting"
-                              @click="open('accept', row)"
-                            >
-                              Terima
-                            </Button>
-                          </template>
-                          <Button
-                            v-if="canDecide && row.status === 'ACCEPTED'"
-                            variant="outline"
-                            :disabled="acting"
-                            @click="open('cancel-acceptance', row)"
-                          >
-                            Batalkan penerimaan
-                          </Button>
-                          <Button
-                            v-if="canDecide && row.status === 'REJECTED'"
-                            variant="outline"
-                            :disabled="acting"
-                            @click="open('cancel-rejection', row)"
-                          >
-                            Batalkan penolakan
-                          </Button>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
 
                   <div
                     v-if="canDecide && tab === 'waiting' && selected.length"
                     data-test="selection-bar"
                     class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 sm:px-4"
                   >
-                    <span class="text-sm font-medium"
+                    <span
+                      class="text-[length:var(--text-control,0.75rem)] font-medium"
                       >{{ selected.length }} dipilih</span
                     >
                     <Button
@@ -618,16 +514,6 @@ onMounted(async () => {
                       Terima terpilih
                     </Button>
                   </div>
-
-                  <ServerPager
-                    class="md:hidden"
-                    :page="page"
-                    :page-size="pageSize"
-                    :total="total"
-                    item-label="pendaftar"
-                    :disabled="loading"
-                    @update:page="goToPage"
-                  />
                 </template>
               </template>
             </CardContent>

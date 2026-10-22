@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { FileText, UploadCloud, XCircle } from '@lucide/vue'
-import { ActionCell, DataTable } from '@mts241alikhlash/ui'
+import { ActionCell, DataTable, FileDropzone } from '@mts241alikhlash/ui'
 import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
@@ -19,6 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@mts241alikhlash/ui/tooltip'
 import { DOCUMENT_STATUS_LABELS } from '../types'
 import { DOCUMENT_STATUS_BADGE_VARIANTS, formatJakartaDate } from '../utils'
 import type { AdmissionDocument, AdmissionDocumentType } from '../types'
@@ -35,22 +39,17 @@ const props = defineProps<{
 }>()
 
 const activeDocType = ref<AdmissionDocumentType | null>(null)
-const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = computed(() =>
   activeDocType.value ? props.documentFiles[activeDocType.value.code] : null,
 )
 
-const GROUPS = [
-  { key: 'REQUIRED', title: 'Wajib diunggah sekarang' },
-  { key: 'LATER', title: 'Boleh menyusul' },
-  { key: 'OPTIONAL', title: 'Opsional' },
-] as const
+const REQUIREMENT_ORDER = { REQUIRED: 0, LATER: 1, OPTIONAL: 2 } as const
 
-const groups = computed(() =>
-  GROUPS.map((group) => ({
-    ...group,
-    items: props.documentTypes.filter((type) => type.requirement === group.key),
-  })).filter((group) => group.items.length),
+const sortedTypes = computed(() =>
+  [...props.documentTypes].sort(
+    (a, b) =>
+      REQUIREMENT_ORDER[a.requirement] - REQUIREMENT_ORDER[b.requirement],
+  ),
 )
 
 function laterNote(type: AdmissionDocumentType) {
@@ -101,36 +100,53 @@ const columns = computed<ColumnDef<AdmissionDocumentType>[]>(() => [
   {
     id: 'file',
     header: 'Berkas',
+    meta: { mobileLabel: 'Berkas' },
     cell: ({ row }) => {
       const document = documentFor(row.original.id)
-      return h('div', { class: 'min-w-0 space-y-1' }, [
-        h('span', { class: 'break-all' }, document?.file?.originalName ?? '-'),
-        ...(document?.note
-          ? [
-              h(
-                'p',
-                { class: 'text-sm text-destructive' },
-                `Catatan: ${document.note}`,
-              ),
-            ]
-          : []),
-      ])
+      return h(
+        'span',
+        { class: 'break-all' },
+        document?.file?.originalName ?? '-',
+      )
     },
   },
   {
     id: 'status',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionDocumentType) => {
+        const document = documentFor(row.id)
+        const label = document?.file
+          ? DOCUMENT_STATUS_LABELS[document.status]
+          : 'Belum diunggah'
+        return document?.note ? `${label}. ${document.note}` : label
+      },
+    },
     cell: ({ row }) => {
       const document = documentFor(row.original.id)
       const variant = document?.file
         ? DOCUMENT_STATUS_BADGE_VARIANTS[document.status]
         : 'outline'
-      return h(Badge, { variant }, () =>
-        document?.file
-          ? DOCUMENT_STATUS_LABELS[document.status]
-          : 'Belum diunggah',
-      )
+      const label = document?.file
+        ? DOCUMENT_STATUS_LABELS[document.status]
+        : 'Belum diunggah'
+      if (!document?.note) return h(Badge, { variant }, () => label)
+      return h(Tooltip, null, () => [
+        h(TooltipTrigger, { asChild: true }, () =>
+          h(
+            Badge,
+            {
+              variant,
+              tabindex: 0,
+              class:
+                'cursor-help focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
+            },
+            () => label,
+          ),
+        ),
+        h(TooltipContent, null, () => document.note),
+      ])
     },
   },
   ...(props.editable
@@ -160,12 +176,6 @@ function selectFile(typeCode: string, event: Event) {
   input.value = ''
 }
 
-function dropFile(event: DragEvent) {
-  if (!fileInput.value || !event.dataTransfer || props.uploadingDoc) return
-  fileInput.value.files = event.dataTransfer.files
-  fileInput.value.dispatchEvent(new Event('change', { bubbles: true }))
-}
-
 function closeDialog() {
   if (props.uploadingDoc || !activeDocType.value) return
   props.onClearFile(activeDocType.value.code)
@@ -192,101 +202,20 @@ async function upload() {
       <CardContent class="px-4 pt-4 pb-4">
         <p
           v-if="!documentTypes.length"
-          class="text-sm text-muted-foreground"
+          class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
         >
           Belum ada jenis berkas yang tersedia.
         </p>
         <template v-else>
-          <section
-            v-for="group in groups"
-            :key="group.key"
-            :data-test="`group-${group.key}`"
-            class="space-y-2 pb-4 last:pb-0"
-          >
-            <h3 class="text-sm font-medium">{{ group.title }}</h3>
-            <DataTable
-              class="hidden md:flex"
-              :columns="columns"
-              :data="group.items"
-              item-label="dokumen"
-              hide-per-page
-              hide-pagination
-              :page-size="Math.max(1, group.items.length)"
-            />
-            <ul
-              data-test="mobile-documents"
-              class="divide-y rounded-lg border md:hidden"
-            >
-              <li
-                v-for="docType in group.items"
-                :key="docType.id"
-                class="min-w-0 space-y-3 p-4 text-sm"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="break-words font-medium">
-                      {{ docType.name
-                      }}<span
-                        v-if="docType.requirement === 'REQUIRED'"
-                        class="text-destructive"
-                        aria-label="wajib"
-                      >
-                        *</span
-                      >
-                    </p>
-                  </div>
-                  <Badge
-                    class="shrink-0"
-                    :variant="
-                      documentFor(docType.id)?.file
-                        ? DOCUMENT_STATUS_BADGE_VARIANTS[
-                            documentFor(docType.id)!.status
-                          ]
-                        : 'outline'
-                    "
-                  >
-                    {{
-                      documentFor(docType.id)?.file
-                        ? DOCUMENT_STATUS_LABELS[
-                            documentFor(docType.id)!.status
-                          ]
-                        : 'Belum diunggah'
-                    }}
-                  </Badge>
-                </div>
-                <p
-                  v-if="laterNote(docType)"
-                  class="text-xs text-amber-700 dark:text-amber-400"
-                >
-                  {{ laterNote(docType) }}
-                </p>
-                <p
-                  v-if="documentFor(docType.id)?.file"
-                  class="break-all"
-                >
-                  {{ documentFor(docType.id)?.file?.originalName }}
-                </p>
-                <p
-                  v-if="documentFor(docType.id)?.note"
-                  class="text-destructive"
-                >
-                  Catatan: {{ documentFor(docType.id)?.note }}
-                </p>
-                <Button
-                  v-if="editable"
-                  variant="outline"
-                  class="w-full"
-                  @click="activeDocType = docType"
-                >
-                  {{
-                    documentFor(docType.id)?.file
-                      ? 'Ganti Berkas'
-                      : 'Unggah Berkas'
-                  }}
-                </Button>
-              </li>
-            </ul>
-          </section>
+          <DataTable
+            mobile="cards"
+            :columns="columns"
+            :data="sortedTypes"
+            item-label="dokumen"
+            hide-per-page
+            hide-pagination
+            :page-size="Math.max(1, sortedTypes.length)"
+          />
         </template>
       </CardContent>
     </Card>
@@ -303,54 +232,15 @@ async function upload() {
           >
         </DialogHeader>
         <div class="min-h-0 flex-1 overflow-y-auto dialog-body">
-          <label
-            v-if="!selectedFile"
-            class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/25 p-8 text-center transition-colors hover:bg-muted/50 focus-within:ring-2 focus-within:ring-ring"
-            @dragover.prevent
-            @drop.prevent="dropFile($event)"
-          >
-            <span class="rounded-full bg-primary/10 p-3 text-primary">
-              <UploadCloud class="size-6" />
-            </span>
-            <span>
-              <span class="block text-sm font-medium"
-                >Klik atau tarik file ke sini</span
-              >
-              <span class="mt-1 block text-xs text-muted-foreground"
-                >JPG, PNG, atau PDF, maks. 5 MB</span
-              >
-            </span>
-            <input
-              ref="fileInput"
-              type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
-              class="sr-only"
-              :disabled="!!uploadingDoc"
-              :aria-label="`Pilih berkas ${activeDocType?.name}`"
-              @change="activeDocType && selectFile(activeDocType.code, $event)"
-            />
-          </label>
-          <div
-            v-else
-            class="flex min-w-0 items-center gap-3 rounded-xl border bg-muted/30 p-4"
-          >
-            <span class="shrink-0 rounded-lg bg-primary/10 p-2 text-primary">
-              <FileText class="size-5" />
-            </span>
-            <span class="min-w-0 flex-1 truncate text-sm font-medium">{{
-              selectedFile.name
-            }}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="shrink-0"
-              aria-label="Lepas berkas"
-              :disabled="!!uploadingDoc"
-              @click="activeDocType && onClearFile(activeDocType.code)"
-            >
-              <XCircle class="size-4" />
-            </Button>
-          </div>
+          <FileDropzone
+            :file-name="selectedFile?.name"
+            :disabled="!!uploadingDoc"
+            clearable
+            :aria-label="`Pilih berkas ${activeDocType?.name}`"
+            hint="JPG, PNG, atau PDF, maks. 5 MB"
+            @change="activeDocType && selectFile(activeDocType.code, $event)"
+            @clear="activeDocType && onClearFile(activeDocType.code)"
+          />
         </div>
         <DialogFooter
           standard

@@ -55,7 +55,9 @@ async function onPick(event: Event) {
 
 <template>
   <div class="space-y-2">
-    <p class="text-sm font-medium">{{ label }}</p>
+    <p class="text-[length:var(--text-control,0.75rem)] font-medium">
+      {{ label }}
+    </p>
     <div class="flex flex-wrap items-start gap-3">
       <div
         class="flex w-28 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/30"

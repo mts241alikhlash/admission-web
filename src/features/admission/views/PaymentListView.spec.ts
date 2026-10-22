@@ -5,6 +5,15 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
 import PaymentListView from './PaymentListView.vue'
+import {
+  cardRow,
+  cardRows,
+  cardsFooter,
+  menuLabels,
+  openRowMenu,
+  chooseRowAction,
+  nextCardPage,
+} from '@/test/dataTableCards'
 
 const service = vi.hoisted(() => ({
   fetchQueue: vi.fn(),
@@ -136,13 +145,13 @@ it('shows the pending tab first with the counts of every tab', async () => {
   )
   expect(tab(wrapper, 'Menunggu').text()).toContain('1')
   expect(tab(wrapper, 'Terverifikasi').text()).toContain('1')
-  const row = wrapper.get('[data-test="payment-row"]')
+  const row = cardRow(wrapper)
   expect(row.text()).toContain('Ahmad Fauzi')
   expect(row.text()).toContain('PSB-001')
   expect(row.text()).toContain('Gelombang 1')
   expect(row.text()).toContain('Budi Santoso')
   expect(row.find('a').exists()).toBe(false)
-  await row.get('[data-test="open-file"]').trigger('click')
+  await chooseRowAction(row, 'Lihat bukti')
   expect(wrapper.get('[data-test="preview"]').attributes('data-open')).toBe(
     'true',
   )
@@ -169,11 +178,7 @@ it('verifies a pending payment and reloads', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="payment-row"]')
-    .findAll('button')
-    .find((b) => b.text() === 'Verifikasi')!
-    .trigger('click')
+  await chooseRowAction(cardRow(wrapper), 'Verifikasi')
   await flushPromises()
 
   expect(service.verify).toHaveBeenCalledWith('app1')
@@ -185,11 +190,7 @@ it('rejects only with a reason', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="payment-row"]')
-    .findAll('button')
-    .find((b) => b.text() === 'Tolak')!
-    .trigger('click')
+  await chooseRowAction(cardRow(wrapper), 'Tolak')
   await wrapper.get('[data-test="reason-form"]').trigger('submit')
   await flushPromises()
   expect(service.reject).not.toHaveBeenCalled()
@@ -212,11 +213,7 @@ it('cancels a verification only with a reason, and only from the verified tab', 
   service.fetchQueue.mockResolvedValue(page([verified]))
   await tab(wrapper, 'Terverifikasi').trigger('mousedown')
   await flushPromises()
-  await wrapper
-    .get('[data-test="payment-row"]')
-    .findAll('button')
-    .find((b) => b.text() === 'Batalkan verifikasi')!
-    .trigger('click')
+  await chooseRowAction(cardRow(wrapper), 'Batalkan verifikasi')
   await wrapper.get('textarea').setValue('Salah nominal')
   await wrapper.get('[data-test="reason-form"]').trigger('submit')
   await flushPromises()
@@ -229,11 +226,7 @@ it('keeps the dialog open and the list unchanged when the action is refused', as
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="payment-row"]')
-    .findAll('button')
-    .find((b) => b.text() === 'Tolak')!
-    .trigger('click')
+  await chooseRowAction(cardRow(wrapper), 'Tolak')
   await wrapper.get('textarea').setValue('x')
   await wrapper.get('[data-test="reason-form"]').trigger('submit')
   await flushPromises()
@@ -247,8 +240,9 @@ it('shows no action buttons and no add button without the verify and create perm
   const wrapper = mountView()
   await flushPromises()
 
-  const row = wrapper.get('[data-test="payment-row"]')
-  expect(row.findAll('button:not([data-test="open-file"])')).toHaveLength(0)
+  const row = cardRow(wrapper)
+  await openRowMenu(row)
+  expect(menuLabels()).toEqual(['Lihat bukti'])
   expect(
     wrapper.findAll('button').filter((b) => b.text() === 'Tambah'),
   ).toHaveLength(0)
@@ -322,7 +316,7 @@ it('ignores a slow response from a tab that is no longer shown', async () => {
   release(page([pending]))
   await flushPromises()
 
-  const rows = wrapper.findAll('[data-test="payment-row"]')
+  const rows = cardRows(wrapper)
   expect(rows).toHaveLength(1)
   expect(rows[0].text()).toContain('Terverifikasi')
 })
@@ -348,6 +342,7 @@ it('renders DataTable with expected columns and without numbering column', async
   expect(headers).toEqual([
     'No. Pendaftaran',
     'Nama Pendaftar',
+    'Gelombang',
     'Status',
     'Jumlah',
     'Pengirim',
@@ -372,15 +367,13 @@ it('loads the next page from the server and replaces the rows', async () => {
   })
   const wrapper = mountView()
   await flushPromises()
-  expect(wrapper.get('[data-test="server-pager"]').text()).toContain(
-    '1–10 dari 25 pembayaran',
-  )
+  expect(cardsFooter(wrapper).text()).toContain('dari 25 pembayaran')
 
   service.fetchQueue.mockResolvedValue({
     ...page([{ ...pending, paymentId: 'p9', applicantName: 'Siti Aminah' }]),
     total: 25,
   })
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenLastCalledWith(
@@ -394,7 +387,7 @@ it('goes back to the first page when another tab is opened', async () => {
   service.fetchQueue.mockResolvedValue({ ...page([pending]), total: 25 })
   const wrapper = mountView()
   await flushPromises()
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   await tab(wrapper, 'Terverifikasi').trigger('mousedown')
@@ -409,7 +402,7 @@ it('steps back to the last page when the current one is gone', async () => {
   service.fetchQueue.mockResolvedValueOnce({ ...page([pending]), total: 11 })
   const wrapper = mountView()
   await flushPromises()
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   service.fetchQueue.mockResolvedValueOnce({ ...page([]), total: 10 })
   service.fetchQueue.mockResolvedValueOnce({ ...page([pending]), total: 10 })
   await flushPromises()

@@ -127,7 +127,7 @@ defineExpose({ validate })
           </CardTitle>
         </CardHeader>
         <CardContent
-          class="grid gap-4 px-4 pb-4 sm:grid-cols-2"
+          class="grid gap-x-4 gap-y-1 px-4 pb-4 sm:grid-cols-2"
           :class="parent.relation === 'GUARDIAN' ? 'pt-5' : ''"
         >
           <div
@@ -201,6 +201,7 @@ defineExpose({ validate })
                   :model-value="value ?? ''"
                   min-date="1940-01-01"
                   :max-date="fifteenYearsAgo"
+                  placeholder=""
                   :disabled="!editable"
                   @update:model-value="setValue"
                 />

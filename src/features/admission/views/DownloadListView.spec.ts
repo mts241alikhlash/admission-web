@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from 'vitest'
-import { defineComponent, h, type PropType, type VNode } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import DownloadListView from './DownloadListView.vue'
+import { cardRow, cardRows, rowActionProps } from '@/test/dataTableCards'
 
 const service = vi.hoisted(() => ({
   fetchAll: vi.fn(),
@@ -53,30 +53,6 @@ const downloads = [
 ]
 
 type Row = (typeof downloads)[number]
-interface Column {
-  header?: string
-  accessorKey?: keyof Row
-  cell?: (context: { row: { original: Row; index: number } }) => VNode
-}
-
-const DataTableStub = defineComponent({
-  props: {
-    columns: { type: Array as PropType<Column[]>, required: true },
-    data: { type: Array as PropType<Row[]>, required: true },
-  },
-  setup: (props) => () =>
-    h('div', { 'data-test': 'desktop-downloads' }, [
-      h(
-        'div',
-        { 'data-test': 'headers' },
-        props.columns.map((column) => h('span', column.header)),
-      ),
-    ]),
-})
-const ActionCellStub = defineComponent({
-  props: { hideDelete: Boolean, hideEdit: Boolean },
-  setup: () => () => h('span', { 'data-test': 'actions' }),
-})
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -87,8 +63,9 @@ function mountView() {
   return mount(DownloadListView, {
     global: {
       stubs: {
-        DataTable: DataTableStub,
-        ActionCell: ActionCellStub,
+        Tooltip: passthrough,
+        TooltipTrigger: passthrough,
+        TooltipContent: passthrough,
         Dialog: passthrough,
         DialogContent: passthrough,
         DialogHeader: passthrough,
@@ -140,7 +117,7 @@ it('lists the files on mobile with size, status and description', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const items = wrapper.get('[data-test="mobile-downloads"]').findAll('li')
+  const items = cardRows(wrapper)
   expect(items).toHaveLength(2)
   expect(items[0].text()).toContain('Brosur PPDB')
   expect(items[0].text()).toContain('Edisi 2026')
@@ -148,14 +125,12 @@ it('lists the files on mobile with size, status and description', async () => {
   expect(items[0].text()).toContain('1,5 MB')
   expect(items[0].text()).toContain('Aktif')
   expect(items[1].text()).toContain('Nonaktif')
-  const headers = wrapper.get('[data-test="headers"]').findAll('span')
-  expect(headers.map((h) => h.text())).toEqual([
-    'Urutan',
-    'Judul',
-    'Berkas',
-    'Status',
-    'Aksi',
-  ])
+  const headers = (
+    wrapper.getComponent({ name: 'DataTable' }).props('columns') as {
+      header?: unknown
+    }[]
+  ).map((column) => column.header)
+  expect(headers).toEqual(['Urutan', 'Judul', 'Berkas', 'Status', 'Aksi'])
 })
 
 it('adds a file with its PDF and reloads the list', async () => {
@@ -237,10 +212,7 @@ it('edits without a new file and keeps the stored PDF', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="mobile-downloads"]')
-    .get('button[aria-label="Ubah Brosur PPDB"]')
-    .trigger('click')
+  rowActionProps<Row>(wrapper, downloads[0]).onEdit()
   await flushPromises()
   expect(wrapper.text()).toContain('brosur.pdf')
   expect(
@@ -265,8 +237,7 @@ it('moves a file down and sends the full order', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="mobile-downloads"]')
+  await cardRow(wrapper, 0)
     .get('button[aria-label="Turunkan Brosur PPDB"]')
     .trigger('click')
   await flushPromises()
@@ -280,7 +251,7 @@ it('cannot move the first file up or the last one down', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const items = wrapper.get('[data-test="mobile-downloads"]').findAll('li')
+  const items = cardRows(wrapper)
   expect(
     items[0]
       .get('button[aria-label="Naikkan Brosur PPDB"]')
@@ -304,14 +275,10 @@ it('deletes after confirming', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('[data-test="mobile-downloads"]')
-    .get('button[aria-label="Hapus Brosur PPDB"]')
-    .trigger('click')
-  await wrapper
-    .findAll('button')
-    .find((b) => b.text() === 'Hapus' && !b.attributes('aria-label'))!
-    .trigger('click')
+  await rowActionProps<Row>(wrapper, downloads[0]).onDelete({
+    closeAlert: vi.fn(),
+    setLoading: vi.fn(),
+  })
   await flushPromises()
 
   expect(service.remove).toHaveBeenCalledWith('d1')
@@ -324,13 +291,15 @@ it('offers nothing to change without create, update or delete rights', async () 
   const wrapper = mountView()
   await flushPromises()
 
-  const items = wrapper.get('[data-test="mobile-downloads"]').findAll('li')
-  expect(items).toHaveLength(2)
-  expect(items[0].findAll('button')).toHaveLength(0)
+  expect(cardRows(wrapper)).toHaveLength(2)
   expect(
     wrapper.findAll('button').filter((b) => b.text().includes('Tambah')),
   ).toHaveLength(0)
-  expect(wrapper.find('[data-test="actions"]').exists()).toBe(false)
+  expect(wrapper.find('button[aria-label^="Naikkan"]').exists()).toBe(false)
+  const columns = wrapper
+    .getComponent({ name: 'DataTable' })
+    .props('columns') as { id?: string }[]
+  expect(columns.some((column) => column.id === 'actions')).toBe(false)
 })
 
 it('lets a user who may only update edit and move but not delete', async () => {
@@ -339,16 +308,14 @@ it('lets a user who may only update edit and move but not delete', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  const first = wrapper.get('[data-test="mobile-downloads"]').findAll('li')[0]
-  expect(first.find('button[aria-label="Ubah Brosur PPDB"]').exists()).toBe(
-    true,
-  )
-  expect(first.find('button[aria-label="Turunkan Brosur PPDB"]').exists()).toBe(
-    true,
-  )
-  expect(first.find('button[aria-label="Hapus Brosur PPDB"]').exists()).toBe(
-    false,
-  )
+  const props = rowActionProps<Row>(wrapper, downloads[0])
+  expect(props.hideEdit).toBe(false)
+  expect(props.hideDelete).toBe(true)
+  expect(
+    cardRow(wrapper, 0)
+      .find('button[aria-label="Turunkan Brosur PPDB"]')
+      .exists(),
+  ).toBe(true)
 })
 
 it('shows the load error with a retry', async () => {
@@ -365,7 +332,5 @@ it('shows the load error with a retry', async () => {
   await flushPromises()
 
   expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-  expect(
-    wrapper.get('[data-test="mobile-downloads"]').findAll('li'),
-  ).toHaveLength(2)
+  expect(cardRows(wrapper)).toHaveLength(2)
 })

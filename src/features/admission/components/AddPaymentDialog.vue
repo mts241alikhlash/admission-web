@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { refDebounced } from '@vueuse/core'
-import { UploadCloud } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
-import { DatePicker } from '@mts241alikhlash/ui'
+import { DatePicker, FileDropzone } from '@mts241alikhlash/ui'
 import { Input } from '@mts241alikhlash/ui/input'
 import {
   Dialog,
@@ -163,7 +162,9 @@ watch(debouncedSearch, loadApplicants)
           @submit.prevent="save"
         >
           <fieldset class="space-y-2">
-            <legend class="text-sm font-medium">
+            <legend
+              class="text-[length:var(--text-control,0.75rem)] font-medium"
+            >
               Pendaftar <span class="text-destructive">*</span>
             </legend>
             <Input
@@ -178,7 +179,7 @@ watch(debouncedSearch, loadApplicants)
                 :key="applicant.applicationId"
               >
                 <label
-                  class="flex cursor-pointer items-center gap-3 rounded-md border p-2 text-sm"
+                  class="flex cursor-pointer items-center gap-3 rounded-md border p-2 text-[length:var(--text-control,0.75rem)]"
                 >
                   <input
                     v-model="applicationId"
@@ -200,7 +201,7 @@ watch(debouncedSearch, loadApplicants)
             </ul>
             <p
               v-if="errors.applicationId"
-              class="text-sm text-destructive"
+              class="text-[length:var(--text-control,0.75rem)] text-destructive"
             >
               {{ errors.applicationId }}
             </p>
@@ -208,19 +209,21 @@ watch(debouncedSearch, loadApplicants)
 
           <p
             v-if="selected"
-            class="text-sm"
+            class="text-[length:var(--text-control,0.75rem)]"
           >
             Jumlah: <strong>{{ formatIDR(selected.amount) }}</strong>
           </p>
 
           <fieldset class="space-y-2">
-            <legend class="text-sm font-medium">
+            <legend
+              class="text-[length:var(--text-control,0.75rem)] font-medium"
+            >
               Rekening Tujuan <span class="text-destructive">*</span>
             </legend>
             <label
               v-for="account in accounts"
               :key="account.id"
-              class="flex cursor-pointer items-start gap-3 rounded-md border p-2 text-sm"
+              class="flex cursor-pointer items-start gap-3 rounded-md border p-2 text-[length:var(--text-control,0.75rem)]"
             >
               <input
                 v-model="bankAccountId"
@@ -241,14 +244,14 @@ watch(debouncedSearch, loadApplicants)
             </label>
             <p
               v-if="errors.bankAccountId"
-              class="text-sm text-destructive"
+              class="text-[length:var(--text-control,0.75rem)] text-destructive"
             >
               {{ errors.bankAccountId }}
             </p>
           </fieldset>
 
           <div class="grid gap-4 sm:grid-cols-2">
-            <label class="space-y-1 text-sm">
+            <label class="space-y-1 text-[length:var(--text-control,0.75rem)]">
               <span class="font-medium">
                 Bank Pengirim <span class="text-destructive">*</span>
               </span>
@@ -263,7 +266,7 @@ watch(debouncedSearch, loadApplicants)
                 >{{ errors.bankName }}</span
               >
             </label>
-            <label class="space-y-1 text-sm">
+            <label class="space-y-1 text-[length:var(--text-control,0.75rem)]">
               <span class="font-medium">
                 Nama Pemilik Rekening Pengirim
                 <span class="text-destructive">*</span>
@@ -279,7 +282,7 @@ watch(debouncedSearch, loadApplicants)
                 >{{ errors.senderAccountName }}</span
               >
             </label>
-            <label class="space-y-1 text-sm">
+            <label class="space-y-1 text-[length:var(--text-control,0.75rem)]">
               <span class="font-medium">
                 Tanggal Transfer <span class="text-destructive">*</span>
               </span>
@@ -296,30 +299,19 @@ watch(debouncedSearch, loadApplicants)
           </div>
 
           <div class="space-y-2">
-            <p class="text-sm font-medium">
+            <p class="text-[length:var(--text-control,0.75rem)] font-medium">
               Bukti Transfer <span class="text-destructive">*</span>
             </p>
-            <label
-              class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/25 p-5 text-center focus-within:ring-2 focus-within:ring-ring"
-            >
-              <UploadCloud class="size-6 text-primary" />
-              <span class="text-sm">{{
-                file?.name || 'Klik untuk memilih berkas'
-              }}</span>
-              <span class="text-xs text-muted-foreground"
-                >JPG, PNG, atau PDF, maks. 5 MB</span
-              >
-              <input
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
-                class="sr-only"
-                aria-label="Pilih bukti transfer"
-                @change="pickFile"
-              />
-            </label>
+            <FileDropzone
+              :file-name="file?.name"
+              :invalid="!!errors.file"
+              aria-label="Pilih bukti transfer"
+              hint="JPG, PNG, atau PDF, maks. 5 MB"
+              @change="pickFile"
+            />
             <p
               v-if="errors.file"
-              class="text-sm text-destructive"
+              class="text-[length:var(--text-control,0.75rem)] text-destructive"
             >
               {{ errors.file }}
             </p>

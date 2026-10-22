@@ -39,7 +39,7 @@ defineExpose({ validate })
 </script>
 
 <template>
-  <div class="grid gap-4 sm:grid-cols-2">
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-2">
     <FloatingField
       v-slot="{ componentField }"
       name="fullName"
@@ -94,6 +94,7 @@ defineExpose({ validate })
           <DatePicker
             :model-value="value ?? ''"
             min-date="2000-01-01"
+            placeholder=""
             :disabled="!editable"
             @update:model-value="setValue"
           />
@@ -149,7 +150,7 @@ defineExpose({ validate })
           <SelectTrigger
             class="w-full aria-invalid:data-[placeholder]:text-destructive"
           >
-            <SelectValue placeholder="Pilih" />
+            <SelectValue />
           </SelectTrigger>
         </FormControl>
         <SelectContent>

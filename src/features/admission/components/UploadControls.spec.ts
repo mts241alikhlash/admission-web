@@ -65,13 +65,10 @@ it('marks required documents and shows each status with the reviewer note', asyn
   await flushPromises()
 
   expect(wrapper.text()).toContain('Ditolak')
-  expect(wrapper.text()).toContain('Catatan: Foto buram')
+  expect(wrapper.text()).toContain('Status:Ditolak. Foto buram')
+  expect(wrapper.text()).not.toContain('Catatan:')
   expect(wrapper.text()).toContain('Belum diunggah')
-  expect(
-    wrapper
-      .get('[data-test="mobile-documents"]')
-      .findAll('[aria-label="wajib"]'),
-  ).toHaveLength(1)
+  expect(wrapper.findAll('tbody [aria-label="wajib"]')).toHaveLength(1)
 })
 
 it('explains when there are no document types yet', () => {
@@ -180,7 +177,7 @@ it('shows payment errors under their fields and uploads only a valid form', asyn
   })
   const button = wrapper
     .findAll('button')
-    .find((item) => item.text().includes('Unggah Bukti'))!
+    .find((item) => item.text() === 'Unggah')!
 
   await button.trigger('click')
   await flushPromises()
@@ -260,5 +257,85 @@ it('replaces the proof upload with a notice while the wave is full', () => {
   })
   expect(wrapper.text()).toContain('Gelombang ini sudah penuh')
   expect(wrapper.find('input[type="file"]').exists()).toBe(false)
+  wrapper.unmount()
+})
+
+const submitted = {
+  id: 'pay1',
+  status: 'REJECTED',
+  amount: 150000,
+  note: 'Nominal kurang',
+  bankName: 'BSI',
+  senderAccountName: 'Budi',
+  transferDate: '2026-10-10',
+  bankAccount: {
+    id: 'acc-1',
+    bankName: 'BRI',
+    accountNumber: '123',
+    accountHolder: 'MTs Al-Ikhlash',
+  },
+  proofFile: { id: 'f1', originalName: 'bukti.jpg', mimeType: 'image/jpeg' },
+}
+
+function mountPayment(extra: Record<string, unknown> = {}) {
+  return mount(PaymentStep, {
+    props: {
+      modelValue: {
+        bankAccountId: '',
+        bankName: '',
+        senderAccountName: '',
+        transferDate: '',
+      },
+      applicationPayment: submitted,
+      editable: true,
+      paymentFile: null,
+      uploadingPayment: false,
+      onFileChange: vi.fn(),
+      onUpload: vi.fn(),
+      ...extra,
+    } as never,
+  })
+}
+
+it('lists the payment as label and value without a badge or a copy button for the amount', () => {
+  const wrapper = mountPayment()
+
+  const info = wrapper.get('dl').text()
+  expect(info).toContain('Biaya:')
+  expect(info).toContain('150.000')
+  expect(info).toContain('Status:Ditolak')
+  expect(info).toContain('Catatan:Nominal kurang')
+  expect(info).toContain('Rekening tujuan:BRI 123 a.n. MTs Al-Ikhlash')
+  expect(info).toContain('Pengirim:BSI a.n. Budi')
+  expect(wrapper.find('dl [data-slot="badge"]').exists()).toBe(false)
+  expect(wrapper.find('[aria-label="Salin nominal"]').exists()).toBe(false)
+  wrapper.unmount()
+})
+
+it('opens the proof from the file name when a preview handler is given', async () => {
+  const onPreview = vi.fn()
+  const wrapper = mountPayment({ onPreview })
+
+  const open = wrapper.get('[data-test="open-file"]')
+  expect(open.text()).toContain('bukti.jpg')
+  expect(open.find('svg').exists()).toBe(true)
+  await open.trigger('click')
+  expect(onPreview).toHaveBeenCalledWith(submitted.proofFile)
+  wrapper.unmount()
+})
+
+it('shows only the file name as text without a preview handler', () => {
+  const wrapper = mountPayment()
+
+  expect(wrapper.find('[data-test="open-file"]').exists()).toBe(false)
+  expect(wrapper.get('[data-test="uploaded-proof"]').text()).toBe('bukti.jpg')
+  wrapper.unmount()
+})
+
+it('uses the shared drop area for the proof and no card around the form', () => {
+  const wrapper = mountPayment()
+
+  expect(wrapper.find('[data-slot="file-dropzone"]').exists()).toBe(true)
+  expect(wrapper.find('[data-slot="card"]').exists()).toBe(false)
   wrapper.unmount()
 })

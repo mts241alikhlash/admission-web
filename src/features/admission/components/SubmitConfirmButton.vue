@@ -15,6 +15,7 @@ import {
 defineProps<{
   disabled: boolean
   submitting: boolean
+  size?: 'default' | 'sm'
 }>()
 
 const emit = defineEmits<{ confirm: [] }>()
@@ -24,6 +25,7 @@ const open = ref(false)
 
 <template>
   <Button
+    :size="size"
     :disabled="disabled || submitting"
     @click="open = true"
   >

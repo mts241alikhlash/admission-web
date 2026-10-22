@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, h, nextTick, onMounted, ref, useId, watch } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { DataTable, ActionCell, SearchInput } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Badge } from '@mts241alikhlash/ui/badge'
@@ -24,7 +24,6 @@ import {
 } from '@mts241alikhlash/ui/select'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { Filter, Plus } from '@lucide/vue'
-import ServerPager from '../components/ServerPager.vue'
 import { useApplicationList } from '../composables/useApplicationList'
 import { useAdminRegistration } from '../composables/useAdminRegistration'
 import { usePublicAdmission } from '../composables/usePublicAdmission'
@@ -199,19 +198,28 @@ const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
   {
     id: 'wave',
     header: 'Gelombang',
-    meta: { align: 'center' },
+    meta: { align: 'center', mobile: 'hide' },
     cell: ({ row }) => row.original.wave?.code ?? '-',
   },
   {
     id: 'status',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileLabel: 'Pendaftaran',
+      mobileValue: (row: AdmissionApplicationListItem) =>
+        STATUS_LABELS[row.status],
+    },
     cell: ({ row }) => h(StatusBadge, { status: row.original.status }),
   },
   {
     id: 'payment',
     header: 'Pembayaran',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionApplicationListItem) =>
+        row.payment ? PAYMENT_STATUS_LABELS[row.payment.status] : '-',
+    },
     cell: ({ row }) => {
       const status = row.original.payment?.status
       return status
@@ -226,6 +234,7 @@ const columns = computed<ColumnDef<AdmissionApplicationListItem>[]>(() => [
   {
     id: 'submittedAt',
     header: 'Dikirim',
+    meta: { mobile: 'hide' },
     cell: ({ row }) => formatDateTime(row.original.submittedAt),
   },
   {
@@ -255,6 +264,11 @@ watch(
   },
   { immediate: true },
 )
+
+function openApplicant(item: AdmissionApplicationListItem) {
+  saveListContext()
+  void router.push(`/admin/applicants/${item.id}`)
+}
 
 async function openRegister() {
   registerError.value = null
@@ -310,72 +324,20 @@ function fillForm() {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <div class="mb-3 flex justify-end md:hidden">
-        <Button
-          class="w-full sm:w-auto"
-          @click="openRegister"
-        >
-          <Plus class="mr-1.5 size-4" />
-          Tambah
-        </Button>
-      </div>
-
       <div
         ref="listStart"
         class="space-y-4 p-0 sm:px-0"
       >
-        <div class="flex items-center gap-2 md:hidden">
-          <SearchInput
-            v-model="searchQuery"
-            label="Cari pendaftar"
-            class="min-w-0 flex-1"
-          />
-          <Button
-            variant="outline"
-            class="relative shrink-0"
-            @click="filterOpen = true"
-          >
-            <Filter class="mr-1.5 size-4" />
-            Filter
-            <span
-              v-if="activeFiltersCount"
-              class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
-            >
-              {{ activeFiltersCount }}
-            </span>
-          </Button>
-        </div>
-        <div
-          v-if="activeFiltersCount"
-          class="flex flex-wrap gap-2 text-sm md:hidden"
-        >
-          <Button
-            v-if="statusFilter !== 'ALL'"
-            variant="outline"
-            @click="statusFilter = 'ALL'"
-          >
-            Hapus filter status: {{ STATUS_LABELS[statusFilter] }}
-          </Button>
-          <Button
-            v-if="waveFilter !== 'ALL'"
-            variant="outline"
-            @click="waveFilter = 'ALL'"
-          >
-            Hapus filter gelombang:
-            {{
-              waves.find((wave) => wave.id === waveFilter)?.name ?? waveFilter
-            }}
-          </Button>
-        </div>
-
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="refresh()"
@@ -385,16 +347,18 @@ function fillForm() {
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:flex"
+            mobile="cards"
+            row-clickable
             :columns="columns"
-            :data="applications"
+            :data="filtersPending ? [] : applications"
             :page="page"
             :page-size="pageSize"
             :total-items="totalItems"
-            :is-loading="loading"
+            :is-loading="loading || filtersPending"
             item-label="pendaftar"
             @update:page="goToPage"
             @update:page-size="changePageSize"
+            @row-click="openApplicant"
           >
             <template #header-left>
               <Button
@@ -470,75 +434,73 @@ function fillForm() {
                 />
               </div>
             </template>
-          </DataTable>
-          <p
-            v-if="loading || filtersPending"
-            class="text-center text-sm text-muted-foreground md:hidden"
-          >
-            Memuat pendaftar…
-          </p>
-          <div
-            v-if="!loading && !filtersPending && !applications.length"
-            class="space-y-3 rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
-          >
-            <p>
-              {{
-                activeFiltersCount || searchQuery
-                  ? 'Tidak ada pendaftar yang cocok dengan filter.'
-                  : 'Tidak ada data.'
-              }}
-            </p>
-            <Button
-              v-if="activeFiltersCount || searchQuery"
-              variant="outline"
-              @click="resetAllFilters"
-              >Atur Ulang</Button
-            >
-          </div>
-          <ul
-            v-if="!loading && !filtersPending && applications.length"
-            data-test="mobile-applications"
-            class="divide-y rounded-md border md:hidden"
-          >
-            <li
-              v-for="item in applications"
-              :key="item.id"
-              class="min-w-0"
-            >
-              <RouterLink
-                :to="`/admin/applicants/${item.id}`"
-                class="flex min-h-14 min-w-0 items-center gap-2 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
-                @click="saveListContext"
+
+            <template #mobile-toolbar>
+              <SearchInput
+                v-model="searchQuery"
+                label="Cari pendaftar"
+                class="w-full"
+              />
+            </template>
+            <template #mobile-filter>
+              <Button
+                variant="outline"
+                class="relative shrink-0"
+                @click="filterOpen = true"
               >
-                <div class="min-w-0 flex-1">
-                  <p class="break-words text-sm font-medium">
-                    {{ item.fullName }}
-                  </p>
-                  <p class="break-all text-xs text-muted-foreground">
-                    {{ item.registrationNumber }} · Pendaftaran:
-                    {{ STATUS_LABELS[item.status] }}
-                  </p>
-                  <p class="text-xs text-muted-foreground">
-                    Pembayaran:
-                    {{
-                      item.payment
-                        ? PAYMENT_STATUS_LABELS[item.payment.status]
-                        : '-'
-                    }}
-                  </p>
-                </div>
-              </RouterLink>
-            </li>
-          </ul>
-          <ServerPager
-            v-if="!loading && !filtersPending && totalItems > 0"
-            class="md:hidden"
-            :page="page"
-            :page-size="pageSize"
-            :total="totalItems"
-            item-label="pendaftar"
-            @update:page="goToPage"
-          />
+                <Filter class="mr-1.5 size-4" />
+                Filter
+                <span
+                  v-if="activeFiltersCount"
+                  class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
+                >
+                  {{ activeFiltersCount }}
+                </span>
+              </Button>
+            </template>
+            <template #mobile-chips>
+              <div
+                v-if="activeFiltersCount"
+                class="flex flex-wrap gap-2 text-[length:var(--text-control,0.75rem)]"
+              >
+                <Button
+                  v-if="statusFilter !== 'ALL'"
+                  variant="outline"
+                  @click="statusFilter = 'ALL'"
+                >
+                  Hapus filter status: {{ STATUS_LABELS[statusFilter] }}
+                </Button>
+                <Button
+                  v-if="waveFilter !== 'ALL'"
+                  variant="outline"
+                  @click="waveFilter = 'ALL'"
+                >
+                  Hapus filter gelombang:
+                  {{
+                    waves.find((wave) => wave.id === waveFilter)?.name ??
+                    waveFilter
+                  }}
+                </Button>
+              </div>
+            </template>
+            <template #empty>
+              <div class="space-y-3">
+                <p>
+                  {{
+                    activeFiltersCount || searchQuery
+                      ? 'Tidak ada pendaftar yang cocok dengan filter.'
+                      : 'Tidak ada data.'
+                  }}
+                </p>
+                <Button
+                  v-if="activeFiltersCount || searchQuery"
+                  variant="outline"
+                  @click="resetAllFilters"
+                  >Atur Ulang</Button
+                >
+              </div>
+            </template>
+          </DataTable>
         </template>
       </div>
     </Card>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-import { Badge } from '@mts241alikhlash/ui/badge'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
@@ -48,56 +47,37 @@ const fieldGridClass =
 </script>
 
 <template>
-  <div class="space-y-4 text-sm">
+  <div class="space-y-4 text-[length:var(--text-control,0.75rem)]">
     <Card
-      v-if="editable"
+      v-if="editable && missing.length"
       gap="none"
-      class="overflow-hidden"
     >
-      <CardHeader
-        standard
-        class="flex-wrap"
-      >
+      <CardHeader standard>
         <CardTitle size="md">Kelengkapan Data</CardTitle>
-        <Badge :variant="missing.length ? 'destructive' : 'secondary'">
-          {{
-            missing.length
-              ? `${missing.length} bagian belum lengkap`
-              : 'Bagian wajib lengkap'
-          }}
-        </Badge>
       </CardHeader>
-      <CardContent class="px-4 py-2">
-        <p
-          v-if="!missing.length"
-          class="py-3 text-muted-foreground"
-        >
-          Semua bagian yang wajib sudah lengkap. Periksa juga pembayaran dan
-          ringkasan di bawah.
-        </p>
-        <ul
-          v-else
-          class="divide-y"
-        >
+      <CardContent variant="flush">
+        <ul class="divide-y">
           <li
             v-for="item in missing"
             :key="item.step"
-            class="flex flex-wrap items-center gap-x-3 gap-y-1 py-3"
+            class="flex items-center gap-3 px-4 py-2"
           >
-            <span class="min-w-0 flex-1 font-medium">{{ item.label }}</span>
+            <div class="min-w-0 flex-1">
+              <p class="font-medium">{{ item.label }}</p>
+              <p
+                v-if="item.detail"
+                class="text-destructive"
+              >
+                {{ item.detail }}
+              </p>
+            </div>
             <Button
-              variant="link"
+              variant="outline"
               size="sm"
               @click="onGoToStep(item.step)"
             >
               Lengkapi
             </Button>
-            <span
-              v-if="item.detail"
-              class="w-full text-destructive"
-            >
-              {{ item.detail }}
-            </span>
           </li>
         </ul>
       </CardContent>
@@ -115,20 +95,11 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium">Data Diri</span>
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(0)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -247,20 +218,11 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium">Orang Tua/Wali</span>
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(1)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -321,20 +283,11 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium">Alamat</span>
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(2)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -373,20 +326,11 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium">Sekolah Asal</span>
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(3)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -413,22 +357,13 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium"
               >Tempat Tinggal & Perjalanan</span
             >
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(2)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -475,20 +410,11 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium">Prestasi & Beasiswa</span>
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(4)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -533,20 +459,11 @@ const fieldGridClass =
           class="group"
         >
           <summary
-            class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 border-b px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
+            class="flex min-h-[var(--control-h-lg,2rem)] cursor-pointer list-none items-center justify-between gap-3 border-b bg-muted/30 px-4 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring marker:content-none"
           >
             <span class="min-w-0 flex-1 font-medium">Berkas & Pembayaran</span>
-            <Button
-              v-if="editable"
-              variant="link"
-              size="sm"
-              class="h-auto p-0"
-              @click.stop.prevent="onGoToStep(5)"
-            >
-              Ubah
-            </Button>
             <ChevronDown
-              class="size-5 shrink-0 transition-transform group-open:rotate-180"
+              class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
               aria-hidden="true"
             />
           </summary>
@@ -591,19 +508,6 @@ const fieldGridClass =
           </CardContent>
         </details>
       </Card>
-    </div>
-
-    <div
-      v-if="editable"
-      class="rounded-md border border-primary/50 bg-primary/5 p-4"
-    >
-      <p class="font-medium">
-        Pastikan seluruh data sudah benar sebelum mengirim.
-      </p>
-      <p class="text-muted-foreground">
-        Setelah dikirim, formulir tidak dapat diubah kecuali admin meminta
-        revisi.
-      </p>
     </div>
   </div>
 </template>

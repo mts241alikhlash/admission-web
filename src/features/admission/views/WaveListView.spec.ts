@@ -3,6 +3,12 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
 import WaveListView from './WaveListView.vue'
+import {
+  CARDS,
+  cardRows,
+  rowActionProps,
+  nextCardPage,
+} from '@/test/dataTableCards'
 const filtersPending = ref(false)
 beforeEach(() => {
   filtersPending.value = false
@@ -67,8 +73,9 @@ const mountView = () =>
       stubs: {
         ...stubs,
         WaveFormDialog: true,
-        DataTable: true,
-        ActionCell: true,
+        Tooltip: stubs.Card,
+        TooltipTrigger: stubs.Card,
+        TooltipContent: stubs.Card,
       },
     },
   })
@@ -91,22 +98,17 @@ it('shows essential mobile wave information and confirms deletion', async () => 
   state.error = null
   state.deleteWave.mockReset().mockResolvedValue({ success: true })
   const wrapper = mountView()
-  const mobile = wrapper.get('[data-test="mobile-waves"]')
-  expect(mobile.text()).toContain('Kuota 30 / 30 · Penuh')
+  const mobile = wrapper.get(CARDS)
+  expect(mobile.text()).toContain('Kuota:30 / 30 · Penuh')
   expect(mobile.text()).toContain('Gelombang Satu')
   expect(mobile.text()).toContain('Aktif')
   expect(mobile.text()).toContain('30')
   expect(mobile.text()).toContain('50.000')
   expect(mobile.text()).toContain('2026')
-  await mobile.get('button[aria-label="Hapus gelombang"]').trigger('click')
+  rowActionProps(wrapper, state.waves[0]).onDelete()
+  await flushPromises()
   expect(state.deleteWave).not.toHaveBeenCalled()
   expect(wrapper.text()).toContain('Hapus gelombang?')
-  await wrapper
-    .findAll('button')
-    .find((button) => button.text() === 'Batal')!
-    .trigger('click')
-  expect(state.deleteWave).not.toHaveBeenCalled()
-  await mobile.get('button[aria-label="Hapus gelombang"]').trigger('click')
   await wrapper.get('[data-test="confirm-wave-delete"]').trigger('click')
   await flushPromises()
   expect(state.deleteWave).toHaveBeenCalledOnce()
@@ -142,15 +144,12 @@ it('shows the ten waves of the page with filters reachable from a dialog', async
     isActive: true,
   }))
   const wrapper = mountView()
-  expect(wrapper.findAll('[data-test="mobile-waves"] li')).toHaveLength(10)
-  expect(wrapper.text()).toContain('Halaman 1 dari 2')
+  expect(cardRows(wrapper)).toHaveLength(10)
+  expect(wrapper.get(CARDS).text()).toContain('1 / 2')
   expect(
     wrapper.findAll('button').some((button) => button.text() === 'Filter'),
   ).toBe(true)
-  await wrapper
-    .findAll('button')
-    .find((button) => button.text() === 'Selanjutnya')!
-    .trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   expect(state.page?.value).toBe(2)
   state.total = null
   wrapper.unmount()
@@ -173,7 +172,7 @@ it('hides old mobile wave rows while a filter request is pending', async () => {
   const wrapper = mountView()
   filtersPending.value = true
   await flushPromises()
-  expect(wrapper.find('[data-test="mobile-waves"]').exists()).toBe(false)
-  expect(wrapper.text()).toContain('Memuat gelombang')
+  expect(cardRows(wrapper)).toHaveLength(0)
+  expect(wrapper.find('[data-slot="skeleton"]').exists()).toBe(true)
   wrapper.unmount()
 })

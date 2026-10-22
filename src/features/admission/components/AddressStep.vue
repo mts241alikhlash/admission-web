@@ -62,7 +62,10 @@ function regionOf(): RegionCodesForm {
   }
 }
 
+const attempted = ref(false)
+
 async function validateAll() {
+  attempted.value = true
   const [own, others] = await Promise.all([
     validate(),
     parentAddressesRef.value?.validate() ?? Promise.resolve({ valid: true }),
@@ -82,13 +85,9 @@ defineExpose({ validate: validateAll })
       <CardHeader standard>
         <div class="flex items-center gap-3">
           <CardTitle size="md"> Alamat {{ addressOwner }} </CardTitle>
-          <p class="text-sm text-muted-foreground">
-            Santri mengikuti alamat ini. Anggota keluarga lain juga
-            mengikutinya, kecuali yang tinggal di tempat lain.
-          </p>
         </div>
       </CardHeader>
-      <CardContent class="grid gap-4 px-4 pt-4 pb-4 sm:grid-cols-2">
+      <CardContent class="grid gap-x-4 gap-y-1 px-4 pt-4 pb-4 sm:grid-cols-2">
         <FloatingField
           v-slot="{ componentField }"
           name="street"
@@ -104,7 +103,7 @@ defineExpose({ validate: validateAll })
           </FormControl>
         </FloatingField>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1">
           <FloatingField
             v-slot="{ componentField }"
             name="rt"
@@ -160,14 +159,9 @@ defineExpose({ validate: validateAll })
           <RegionSelect
             :model-value="regionOf()"
             :disabled="!editable"
-            @update:model-value="setValues($event)"
+            :invalid="attempted && !!errors.villageCode"
+            @update:model-value="setValues($event, attempted)"
           />
-          <p
-            v-if="errors.villageCode"
-            class="mt-1 text-sm text-destructive"
-          >
-            {{ errors.villageCode }}
-          </p>
         </div>
 
         <FloatingField
