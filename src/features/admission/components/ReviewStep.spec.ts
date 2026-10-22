@@ -121,7 +121,9 @@ it('lists what is incomplete and takes the applicant to that step', async () => 
     },
   })
 
-  expect(wrapper.text()).toContain('1 bagian belum lengkap')
+  expect(wrapper.text()).toContain('Kelengkapan Data')
+  expect(wrapper.text()).not.toContain('bagian belum lengkap')
+  expect(wrapper.findAll('li')).toHaveLength(1)
   expect(wrapper.text()).toContain('Berkas')
   expect(wrapper.text()).toContain('Kartu Keluarga')
   await wrapper
@@ -131,7 +133,7 @@ it('lists what is incomplete and takes the applicant to that step', async () => 
   expect(onGoToStep).toHaveBeenCalledWith(5)
 })
 
-it('summarizes every answer and opens the step behind each section', async () => {
+it('summarizes every answer in collapsible sections', () => {
   const { personal, parents, address, school, hydrate } =
     useApplicationFormState()
   hydrate({ ...draft, parents: [] })
@@ -167,10 +169,54 @@ it('summarizes every answer and opens the step behind each section', async () =>
   expect(wrapper.text()).toContain('Jl. Kenanga 2')
   expect(wrapper.text()).toContain('boleh menyusul')
 
-  const edit = wrapper
-    .findAll('button')
-    .filter((button) => button.text() === 'Ubah')
-  expect(edit).toHaveLength(7)
-  await edit[1].trigger('click')
-  expect(onGoToStep).toHaveBeenCalledWith(1)
+  expect(wrapper.findAll('details')).toHaveLength(7)
+  expect(
+    wrapper.findAll('button').filter((button) => button.text() === 'Ubah'),
+  ).toHaveLength(0)
+  expect(onGoToStep).not.toHaveBeenCalled()
+})
+
+it('shows no completeness card when every part is done or the form is locked', () => {
+  const { personal, parents, address, school } = useApplicationFormState()
+  const props = {
+    personal: personal.value,
+    parents: parents.value,
+    address: address.value,
+    school: school.value,
+    application: draft,
+    onGoToStep: vi.fn(),
+  }
+  const done = mount(ReviewStep, {
+    props: {
+      ...props,
+      editable: true,
+      completeness: [{ step: 0, label: 'Data Diri', done: true }],
+    },
+  })
+  expect(done.text()).not.toContain('Kelengkapan Data')
+  const locked = mount(ReviewStep, {
+    props: {
+      ...props,
+      editable: false,
+      completeness: [{ step: 5, label: 'Berkas', done: false }],
+    },
+  })
+  expect(locked.text()).not.toContain('Kelengkapan Data')
+})
+
+it('has no submit warning box, the confirmation dialog carries it', () => {
+  const { personal, parents, address, school } = useApplicationFormState()
+  const wrapper = mount(ReviewStep, {
+    props: {
+      personal: personal.value,
+      parents: parents.value,
+      address: address.value,
+      school: school.value,
+      application: draft,
+      editable: true,
+      completeness: [],
+      onGoToStep: vi.fn(),
+    },
+  })
+  expect(wrapper.text()).not.toContain('Pastikan seluruh data sudah benar')
 })

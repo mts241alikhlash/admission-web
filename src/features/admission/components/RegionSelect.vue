@@ -5,9 +5,10 @@ import { getIndonesianErrorMessage } from '@mts241alikhlash/web-shared/utils/err
 import { admissionApi } from '../api/admissionApi'
 import type { RegionCodesForm } from '../composables/useApplicationFormState'
 import type { RegionNode } from '../types'
+import { FloatingLabelField } from '@mts241alikhlash/ui/form'
 import OptionSelect from './OptionSelect.vue'
 
-defineProps<{ disabled?: boolean }>()
+defineProps<{ disabled?: boolean; invalid?: boolean }>()
 
 const model = defineModel<RegionCodesForm>({ required: true })
 
@@ -67,22 +68,27 @@ async function choose(index: number, code: string) {
 </script>
 
 <template>
-  <div class="grid gap-4 sm:grid-cols-2">
-    <div
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+    <FloatingLabelField
       v-for="(level, index) in LEVELS"
       :key="level.key"
-      class="space-y-1"
+      :label="level.label"
+      :error="
+        invalid && !model[level.key]
+          ? `${level.label} wajib dipilih`
+          : undefined
+      "
+      floating
+      required
     >
-      <p class="text-xs font-medium text-muted-foreground">
-        {{ level.label }}
-      </p>
       <OptionSelect
         :label="level.label"
         :model-value="model[level.key]"
         :options="asOptions(options[index])"
         :disabled="disabled"
+        :invalid="invalid && !model[level.key]"
         @update:model-value="choose(index, $event)"
       />
-    </div>
+    </FloatingLabelField>
   </div>
 </template>

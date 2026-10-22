@@ -32,7 +32,6 @@ import {
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
 import type { ColumnDef } from '@tanstack/vue-table'
-import ServerPager from '../components/ServerPager.vue'
 import { useAnnouncementList } from '../composables/useAnnouncementList'
 import AnnouncementFormDialog from '../components/AnnouncementFormDialog.vue'
 import type { AdmissionAnnouncement, AnnouncementSavePayload } from '../types'
@@ -109,6 +108,10 @@ const columns = computed<ColumnDef<AdmissionAnnouncement>[]>(() => [
   {
     id: 'isPublished',
     header: 'Status',
+    meta: {
+      mobileValue: (row: AdmissionAnnouncement) =>
+        row.isPublished ? 'Terbit' : 'Draft',
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -190,55 +193,17 @@ async function confirmPendingAction() {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <div class="mb-3 flex justify-end md:hidden">
-        <Button
-          class="w-full sm:w-auto"
-          @click="openCreateForm"
-        >
-          <Plus class="mr-1.5 size-4" />
-          Tambah
-        </Button>
-      </div>
-
       <div class="space-y-4 p-0 sm:px-0">
-        <div class="flex items-center gap-2 md:hidden">
-          <SearchInput
-            v-model="search"
-            label="Cari pengumuman"
-            class="min-w-0 flex-1"
-          />
-          <Button
-            variant="outline"
-            class="shrink-0"
-            @click="filterOpen = true"
-            ><Filter class="mr-1.5 size-4" />Filter</Button
-          >
-        </div>
-        <div
-          v-if="statusFilter !== 'ALL' || waveFilter !== 'ALL'"
-          class="flex flex-wrap gap-2 md:hidden"
-        >
-          <Button
-            v-if="statusFilter !== 'ALL'"
-            variant="outline"
-            @click="statusFilter = 'ALL'"
-            >Hapus filter status</Button
-          >
-          <Button
-            v-if="waveFilter !== 'ALL'"
-            variant="outline"
-            @click="waveFilter = 'ALL'"
-            >Hapus filter gelombang</Button
-          >
-        </div>
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="refresh()"
@@ -248,13 +213,13 @@ async function confirmPendingAction() {
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:flex"
+            mobile="cards"
             :columns="columns"
-            :data="announcements"
+            :data="filtersPending ? [] : announcements"
             :page="page"
             :page-size="pageSize"
             :total-items="totalItems"
-            :is-loading="loading"
+            :is-loading="loading || filtersPending"
             item-label="pengumuman"
             @update:page="goToPage"
             @update:page-size="changePageSize"
@@ -328,74 +293,41 @@ async function confirmPendingAction() {
                 />
               </div>
             </template>
-          </DataTable>
-          <p
-            v-if="!loading && !filtersPending && !announcements.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
-          >
-            Tidak ada data.
-          </p>
-          <p
-            v-if="loading || filtersPending"
-            class="text-center text-sm text-muted-foreground md:hidden"
-          >
-            Memuat pengumuman…
-          </p>
-          <ul
-            v-if="!loading && !filtersPending"
-            data-test="mobile-announcements"
-            class="space-y-2 md:hidden"
-          >
-            <li
-              v-for="item in announcements"
-              :key="item.id"
-              class="min-w-0 space-y-2 rounded-lg border p-4"
-            >
-              <p class="break-words font-medium">{{ item.title }}</p>
-              <p class="break-words text-sm">
-                {{ item.wave?.name ?? 'Semua Gelombang' }}
-              </p>
-              <Badge :variant="item.isPublished ? 'default' : 'secondary'">{{
-                item.isPublished ? 'Terbit' : 'Draft'
-              }}</Badge>
-              <p
-                v-if="item.publishedAt"
-                class="text-sm"
+            <template #mobile-toolbar>
+              <SearchInput
+                v-model="search"
+                label="Cari pengumuman"
+                class="w-full"
+              />
+            </template>
+            <template #mobile-filter>
+              <Button
+                variant="outline"
+                class="shrink-0"
+                @click="filterOpen = true"
+                ><Filter class="mr-1.5 size-4" />Filter</Button
               >
-                Terbit {{ formatDateTime(item.publishedAt) }}
-              </p>
-              <div class="flex flex-wrap gap-2">
+            </template>
+            <template #mobile-chips>
+              <div
+                v-if="statusFilter !== 'ALL' || waveFilter !== 'ALL'"
+                class="flex flex-wrap gap-2"
+              >
                 <Button
-                  v-if="!item.isPublished"
+                  v-if="statusFilter !== 'ALL'"
                   variant="outline"
-                  aria-label="Terbitkan pengumuman"
-                  @click="pendingAction = { kind: 'publish', id: item.id }"
-                  >Terbitkan</Button
+                  @click="statusFilter = 'ALL'"
+                  >Hapus filter status</Button
                 >
                 <Button
+                  v-if="waveFilter !== 'ALL'"
                   variant="outline"
-                  aria-label="Ubah pengumuman"
-                  @click="openEditForm(item)"
-                  >Ubah</Button
-                >
-                <Button
-                  variant="outline"
-                  aria-label="Hapus pengumuman"
-                  @click="pendingAction = { kind: 'delete', id: item.id }"
-                  >Hapus</Button
+                  @click="waveFilter = 'ALL'"
+                  >Hapus filter gelombang</Button
                 >
               </div>
-            </li>
-          </ul>
-          <ServerPager
-            v-if="!loading && !filtersPending && totalItems > 0"
-            class="md:hidden"
-            :page="page"
-            :page-size="pageSize"
-            :total="totalItems"
-            item-label="pengumuman"
-            @update:page="goToPage"
-          />
+            </template>
+          </DataTable>
         </template>
       </div>
     </Card>

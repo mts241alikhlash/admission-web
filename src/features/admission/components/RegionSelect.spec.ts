@@ -174,4 +174,52 @@ describe('RegionSelect', () => {
 
     expect(wrapper.findAll('.level')[1].text()).toBe('1')
   })
+
+  it('labels each level with a floating label', async () => {
+    const wrapper = await mountSelect()
+
+    const labels = wrapper
+      .findAll('[data-slot="ff-label"]')
+      .map((l) => l.text())
+    expect(labels).toEqual([
+      'Provinsi *',
+      'Kabupaten/Kota *',
+      'Kecamatan *',
+      'Desa/Kelurahan *',
+    ])
+  })
+
+  it('shows no error before the form was validated', async () => {
+    const wrapper = await mountSelect()
+
+    expect(wrapper.find('.ff-error').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('wajib dipilih')
+  })
+
+  it('names every empty level once the form is invalid', async () => {
+    const wrapper = await mountSelect()
+    await wrapper.setProps({ invalid: true })
+
+    const labels = wrapper
+      .findAll('[data-slot="ff-label"]')
+      .map((l) => l.text())
+    expect(labels).toEqual([
+      'Provinsi wajib dipilih',
+      'Kabupaten/Kota wajib dipilih',
+      'Kecamatan wajib dipilih',
+      'Desa/Kelurahan wajib dipilih',
+    ])
+    expect(wrapper.findAll('.ff-error')).toHaveLength(4)
+  })
+
+  it('keeps a filled level normal while the others are invalid', async () => {
+    const wrapper = await mountSelect({ ...EMPTY, provinceCode: '32' })
+    await wrapper.setProps({ invalid: true })
+
+    const labels = wrapper
+      .findAll('[data-slot="ff-label"]')
+      .map((l) => l.text())
+    expect(labels[0]).toBe('Provinsi *')
+    expect(labels[1]).toBe('Kabupaten/Kota wajib dipilih')
+  })
 })

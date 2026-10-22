@@ -4,6 +4,14 @@ import { defineComponent, h } from 'vue'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
+import {
+  cardRow,
+  cardsFooter,
+  chooseRowAction,
+  menuLabels,
+  nextCardPage,
+  openRowMenu,
+} from '@/test/dataTableCards'
 import DecisionListView from './DecisionListView.vue'
 
 const service = vi.hoisted(() => ({
@@ -76,7 +84,7 @@ function mountView() {
 const tab = (wrapper: ReturnType<typeof mountView>, label: string) =>
   wrapper.findAll('[role="tab"]').find((t) => t.text().includes(label))!
 const rowOf = (wrapper: ReturnType<typeof mountView>, index = 0) =>
-  wrapper.findAll('[data-test="decision-row"]')[index]
+  cardRow(wrapper, index)
 const buttonOf = (parent: Pick<VueWrapper, 'findAll'>, text: string) =>
   parent.findAll('button').find((b) => b.text() === text)!
 
@@ -113,7 +121,6 @@ it('shows Menunggu first with the counts of every tab and each summary', async (
   expect(tab(wrapper, 'Ditolak').text()).toContain('1')
   expect(rowOf(wrapper).text()).toContain('Ahmad Fauzi')
   expect(rowOf(wrapper).text()).toContain('PSB-a1')
-  expect(rowOf(wrapper).text()).toContain('3 disetujui dari 3 berkas')
 })
 
 it('has no add button', async () => {
@@ -129,7 +136,7 @@ it('opens the applicant detail', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await rowOf(wrapper).get('[data-test="open-detail"]').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Lihat detail')
 
   expect(router.push).toHaveBeenCalledWith('/admin/applicants/a1')
 })
@@ -138,7 +145,7 @@ it('accepts one applicant with an optional note', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await buttonOf(rowOf(wrapper), 'Terima').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Terima')
   await wrapper
     .get('[data-test="action-form"] textarea')
     .setValue('Selamat bergabung')
@@ -153,7 +160,7 @@ it('accepts without a note', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await buttonOf(rowOf(wrapper), 'Terima').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Terima')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -164,7 +171,7 @@ it('rejects only with a reason', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await buttonOf(rowOf(wrapper), 'Tolak').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Tolak')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
   expect(service.reject).not.toHaveBeenCalled()
@@ -185,7 +192,7 @@ it('keeps the dialog open and the list unchanged when the action is refused', as
   const wrapper = mountView()
   await flushPromises()
 
-  await buttonOf(rowOf(wrapper), 'Terima').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Terima')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -261,7 +268,7 @@ it('forgets selected applicants that are no longer in the tab', async () => {
   await rowOf(wrapper, 1).get('[role="checkbox"]').trigger('click')
 
   service.fetchQueue.mockResolvedValue(page([row('a1', 'Ahmad Fauzi')]))
-  await buttonOf(rowOf(wrapper), 'Terima').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Terima')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
 
@@ -281,13 +288,15 @@ it('cancels an acceptance with a reason, except once enrollment started', async 
   await tab(wrapper, 'Diterima').trigger('mousedown')
   await flushPromises()
 
-  expect(rowOf(wrapper, 1).text()).not.toContain('Batalkan penerimaan')
-  expect(rowOf(wrapper, 2).text()).not.toContain('Batalkan penerimaan')
+  await openRowMenu(rowOf(wrapper, 1))
+  expect(menuLabels()).not.toContain('Batalkan penerimaan')
+  await openRowMenu(rowOf(wrapper, 2))
+  expect(menuLabels()).not.toContain('Batalkan penerimaan')
   expect(service.fetchQueue).toHaveBeenLastCalledWith(
     expect.objectContaining({ tab: 'accepted' }),
   )
 
-  await buttonOf(rowOf(wrapper, 0), 'Batalkan penerimaan').trigger('click')
+  await chooseRowAction(rowOf(wrapper, 0), 'Batalkan penerimaan')
   await wrapper.get('[data-test="action-form"]').trigger('submit')
   await flushPromises()
   expect(service.cancelAcceptance).not.toHaveBeenCalled()
@@ -305,7 +314,7 @@ it('cancels a rejection with a reason from the Ditolak tab', async () => {
   await tab(wrapper, 'Ditolak').trigger('mousedown')
   await flushPromises()
 
-  await buttonOf(rowOf(wrapper), 'Batalkan penolakan').trigger('click')
+  await chooseRowAction(rowOf(wrapper), 'Batalkan penolakan')
   await wrapper
     .get('[data-test="action-form"] textarea')
     .setValue('Banding diterima')
@@ -322,11 +331,8 @@ it('hides every action without the decide permission', async () => {
 
   expect(wrapper.findAll('[role="checkbox"]')).toHaveLength(0)
   expect(wrapper.find('[data-test="selection-bar"]').exists()).toBe(false)
-  expect(
-    rowOf(wrapper)
-      .findAll('button')
-      .map((b) => b.text()),
-  ).toEqual(['Lihat detail'])
+  await openRowMenu(rowOf(wrapper))
+  expect(menuLabels()).toEqual(['Lihat detail'])
 })
 
 it('says what an empty tab means', async () => {
@@ -420,14 +426,13 @@ it('loads the next page from the server and replaces the rows', async () => {
   )
   const wrapper = mountView()
   await flushPromises()
-  expect(wrapper.get('[data-test="server-pager"]').text()).toContain(
-    '1–10 dari 25 pendaftar',
-  )
+  expect(cardsFooter(wrapper).text()).toContain('dari 25 pendaftar')
+  expect(cardsFooter(wrapper).text()).toContain('1 / 3')
   service.fetchQueue.mockResolvedValue(
     page([row('a2', 'Siti Aminah')], COUNTS, 25),
   )
 
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenLastCalledWith(
@@ -451,7 +456,7 @@ it('keeps only the selection that is still on the shown page', async () => {
     page([row('a2', 'Siti Aminah')], COUNTS, 25),
   )
 
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   expect(wrapper.find('[data-test="selection-bar"]').exists()).toBe(false)

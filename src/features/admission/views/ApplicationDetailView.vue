@@ -4,8 +4,13 @@ import { computed, h, onMounted, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import type { ColumnDef } from '@tanstack/vue-table'
-import { ActionCell, DataTable, BackButton } from '@mts241alikhlash/ui'
+import { ActionCell, DataTable } from '@mts241alikhlash/ui'
 import { Badge } from '@mts241alikhlash/ui/badge'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@mts241alikhlash/ui/tooltip'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
@@ -32,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { FileText, Info, SquarePen, TriangleAlert } from '@lucide/vue'
+import { FileText, SquarePen, TriangleAlert } from '@lucide/vue'
 import { Alert, AlertDescription, AlertTitle } from '@mts241alikhlash/ui/alert'
 import { useRoleGuard } from '@/features/platform/auth'
 import { useApplicationDetail } from '../composables/useApplicationDetail'
@@ -149,7 +154,7 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
   {
     id: 'name',
     header: 'Jenis Dokumen',
-    meta: { align: 'center', strong: true },
+    meta: { align: 'left', strong: true },
     cell: ({ row }) =>
       h('span', [
         row.original.docType.isActive
@@ -178,7 +183,7 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
                 type: 'button',
                 'data-test': 'open-file',
                 class:
-                  'group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary',
+                  'group inline-flex items-center gap-1.5 text-left text-[length:var(--text-control,0.75rem)] text-foreground transition-colors hover:text-primary',
                 onClick: () => preview.show(doc.file!),
               },
               [
@@ -190,32 +195,45 @@ const documentColumns = computed<ColumnDef<DocumentRow>[]>(() => [
               ],
             )
           : h('span', { class: 'text-muted-foreground' }, '-'),
-        doc?.note
-          ? h(
-              'p',
-              { class: 'text-sm text-destructive' },
-              `Catatan: ${doc.note}`,
-            )
-          : null,
       ])
     },
   },
   {
     id: 'status',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: DocumentRow) => {
+        const label = row.doc?.file
+          ? DOCUMENT_STATUS_LABELS[row.doc.status]
+          : 'Belum diunggah'
+        return row.doc?.note ? `${label}. ${row.doc.note}` : label
+      },
+    },
     cell: ({ row }) => {
       const { doc } = row.original
-      return h(
-        Badge,
-        {
-          variant: doc?.file
-            ? DOCUMENT_STATUS_BADGE_VARIANTS[doc.status]
-            : 'outline',
-        },
-        () =>
-          doc?.file ? DOCUMENT_STATUS_LABELS[doc.status] : 'Belum diunggah',
-      )
+      const variant = doc?.file
+        ? DOCUMENT_STATUS_BADGE_VARIANTS[doc.status]
+        : 'outline'
+      const label = doc?.file
+        ? DOCUMENT_STATUS_LABELS[doc.status]
+        : 'Belum diunggah'
+      if (!doc?.note) return h(Badge, { variant }, () => label)
+      return h(Tooltip, null, () => [
+        h(TooltipTrigger, { asChild: true }, () =>
+          h(
+            Badge,
+            {
+              variant,
+              tabindex: 0,
+              class:
+                'cursor-help focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
+            },
+            () => label,
+          ),
+        ),
+        h(TooltipContent, null, () => doc.note),
+      ])
     },
   },
   ...(canReviewDocuments.value &&
@@ -316,7 +334,7 @@ const achievementColumns = computed<ColumnDef<AdmissionAchievement>[]>(() => [
             type: 'button',
             'data-test': 'open-file',
             class:
-              'group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary',
+              'group inline-flex items-center gap-1.5 text-left text-[length:var(--text-control,0.75rem)] text-foreground transition-colors hover:text-primary',
             onClick: () => preview.show(file),
           },
           [
@@ -416,7 +434,7 @@ const scholarshipColumns = computed<ColumnDef<AdmissionScholarship>[]>(() => [
             type: 'button',
             'data-test': 'open-file',
             class:
-              'group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary',
+              'group inline-flex items-center gap-1.5 text-left text-[length:var(--text-control,0.75rem)] text-foreground transition-colors hover:text-primary',
             onClick: () => preview.show(file),
           },
           [
@@ -579,7 +597,7 @@ useBreadcrumbs(() => {
 <template>
   <div
     v-if="loading"
-    class="p-6 text-sm text-muted-foreground"
+    class="p-6 text-[length:var(--text-control,0.75rem)] text-muted-foreground"
   >
     Memuat detail pendaftar…
   </div>
@@ -588,7 +606,9 @@ useBreadcrumbs(() => {
     v-else-if="error === 'not-found'"
     class="space-y-3 p-6"
   >
-    <p class="text-sm text-muted-foreground">Pendaftar tidak ditemukan.</p>
+    <p class="text-[length:var(--text-control,0.75rem)] text-muted-foreground">
+      Pendaftar tidak ditemukan.
+    </p>
     <Button
       variant="outline"
       @click="router.push('/admin/applicants')"
@@ -601,7 +621,9 @@ useBreadcrumbs(() => {
     v-else-if="error === 'load-failed'"
     class="space-y-3 p-6"
   >
-    <p class="text-sm text-muted-foreground">Gagal memuat detail pendaftar.</p>
+    <p class="text-[length:var(--text-control,0.75rem)] text-muted-foreground">
+      Gagal memuat detail pendaftar.
+    </p>
     <div class="flex flex-wrap gap-2">
       <Button
         variant="outline"
@@ -620,38 +642,39 @@ useBreadcrumbs(() => {
 
   <div
     v-else-if="application"
-    class="space-y-6 p-4 sm:p-6"
+    class="space-y-4 px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2"
   >
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <CardHeader
-        standard
-        class="min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
-      >
-        <div class="flex min-w-0 items-center gap-3">
-          <BackButton
-            label="Kembali ke daftar pendaftar"
-            @click="router.push('/admin/applicants')"
-          />
-          <CardTitle size="lg"> Detail Pendaftar </CardTitle>
-        </div>
-        <Button
-          v-if="editable"
-          class="w-full sm:w-auto"
-          @click="
-            router.push({
-              name: 'admin-application-form',
-              params: { id: applicationId },
-            })
-          "
-        >
-          <SquarePen class="mr-1.5 size-4" />
-          Lengkapi Data
-        </Button>
-      </CardHeader>
       <CardContent class="space-y-4 p-0 sm:px-0">
+        <div
+          v-if="editable"
+          class="flex flex-col gap-3 sm:flex-row sm:items-center"
+        >
+          <div
+            v-if="application.revisionNote && status === 'REVISION_NEEDED'"
+            class="flex min-h-[var(--control-h-md,1.75rem)] min-w-0 flex-1 items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1 text-destructive"
+          >
+            <TriangleAlert class="size-3.5 shrink-0" />
+            <p class="min-w-0 leading-normal">
+              {{ application.revisionNote }}
+            </p>
+          </div>
+          <Button
+            class="w-full sm:ml-auto sm:w-auto"
+            @click="
+              router.push({
+                name: 'admin-application-form',
+                params: { id: applicationId },
+              })
+            "
+          >
+            <SquarePen class="mr-1.5 size-4" />
+            Lengkapi Data
+          </Button>
+        </div>
         <Alert
           v-if="(application.duplicateNikCount ?? 0) > 0"
           variant="destructive"
@@ -663,31 +686,15 @@ useBreadcrumbs(() => {
             lain.
           </AlertDescription>
         </Alert>
-        <Alert
-          v-if="application.revisionNote && status === 'REVISION_NEEDED'"
-          variant="destructive"
-        >
-          <TriangleAlert />
-          <AlertTitle>Catatan revisi</AlertTitle>
-          <AlertDescription>{{ application.revisionNote }}</AlertDescription>
-        </Alert>
-        <Alert v-if="application.decisionNote">
-          <Info />
-          <AlertTitle>Catatan keputusan</AlertTitle>
-          <AlertDescription>{{ application.decisionNote }}</AlertDescription>
-        </Alert>
 
         <Tabs
           v-model="activeTab"
           variant="line"
           class="min-w-0 gap-0"
         >
-          <Card
-            gap="none"
-            class="overflow-hidden rounded-xl border bg-card shadow-xs"
-          >
+          <Card gap="none">
             <CardHeader class="p-0 shrink-0">
-              <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
+              <TabsList class="w-full bg-muted/30 px-4">
                 <TabsTrigger value="personal"> Data Diri </TabsTrigger>
                 <TabsTrigger value="parents"> Orang Tua/Wali </TabsTrigger>
                 <TabsTrigger value="address"> Alamat </TabsTrigger>
@@ -700,27 +707,17 @@ useBreadcrumbs(() => {
               </TabsList>
             </CardHeader>
 
-            <CardContent
-              variant="standard"
-              class="sm:p-6 space-y-6"
-            >
-              <p class="pb-1 text-xs text-muted-foreground sm:hidden">
-                Geser untuk melihat bagian lain
-              </p>
-
+            <CardContent variant="standard">
               <TabsContent
                 value="personal"
-                class="space-y-6 text-sm"
+                class="space-y-4 text-[length:var(--text-control,0.75rem)]"
               >
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md">Pendaftaran</CardTitle>
                   </CardHeader>
                   <CardContent variant="standard">
-                    <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                    <dl class="grid gap-x-6 gap-y-1.5 xl:grid-cols-2">
                       <DetailItem
                         label="No. Pendaftaran"
                         :value="application.registrationNumber"
@@ -738,15 +735,12 @@ useBreadcrumbs(() => {
                   </CardContent>
                 </Card>
 
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md">Identitas Calon Santri</CardTitle>
                   </CardHeader>
                   <CardContent variant="standard">
-                    <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                    <dl class="grid gap-x-6 gap-y-1.5 xl:grid-cols-2">
                       <DetailItem
                         label="Nama Lengkap"
                         :value="application.fullName"
@@ -860,11 +854,11 @@ useBreadcrumbs(() => {
 
               <TabsContent
                 value="parents"
-                class="space-y-6 text-sm"
+                class="space-y-4 text-[length:var(--text-control,0.75rem)]"
               >
                 <div
                   v-if="(application.parents ?? []).length === 0"
-                  class="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground shadow-xs"
+                  class="rounded-xl border bg-card p-6 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground shadow-xs"
                 >
                   Belum ada data orang tua atau wali.
                 </div>
@@ -872,7 +866,6 @@ useBreadcrumbs(() => {
                   v-for="parent in application.parents ?? []"
                   :key="parent.relation"
                   gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
                 >
                   <CardHeader standard>
                     <CardTitle size="md">
@@ -886,7 +879,7 @@ useBreadcrumbs(() => {
                     </Badge>
                   </CardHeader>
                   <CardContent variant="standard">
-                    <dl class="grid gap-x-8 gap-y-3 xl:grid-cols-2">
+                    <dl class="grid gap-x-6 gap-y-1.5 xl:grid-cols-2">
                       <DetailItem
                         label="Nama Lengkap"
                         :value="parent.name"
@@ -947,17 +940,16 @@ useBreadcrumbs(() => {
 
               <TabsContent
                 value="address"
-                class="text-sm"
+                class="text-[length:var(--text-control,0.75rem)]"
               >
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md"> Alamat Tempat Tinggal </CardTitle>
                   </CardHeader>
                   <CardContent variant="standard">
-                    <dl class="grid gap-x-8 gap-y-3 text-sm xl:grid-cols-2">
+                    <dl
+                      class="grid gap-x-8 gap-y-3 text-[length:var(--text-control,0.75rem)] xl:grid-cols-2"
+                    >
                       <DetailItem
                         label="Alamat (Jalan)"
                         :value="application.street"
@@ -1024,17 +1016,16 @@ useBreadcrumbs(() => {
 
               <TabsContent
                 value="school"
-                class="text-sm"
+                class="text-[length:var(--text-control,0.75rem)]"
               >
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md"> Sekolah Asal </CardTitle>
                   </CardHeader>
                   <CardContent variant="standard">
-                    <dl class="grid gap-x-8 gap-y-3 text-sm xl:grid-cols-2">
+                    <dl
+                      class="grid gap-x-8 gap-y-3 text-[length:var(--text-control,0.75rem)] xl:grid-cols-2"
+                    >
                       <DetailItem
                         label="Nama Sekolah Asal"
                         :value="application.previousSchoolName"
@@ -1058,12 +1049,9 @@ useBreadcrumbs(() => {
 
               <TabsContent
                 value="achievements"
-                class="space-y-6 text-sm"
+                class="space-y-4 text-[length:var(--text-control,0.75rem)]"
               >
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md">Prestasi</CardTitle>
                   </CardHeader>
@@ -1076,7 +1064,7 @@ useBreadcrumbs(() => {
                     </p>
                     <template v-else>
                       <DataTable
-                        class="hidden md:flex"
+                        mobile="cards"
                         :columns="achievementColumns"
                         :data="application.achievements ?? []"
                         item-label="prestasi"
@@ -1086,91 +1074,11 @@ useBreadcrumbs(() => {
                           Math.max(1, (application.achievements ?? []).length)
                         "
                       />
-                      <ul
-                        data-test="mobile-achievements"
-                        class="divide-y rounded-lg border md:hidden"
-                      >
-                        <li
-                          v-for="row in application.achievements ?? []"
-                          :key="row.id"
-                          class="min-w-0 space-y-3 p-4 text-sm"
-                        >
-                          <div class="flex items-start justify-between gap-3">
-                            <h4 class="break-words font-medium text-sm">
-                              {{ presentValue(row.competitionName) }}
-                            </h4>
-                            <Badge
-                              v-if="row.rank"
-                              variant="secondary"
-                              class="shrink-0"
-                            >
-                              {{ row.rank }}
-                            </Badge>
-                          </div>
-                          <dl
-                            class="grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2"
-                          >
-                            <DetailItem
-                              label="Bidang"
-                              :value="
-                                nameOf(
-                                  'competitionFields',
-                                  row.competitionFieldId,
-                                )
-                              "
-                            />
-                            <DetailItem
-                              label="Tingkat"
-                              :value="
-                                nameOf(
-                                  'competitionLevels',
-                                  row.competitionLevelId,
-                                )
-                              "
-                            />
-                            <DetailItem
-                              label="Tahun"
-                              :value="row.year"
-                            />
-                            <DetailItem
-                              label="Penyelenggara"
-                              :value="row.organizer"
-                            />
-                          </dl>
-                          <button
-                            v-if="row.file"
-                            type="button"
-                            data-test="open-file"
-                            class="group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary"
-                            @click="preview.show(row.file)"
-                          >
-                            <FileText
-                              class="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-                            />
-                            <span class="break-words">
-                              {{
-                                standardDocumentFileName(
-                                  row.competitionName || 'Prestasi',
-                                  application.fullName,
-                                  row.file.originalName,
-                                )
-                              }}
-                            </span>
-                          </button>
-                        </li>
-                      </ul>
-                      <p class="mt-3 text-xs text-muted-foreground">
-                        Menampilkan
-                        {{ (application.achievements ?? []).length }} prestasi
-                      </p>
                     </template>
                   </CardContent>
                 </Card>
 
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md">Beasiswa & Bantuan</CardTitle>
                   </CardHeader>
@@ -1183,7 +1091,7 @@ useBreadcrumbs(() => {
                     </p>
                     <template v-else>
                       <DataTable
-                        class="hidden md:flex"
+                        mobile="cards"
                         :columns="scholarshipColumns"
                         :data="application.scholarships ?? []"
                         item-label="beasiswa"
@@ -1193,92 +1101,6 @@ useBreadcrumbs(() => {
                           Math.max(1, (application.scholarships ?? []).length)
                         "
                       />
-                      <ul
-                        data-test="mobile-scholarships"
-                        class="divide-y rounded-lg border md:hidden"
-                      >
-                        <li
-                          v-for="row in application.scholarships ?? []"
-                          :key="row.id"
-                          class="min-w-0 space-y-3 p-4 text-sm"
-                        >
-                          <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                              <h4 class="break-words font-medium text-sm">
-                                {{ presentValue(row.scholarshipName) }}
-                              </h4>
-                              <p
-                                v-if="row.kipNumber"
-                                class="text-xs text-muted-foreground"
-                              >
-                                No. KIP: {{ row.kipNumber }}
-                              </p>
-                            </div>
-                            <Badge
-                              v-if="row.amount != null"
-                              variant="secondary"
-                              class="shrink-0 tabular-nums"
-                            >
-                              {{ formatIDR(row.amount) }}
-                            </Badge>
-                          </div>
-                          <dl
-                            class="grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2"
-                          >
-                            <DetailItem
-                              label="Kategori"
-                              :value="
-                                nameOf('scholarshipCategories', row.categoryId)
-                              "
-                            />
-                            <DetailItem
-                              label="Instansi Pemberi"
-                              :value="row.providerName"
-                            />
-                            <DetailItem
-                              label="Jenis Instansi"
-                              :value="
-                                nameOf(
-                                  'scholarshipProviderTypes',
-                                  row.providerTypeId,
-                                )
-                              "
-                            />
-                            <DetailItem
-                              label="Jangka Waktu"
-                              :value="row.duration"
-                            />
-                            <DetailItem
-                              label="Tahun"
-                              :value="row.year"
-                            />
-                          </dl>
-                          <button
-                            v-if="row.file"
-                            type="button"
-                            data-test="open-file"
-                            class="group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary"
-                            @click="preview.show(row.file)"
-                          >
-                            <FileText
-                              class="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-                            />
-                            <span class="break-words">
-                              {{
-                                standardDocumentFileName(
-                                  row.scholarshipName || 'Beasiswa',
-                                  application.fullName,
-                                  row.file.originalName,
-                                )
-                              }}
-                            </span>
-                          </button>
-                        </li>
-                      </ul>
-                      <p class="mt-3 text-xs text-muted-foreground">
-                        Menampilkan
-                        {{ (application.scholarships ?? []).length }} beasiswa
-                      </p>
                     </template>
                   </CardContent>
                 </Card>
@@ -1286,25 +1108,22 @@ useBreadcrumbs(() => {
 
               <TabsContent
                 value="documents"
-                class="text-sm"
+                class="text-[length:var(--text-control,0.75rem)]"
               >
-                <Card
-                  gap="none"
-                  class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                >
+                <Card gap="none">
                   <CardHeader standard>
                     <CardTitle size="md">Berkas Persyaratan</CardTitle>
                   </CardHeader>
                   <CardContent variant="standard">
                     <p
                       v-if="documentRows.length === 0"
-                      class="text-sm text-muted-foreground"
+                      class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                     >
                       Belum ada jenis berkas.
                     </p>
                     <template v-else>
                       <DataTable
-                        class="hidden md:flex"
+                        mobile="cards"
                         :columns="documentColumns"
                         :data="documentRows"
                         item-label="dokumen"
@@ -1312,86 +1131,6 @@ useBreadcrumbs(() => {
                         hide-pagination
                         :page-size="Math.max(1, documentRows.length)"
                       />
-                      <ul
-                        data-test="mobile-documents"
-                        class="divide-y rounded-lg border md:hidden"
-                      >
-                        <li
-                          v-for="{ docType, doc } in documentRows"
-                          :key="docType.id"
-                          class="min-w-0 space-y-3 p-4 text-sm"
-                        >
-                          <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                              <p class="break-words font-medium">
-                                {{ docType.name
-                                }}{{ docType.isActive ? '' : ' (nonaktif)' }}
-                              </p>
-                            </div>
-                            <Badge
-                              class="shrink-0"
-                              :variant="
-                                doc?.file
-                                  ? DOCUMENT_STATUS_BADGE_VARIANTS[doc.status]
-                                  : 'outline'
-                              "
-                            >
-                              {{
-                                doc?.file
-                                  ? DOCUMENT_STATUS_LABELS[doc.status]
-                                  : 'Belum diunggah'
-                              }}
-                            </Badge>
-                          </div>
-                          <button
-                            v-if="doc?.file"
-                            type="button"
-                            data-test="open-file"
-                            class="group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary"
-                            @click="preview.show(doc.file)"
-                          >
-                            <FileText
-                              class="size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-                            />
-                            <span class="break-words">
-                              {{
-                                standardDocumentFileName(
-                                  docType.name,
-                                  application.fullName,
-                                  doc.file.originalName,
-                                )
-                              }}
-                            </span>
-                          </button>
-                          <p
-                            v-if="doc?.note"
-                            class="text-destructive"
-                          >
-                            Catatan: {{ doc.note }}
-                          </p>
-                          <div
-                            v-if="canReviewDocuments && needsReview(doc)"
-                            class="grid grid-cols-2 gap-2"
-                          >
-                            <Button
-                              variant="destructive"
-                              :disabled="acting"
-                              @click="openDialog('reject-doc', doc.id)"
-                            >
-                              Tolak
-                            </Button>
-                            <Button
-                              :disabled="acting"
-                              @click="handleApproveDocument(doc.id)"
-                            >
-                              Setujui
-                            </Button>
-                          </div>
-                        </li>
-                      </ul>
-                      <p class="mt-3 text-xs text-muted-foreground">
-                        Menampilkan {{ documentRows.length }} berkas
-                      </p>
                     </template>
                   </CardContent>
                 </Card>
@@ -1399,7 +1138,7 @@ useBreadcrumbs(() => {
 
               <TabsContent
                 value="payment"
-                class="space-y-6 text-sm"
+                class="space-y-4 text-[length:var(--text-control,0.75rem)]"
               >
                 <Alert
                   v-if="application.waveIsFull"
@@ -1413,10 +1152,7 @@ useBreadcrumbs(() => {
                   </AlertDescription>
                 </Alert>
                 <template v-if="application.payment">
-                  <Card
-                    gap="none"
-                    class="overflow-hidden rounded-xl border bg-card shadow-xs"
-                  >
+                  <Card gap="none">
                     <CardHeader standard>
                       <CardTitle size="md"> Rincian Pembayaran </CardTitle>
                       <Badge
@@ -1487,7 +1223,7 @@ useBreadcrumbs(() => {
                             v-if="application.payment.proofFile"
                             type="button"
                             data-test="open-file"
-                            class="group inline-flex items-center gap-1.5 text-left text-sm font-medium text-foreground transition-colors hover:text-primary"
+                            class="group inline-flex items-center gap-1.5 text-left text-[length:var(--text-control,0.75rem)] text-foreground transition-colors hover:text-primary"
                             @click="preview.show(application.payment.proofFile)"
                           >
                             <FileText
@@ -1535,7 +1271,7 @@ useBreadcrumbs(() => {
                             query: { applicationId: application.id },
                           }"
                         >
-                          Tambah pembayaran
+                          Tambah
                         </RouterLink>
                       </Button>
                       <Button
@@ -1691,7 +1427,7 @@ useBreadcrumbs(() => {
               </div>
               <p
                 v-if="application?.nis && application?.nisn"
-                class="text-sm"
+                class="text-[length:var(--text-control,0.75rem)]"
               >
                 NIS {{ application.nis }} dan NISN
                 {{ application.nisn }} dipakai untuk membuat akun santri.
@@ -1768,7 +1504,9 @@ useBreadcrumbs(() => {
     v-else
     class="p-6"
   >
-    <p class="text-sm text-muted-foreground">Data pendaftar belum tersedia.</p>
+    <p class="text-[length:var(--text-control,0.75rem)] text-muted-foreground">
+      Data pendaftar belum tersedia.
+    </p>
     <Button
       variant="outline"
       class="mt-3"

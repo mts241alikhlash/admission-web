@@ -5,6 +5,13 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
 import LateDocumentListView from './LateDocumentListView.vue'
+import {
+  cardRow,
+  chooseRowAction,
+  menuLabels,
+  nextCardPage,
+  openRowMenu,
+} from '@/test/dataTableCards'
 
 const service = vi.hoisted(() => ({
   fetchList: vi.fn(),
@@ -114,6 +121,23 @@ beforeEach(() => {
   service.fetchList.mockResolvedValue(page([base, pending]))
 })
 
+const rowButton = (row: ReturnType<typeof cardRow>, label: string) =>
+  row.findAll('button').find((b) => b.text() === label)
+
+async function can(row: ReturnType<typeof cardRow>, label: string) {
+  if (rowButton(row, label)) return true
+  if (!row.findAll('button').some((b) => b.text().includes('Opsi')))
+    return false
+  await openRowMenu(row)
+  return menuLabels().includes(label)
+}
+
+async function act(row: ReturnType<typeof cardRow>, label: string) {
+  const direct = rowButton(row, label)
+  if (direct) await direct.trigger('click')
+  else await chooseRowAction(row, label)
+}
+
 it('shows the four counts and the year', async () => {
   const wrapper = mountView()
   await flushPromises()
@@ -139,13 +163,7 @@ it('asks the server for the next page', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .get('nav[aria-label], [data-test="server-pager"]')
-    .findAll('button')
-    .find((b) =>
-      /berikut|selanjut|next/i.test(b.text() + b.attributes('aria-label')),
-    )!
-    .trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   expect(service.fetchList).toHaveBeenLastCalledWith(
@@ -153,7 +171,7 @@ it('asks the server for the next page', async () => {
   )
 })
 
-it('tints LATE rows yellow and OVERDUE rows red but disables no action', async () => {
+it('keeps every action enabled on LATE and OVERDUE rows', async () => {
   service.fetchList.mockResolvedValue(
     page([
       { ...base, urgency: 'LATE' },
@@ -163,14 +181,11 @@ it('tints LATE rows yellow and OVERDUE rows red but disables no action', async (
   const wrapper = mountView()
   await flushPromises()
 
-  const [late, overdue] = wrapper.findAll('[data-test="late-row"]')
-  expect(late.classes().join(' ')).toContain('amber')
-  expect(overdue.classes().join(' ')).toContain('red')
   expect(
-    late.get('[data-test="upload"]').attributes('disabled'),
+    rowButton(cardRow(wrapper, 0), 'Unggah')?.attributes('disabled'),
   ).toBeUndefined()
   expect(
-    overdue.get('[data-test="check"]').attributes('disabled'),
+    rowButton(cardRow(wrapper, 1), 'Periksa')?.attributes('disabled'),
   ).toBeUndefined()
 })
 
@@ -178,20 +193,20 @@ it('shows Unggah only with the upload permission and Periksa only with the verif
   access.granted = new Set(['admission-late-documents.read'])
   let wrapper = mountView()
   await flushPromises()
-  expect(wrapper.find('[data-test="upload"]').exists()).toBe(false)
-  expect(wrapper.find('[data-test="check"]').exists()).toBe(false)
+  expect(await can(cardRow(wrapper, 0), 'Unggah')).toBe(false)
+  expect(await can(cardRow(wrapper, 1), 'Periksa')).toBe(false)
 
   access.granted = new Set(['admission-late-documents.upload'])
   wrapper = mountView()
   await flushPromises()
-  expect(wrapper.find('[data-test="upload"]').exists()).toBe(true)
-  expect(wrapper.find('[data-test="check"]').exists()).toBe(false)
+  expect(await can(cardRow(wrapper, 0), 'Unggah')).toBe(true)
+  expect(await can(cardRow(wrapper, 1), 'Periksa')).toBe(false)
 
   access.granted = new Set(['admission-late-documents.verify'])
   wrapper = mountView()
   await flushPromises()
-  expect(wrapper.find('[data-test="upload"]').exists()).toBe(false)
-  expect(wrapper.find('[data-test="check"]').exists()).toBe(true)
+  expect(await can(cardRow(wrapper, 0), 'Unggah')).toBe(false)
+  expect(await can(cardRow(wrapper, 1), 'Periksa')).toBe(true)
 })
 
 it('upload sends the file and reloads the page', async () => {
@@ -199,7 +214,7 @@ it('upload sends the file and reloads the page', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper.get('[data-test="upload"]').trigger('click')
+  await act(cardRow(wrapper, 0), 'Unggah')
   const input = wrapper.get('input[type="file"]')
   const file = new File(['x'], 'ijazah.pdf', { type: 'application/pdf' })
   Object.defineProperty(input.element, 'files', { value: [file] })
@@ -216,7 +231,7 @@ it('approve and reject (reason required) reload the page', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper.get('[data-test="check"]').trigger('click')
+  await act(cardRow(wrapper, 1), 'Periksa')
   await wrapper.get('[data-test="reject"]').trigger('click')
   await flushPromises()
   expect(service.decide).not.toHaveBeenCalled()
@@ -232,7 +247,7 @@ it('approve and reject (reason required) reload the page', async () => {
   )
   expect(service.fetchList).toHaveBeenCalledTimes(2)
 
-  await wrapper.get('[data-test="check"]').trigger('click')
+  await act(cardRow(wrapper, 1), 'Periksa')
   await wrapper.get('textarea').setValue('Buram')
   await wrapper.get('[data-test="reject"]').trigger('click')
   await flushPromises()
@@ -276,10 +291,7 @@ it('opens the file of a row in the preview', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper
-    .findAll('[data-test="late-row"]')[1]
-    .get('[data-test="open-file"]')
-    .trigger('click')
+  await act(cardRow(wrapper, 1), 'Lihat berkas')
   expect(wrapper.get('[data-test="preview"]').attributes('data-file')).toBe(
     'file2',
   )

@@ -181,7 +181,9 @@ const onSubmit = handleSubmit((formValues) => {
         <DialogTitle>
           {{ isEdit ? 'Ubah Gelombang' : 'Tambah Gelombang' }}
         </DialogTitle>
-        <DialogDescription class="sr-only"> </DialogDescription>
+        <DialogDescription class="sr-only">
+          Isi data gelombang pendaftaran.
+        </DialogDescription>
       </DialogHeader>
 
       <div class="min-h-0 flex-1 overflow-y-auto">
@@ -254,6 +256,7 @@ const onSubmit = handleSubmit((formValues) => {
               label="Rentang Tanggal"
               required
               always-float
+              class="[&_button]:border-input [&_button]:bg-transparent [&_button:hover]:bg-transparent [&_button:hover]:text-foreground dark:[&_button]:bg-input/30 dark:[&_button:hover]:bg-input/30"
             >
               <FormControl>
                 <DateRangePicker
@@ -335,7 +338,10 @@ const onSubmit = handleSubmit((formValues) => {
                     @update:model-value="handleChange"
                   />
                 </FormControl>
-                <span class="text-sm font-medium">Aktifkan</span>
+                <span
+                  class="text-[length:var(--text-control,0.75rem)] font-medium"
+                  >Aktifkan</span
+                >
               </div>
             </FloatingField>
           </div>

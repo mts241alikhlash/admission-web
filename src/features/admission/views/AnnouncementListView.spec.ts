@@ -3,6 +3,13 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import AnnouncementListView from './AnnouncementListView.vue'
+import {
+  CARDS,
+  cardRow,
+  cardRows,
+  nextCardPage,
+  rowActionProps,
+} from '@/test/dataTableCards'
 const filtersPending = ref(false)
 beforeEach(() => {
   filtersPending.value = false
@@ -60,17 +67,12 @@ it('shows the announcements of the page and exposes filters behind one button', 
     publishedAt: null,
   }))
   const wrapper = mountView()
-  expect(wrapper.findAll('[data-test="mobile-announcements"] li')).toHaveLength(
-    10,
-  )
-  expect(wrapper.text()).toContain('Halaman 1 dari 2')
+  expect(cardRows(wrapper)).toHaveLength(10)
+  expect(wrapper.get(CARDS).text()).toContain('1 / 2')
   expect(
     wrapper.findAll('button').some((button) => button.text() === 'Filter'),
   ).toBe(true)
-  await wrapper
-    .findAll('button')
-    .find((button) => button.text() === 'Selanjutnya')!
-    .trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   expect(state.page?.value).toBe(2)
   state.total = null
   wrapper.unmount()
@@ -85,10 +87,8 @@ it('hides old mobile announcements while filtering', async () => {
   const wrapper = mountView()
   filtersPending.value = true
   await flushPromises()
-  expect(wrapper.find('[data-test="mobile-announcements"]').exists()).toBe(
-    false,
-  )
-  expect(wrapper.text()).toContain('Memuat pengumuman')
+  expect(cardRows(wrapper)).toHaveLength(0)
+  expect(wrapper.find('[data-slot="skeleton"]').exists()).toBe(true)
   wrapper.unmount()
 })
 const stubs = Object.fromEntries(
@@ -115,8 +115,9 @@ const mountView = () =>
         },
         AlertDialogCancel: { template: '<button><slot /></button>' },
         AnnouncementFormDialog: true,
-        DataTable: true,
-        ActionCell: true,
+        Tooltip: stubs.Card,
+        TooltipTrigger: stubs.Card,
+        TooltipContent: stubs.Card,
       },
     },
   })
@@ -136,11 +137,15 @@ it('shows mobile draft and waits for confirmation before publishing or deleting'
   state.publish.mockReset().mockResolvedValue({ success: true })
   state.remove.mockReset().mockResolvedValue({ success: true })
   const wrapper = mountView()
-  const mobile = wrapper.get('[data-test="mobile-announcements"]')
+  const mobile = wrapper.get(CARDS)
+  const publishButton = () =>
+    cardRow(wrapper)
+      .findAll('button')
+      .find((button) => button.text() === 'Terbitkan')!
   expect(mobile.text()).toContain('Pengumuman Uji')
   expect(mobile.text()).toContain('Gelombang Satu')
   expect(mobile.text()).toContain('Draft')
-  await mobile.get('button[aria-label="Terbitkan pengumuman"]').trigger('click')
+  await publishButton().trigger('click')
   expect(state.publish).not.toHaveBeenCalled()
   expect(wrapper.text()).toContain('akan menerima notifikasi')
   await wrapper
@@ -148,14 +153,15 @@ it('shows mobile draft and waits for confirmation before publishing or deleting'
     .find((button) => button.text() === 'Batal')!
     .trigger('click')
   expect(state.publish).not.toHaveBeenCalled()
-  await mobile.get('button[aria-label="Terbitkan pengumuman"]').trigger('click')
+  await publishButton().trigger('click')
   await wrapper
     .get('[data-test="confirm-announcement-action"]')
     .trigger('click')
   await flushPromises()
   expect(state.publish).toHaveBeenCalledExactlyOnceWith('a-1')
   expect(state.refresh).toHaveBeenCalledOnce()
-  await mobile.get('button[aria-label="Hapus pengumuman"]').trigger('click')
+  rowActionProps(wrapper, state.announcements[0]).onDelete()
+  await flushPromises()
   expect(wrapper.text()).toContain('Pengumuman ini akan dihapus')
   expect(state.remove).not.toHaveBeenCalled()
   await wrapper

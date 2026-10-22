@@ -67,7 +67,9 @@ async function copyCredentials() {
         v-if="credentials"
         class="min-h-0 space-y-4 overflow-y-auto dialog-body"
       >
-        <p class="text-sm text-muted-foreground">
+        <p
+          class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
+        >
           Serahkan kredensial berikut kepada pendaftar. Kata sandi hanya
           ditampilkan sekali.
         </p>

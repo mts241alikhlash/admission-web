@@ -282,7 +282,7 @@ onMounted(() => fetchReview(true))
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <p
       v-if="loading"
-      class="text-sm text-muted-foreground"
+      class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
     >
       Memuat berkas pendaftar…
     </p>
@@ -292,7 +292,7 @@ onMounted(() => fetchReview(true))
       role="alert"
       class="space-y-3 rounded-md border p-4"
     >
-      <p class="text-sm">
+      <p class="text-[length:var(--text-control,0.75rem)]">
         {{
           error === 'not-found'
             ? 'Pendaftar tidak ditemukan.'
@@ -318,7 +318,7 @@ onMounted(() => fetchReview(true))
     <Card
       v-else-if="review"
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
@@ -339,11 +339,13 @@ onMounted(() => fetchReview(true))
         <div class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
           <Card
             gap="none"
-            class="overflow-hidden rounded-xl border bg-card shadow-sm lg:col-span-5 h-full"
+            class="h-full lg:col-span-5"
           >
             <div class="border-b bg-muted/10 p-4 shrink-0 space-y-2">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h2 class="truncate font-semibold text-sm text-foreground">
+                <h2
+                  class="truncate font-semibold text-[length:var(--text-control,0.75rem)] text-foreground"
+                >
                   {{ review.applicantName }}
                 </h2>
                 <button
@@ -424,7 +426,7 @@ onMounted(() => fetchReview(true))
                   v-for="item in review.slots"
                   :key="item.documentTypeId"
                   data-test="slot"
-                  class="group relative flex cursor-pointer flex-col gap-2 border-l-4 p-3.5 text-sm transition-colors sm:p-4"
+                  class="group relative flex cursor-pointer flex-col gap-2 border-l-4 p-3.5 text-[length:var(--text-control,0.75rem)] transition-colors sm:p-4"
                   :class="[
                     activeSlot?.documentTypeId === item.documentTypeId
                       ? 'border-l-primary bg-primary/[0.04]'
@@ -452,7 +454,7 @@ onMounted(() => fetchReview(true))
                       >
                         <div class="flex min-w-0 items-center gap-1">
                           <p
-                            class="truncate font-medium text-sm"
+                            class="truncate font-medium text-[length:var(--text-control,0.75rem)]"
                             :class="[
                               activeSlot?.documentTypeId === item.documentTypeId
                                 ? 'text-primary'
@@ -556,7 +558,7 @@ onMounted(() => fetchReview(true))
 
           <Card
             gap="none"
-            class="hidden overflow-hidden rounded-xl border bg-card shadow-sm lg:col-span-7 lg:flex h-full"
+            class="hidden h-full lg:col-span-7 lg:flex"
           >
             <CardHeader
               standard
@@ -654,7 +656,7 @@ onMounted(() => fetchReview(true))
               >
                 <div
                   v-if="inlineLoading"
-                  class="py-16 text-center text-sm text-muted-foreground"
+                  class="py-16 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Memuat pratinjau…
                 </div>
@@ -662,7 +664,11 @@ onMounted(() => fetchReview(true))
                   v-else-if="inlineError"
                   class="space-y-2 p-6 text-center"
                 >
-                  <p class="text-sm text-destructive">{{ inlineError }}</p>
+                  <p
+                    class="text-[length:var(--text-control,0.75rem)] text-destructive"
+                  >
+                    {{ inlineError }}
+                  </p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -686,14 +692,14 @@ onMounted(() => fetchReview(true))
                   />
                   <div
                     v-else
-                    class="p-6 text-center text-sm text-muted-foreground"
+                    class="p-6 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                   >
                     Format berkas tidak dapat ditampilkan langsung.
                   </div>
                 </template>
                 <div
                   v-else
-                  class="p-12 text-center text-sm text-muted-foreground"
+                  class="p-12 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Dokumen ini belum diunggah oleh calon santri.
                 </div>
@@ -710,7 +716,7 @@ onMounted(() => fetchReview(true))
       >
         <p
           v-if="undecided > 0"
-          class="text-sm text-muted-foreground"
+          class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
         >
           {{ undecided }} berkas belum diputuskan atau belum diunggah.
         </p>
@@ -812,7 +818,7 @@ onMounted(() => fetchReview(true))
         </DialogHeader>
         <div
           data-test="send-confirm"
-          class="dialog-body text-sm leading-relaxed"
+          class="dialog-body text-[length:var(--text-control,0.75rem)] leading-relaxed"
         >
           Pendaftar diberi tahu satu kali dan keputusan berkas tidak bisa diubah
           lagi.

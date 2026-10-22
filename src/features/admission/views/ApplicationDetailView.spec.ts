@@ -123,6 +123,9 @@ const stubs = {
   CardHeader: passthrough,
   CardTitle: passthrough,
   Badge: passthrough,
+  Tooltip: passthrough,
+  TooltipTrigger: passthrough,
+  TooltipContent: passthrough,
   Button: button,
   Dialog: passthrough,
   DialogContent: passthrough,
@@ -309,7 +312,10 @@ describe('ApplicationDetailView', () => {
       'file-kk',
     )
     expect(rows[1].text()).toContain('Ditolak')
-    expect(rows[1].text()).toContain('Catatan: Buram')
+    expect(rows[1].text()).not.toContain('Catatan:')
+    expect(wrapper.get('[data-slot="data-table-cards"]').text()).toContain(
+      'Status:Ditolak. Buram',
+    )
     expect(rows[1].text()).toContain('Setujui')
     expect(rows[1].text()).toContain('Tolak')
     expect(rows[2].text()).toContain('Belum diunggah')
@@ -442,7 +448,7 @@ describe('ApplicationDetailView', () => {
     await openTab(wrapper, 'Berkas')
 
     expect(wrapper.get('tbody').text()).toContain('Berkas Lama (nonaktif)')
-    expect(wrapper.get('[data-test="mobile-documents"]').text()).toContain(
+    expect(wrapper.get('[data-slot="data-table-cards"]').text()).toContain(
       'Berkas Lama (nonaktif)',
     )
   })
@@ -481,7 +487,7 @@ describe('ApplicationDetailView', () => {
     expect(rows[0].text()).toContain('Kartu Keluarga')
     expect(rows[0].text()).not.toContain('(nonaktif)')
     expect(rows[1].text()).toContain('Berkas Lama (nonaktif)')
-    const mobile = wrapper.get('[data-test="mobile-documents"]').findAll('li')
+    const mobile = wrapper.findAll('[data-slot="data-table-cards"] li')
     expect(mobile[0].text()).toContain('Kartu Keluarga')
     expect(mobile[1].text()).toContain('Berkas Lama (nonaktif)')
   })
@@ -725,7 +731,7 @@ describe('ApplicationDetailView', () => {
     await openTab(wrapper, 'Pembayaran')
 
     const link = wrapper.get('[data-test="add-payment-link"]')
-    expect(link.text()).toContain('Tambah pembayaran')
+    expect(link.text()).toBe('Tambah')
     expect(JSON.parse(link.attributes('data-to')!)).toEqual({
       name: 'admin-payments',
       query: { applicationId: 'app-1' },
@@ -845,7 +851,7 @@ describe('ApplicationDetailView', () => {
     await openTab(wrapper, 'Pembayaran')
 
     const footerText = wrapper.find('[data-slot="card-footer"]').text()
-    const tambahIdx = footerText.indexOf('Tambah pembayaran')
+    const tambahIdx = footerText.indexOf('Tambah')
     const tolakIdx = footerText.indexOf('Tolak')
     const verifikasiIdx = footerText.indexOf('Verifikasi Pembayaran')
 

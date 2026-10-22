@@ -224,7 +224,7 @@ describe('ApplicationFormView locked wave field', () => {
   })
 })
 
-it('keeps the form heading, wave, step navigation, fields and actions inside one card', async () => {
+it('puts the form card inside the stepper card with its own title and the actions in the outer footer', async () => {
   vi.clearAllMocks()
   fetchMyApplication.mockResolvedValue(application)
   const wrapper = mount(ApplicationFormView, {
@@ -235,21 +235,29 @@ it('keeps the form heading, wave, step navigation, fields and actions inside one
         CardHeader: {
           template: '<header data-test="form-header"><slot /></header>',
         },
+        CardFooter: {
+          template: '<footer data-test="form-footer"><slot /></footer>',
+        },
       },
     },
   })
   await flushPromises()
 
-  const card = wrapper.get('[data-test="form-card"]')
-  expect(wrapper.get('[data-test="form-header"]').text()).toContain(
-    'Formulir Pendaftaran',
+  const cards = wrapper.findAll('[data-test="form-card"]')
+  expect(cards).toHaveLength(2)
+  const [outer, inner] = cards
+  expect(outer.findAll('ol button')).toHaveLength(8)
+  expect(outer.get('[data-test="form-header"]').find('ol').exists()).toBe(true)
+  expect(outer.element.contains(inner.element)).toBe(true)
+  expect(inner.get('[data-test="form-header"]').text()).toContain('Data Diri')
+  expect(inner.get('[data-test="form-header"]').text()).toContain(
+    'Langkah 1 dari 8',
   )
-  expect(wrapper.findAll('[data-test="form-card"]')).toHaveLength(1)
-  expect(card.text()).toContain('Formulir Pendaftaran')
-  expect(card.findAll('ol button')).toHaveLength(8)
-  expect(card.text()).toContain('Data Diri')
+  expect(inner.find('.scroll-mt-4').exists()).toBe(true)
+  const footer = outer.get('[data-test="form-footer"]')
+  expect(inner.element.contains(footer.element)).toBe(false)
   expect(
-    card.findAll('button').some((button) => button.text() === 'Selanjutnya'),
+    footer.findAll('button').some((button) => button.text() === 'Selanjutnya'),
   ).toBe(true)
 })
 
@@ -369,7 +377,7 @@ describe.each(['applicant', 'admin'] as const)(
       return wrapper
     }
 
-    it('moves on from an empty achievements and scholarships step', async () => {
+    it('moves on from an empty achievements and scholarships step without saving what did not change', async () => {
       const wrapper = await mountHost(true)
       await wrapper.findAll('ol button')[4].trigger('click')
       await flushForm()
@@ -382,9 +390,7 @@ describe.each(['applicant', 'admin'] as const)(
         .trigger('click')
       await flushForm()
 
-      expect(updateStep).toHaveBeenCalledWith(
-        expect.objectContaining({ achievements: [], scholarships: [] }),
-      )
+      expect(updateStep).not.toHaveBeenCalled()
       expect(wrapper.findAll('ol button')[5].classes()).toContain('bg-primary')
     })
 
@@ -523,6 +529,7 @@ describe.each(['applicant', 'admin'] as const)(
           }),
       )
       const wrapper = await mountHost()
+      await wrapper.get('input[name="fullName"]').setValue('Nama yang diubah')
       const next = wrapper
         .findAll('button')
         .find((button) => button.text() === 'Selanjutnya')!
@@ -575,14 +582,35 @@ describe.each(['applicant', 'admin'] as const)(
       expect(wrapper.find('input[name="fullName"]').exists()).toBe(true)
     })
 
-    it('does not report new edits as already saved', async () => {
+    it('does not tell the applicant that edits are unsaved', async () => {
       const wrapper = await mountHost()
-      await wrapper.findAll('ol button')[1].trigger('click')
-      await flushForm()
-      await wrapper.findAll('ol button')[0].trigger('click')
-      await flushForm()
       await wrapper.get('input[name="fullName"]').setValue('Nama yang diubah')
-      expect(wrapper.text()).toContain('Perubahan belum disimpan')
+      expect(wrapper.text()).not.toContain('Perubahan belum disimpan')
+      wrapper.unmount()
+    })
+
+    it('does not call the server when the step was not edited', async () => {
+      const wrapper = await mountHost()
+      updateStep.mockClear()
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text() === 'Selanjutnya')!
+        .trigger('click')
+      await flushForm()
+      expect(updateStep).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+
+    it('saves the step once when it was edited', async () => {
+      const wrapper = await mountHost()
+      updateStep.mockClear()
+      await wrapper.get('input[name="fullName"]').setValue('Nama yang diubah')
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text() === 'Selanjutnya')!
+        .trigger('click')
+      await flushForm()
+      expect(updateStep).toHaveBeenCalledTimes(1)
       wrapper.unmount()
     })
   },
@@ -676,7 +704,7 @@ it('fills an existing application on behalf of the applicant on the admin route'
   routeState.params = { id: 'app-1' }
   fetchMyApplication.mockReset().mockResolvedValue(application)
   const wrapper = await mountView()
-  expect(wrapper.text()).toContain('Formulir Pendaftar')
+  expect(wrapper.text()).toContain('Langkah 1 dari 8')
   expect(
     wrapper.find('[aria-label="Kembali ke detail pendaftar"]').exists(),
   ).toBe(true)
@@ -702,4 +730,85 @@ it('offers retry on the admin route without calling the applicant missing', asyn
   await flushPromises()
   expect(fetchMyApplication).toHaveBeenCalledTimes(2)
   routeState.params = {}
+})
+
+describe('ApplicationFormView stepper flags and navigation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    routeState.params = {}
+  })
+
+  it('flags the Berkas step when a document was rejected', async () => {
+    fetchMyApplication.mockResolvedValue({
+      ...application,
+      documents: [
+        { id: 'd1', documentTypeId: 'kk', status: 'REJECTED', note: 'Buram' },
+      ],
+    })
+    const wrapper = await mountView()
+
+    const buttons = wrapper.findAll('ol button')
+    expect(buttons[5].classes()).toContain('border-destructive')
+    expect(buttons[5].text()).toContain('perlu diperbaiki')
+    expect(buttons[6].classes()).not.toContain('border-destructive')
+    wrapper.unmount()
+  })
+
+  it('flags the Pembayaran step when the payment was rejected', async () => {
+    fetchMyApplication.mockResolvedValue({
+      ...application,
+      payment: { id: 'p1', status: 'REJECTED', note: 'Nominal kurang' },
+    })
+    const wrapper = await mountView()
+
+    const buttons = wrapper.findAll('ol button')
+    expect(buttons[6].classes()).toContain('border-destructive')
+    expect(buttons[5].classes()).not.toContain('border-destructive')
+    wrapper.unmount()
+  })
+
+  it('flags no step when nothing was rejected', async () => {
+    fetchMyApplication.mockResolvedValue(application)
+    const wrapper = await mountView()
+
+    expect(
+      wrapper
+        .findAll('ol button')
+        .some((button) => button.classes().includes('border-destructive')),
+    ).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('offers a back button to the dashboard for the applicant and to the detail for an admin', async () => {
+    fetchMyApplication.mockResolvedValue(application)
+    const applicant = await mountView()
+    expect(applicant.find('[aria-label="Kembali ke dasbor"]').exists()).toBe(
+      true,
+    )
+    applicant.unmount()
+
+    routeState.params = { id: 'app-1' }
+    const admin = await mountView()
+    expect(
+      admin.find('[aria-label="Kembali ke detail pendaftar"]').exists(),
+    ).toBe(true)
+    routeState.params = {}
+    admin.unmount()
+  })
+
+  it('does not scroll the page when a step fails validation', async () => {
+    fetchMyApplication.mockResolvedValue(application)
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    const wrapper = await mountView()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Selanjutnya')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(scroll).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
 })

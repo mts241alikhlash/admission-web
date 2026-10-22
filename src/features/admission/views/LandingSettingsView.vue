@@ -105,7 +105,7 @@ const publishedLabel = computed(() =>
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
@@ -126,7 +126,9 @@ const publishedLabel = computed(() =>
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ loadError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ loadError }}
+          </p>
           <Button
             variant="outline"
             @click="load()"

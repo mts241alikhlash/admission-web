@@ -26,12 +26,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@mts241alikhlash/ui/dialog'
-import { Eye, Plus } from '@lucide/vue'
+import { Plus } from '@lucide/vue'
 import { useRoleGuard } from '@/features/platform/auth'
 import FilePreviewDialog from '../components/FilePreviewDialog.vue'
 import { useFilePreview } from '../composables/useFilePreview'
 import { applicationService } from '../services/applicationService'
-import ServerPager from '../components/ServerPager.vue'
 import { paymentQueueService } from '../services/paymentQueueService'
 import { useApplicationStore } from '../stores/applicationStore'
 import {
@@ -179,10 +178,19 @@ const columns = computed<ColumnDef<AdmissionPaymentQueueRow>[]>(() => [
     meta: { align: 'left', strong: true },
   },
   {
+    accessorKey: 'waveName',
+    header: 'Gelombang',
+    meta: { align: 'center' },
+  },
+  {
     id: 'status',
     size: 110,
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionPaymentQueueRow) =>
+        PAYMENT_STATUS_LABELS[row.status],
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -256,7 +264,7 @@ onMounted(async () => {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
@@ -278,10 +286,7 @@ onMounted(async () => {
           variant="line"
           class="min-w-0 gap-0"
         >
-          <Card
-            gap="none"
-            class="overflow-hidden rounded-xl border bg-card shadow-xs"
-          >
+          <Card gap="none">
             <CardHeader class="p-0 shrink-0">
               <TabsList class="w-full bg-muted/30 px-4 sm:px-6">
                 <TabsTrigger
@@ -342,7 +347,9 @@ onMounted(async () => {
                 class="space-y-3 rounded-md border p-4"
                 role="alert"
               >
-                <p class="text-sm">{{ listError }}</p>
+                <p class="text-[length:var(--text-control,0.75rem)]">
+                  {{ listError }}
+                </p>
                 <Button
                   variant="outline"
                   @click="load()"
@@ -353,19 +360,19 @@ onMounted(async () => {
               <template v-else>
                 <p
                   v-if="loading && !rows.length"
-                  class="text-center text-sm text-muted-foreground"
+                  class="text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Memuat pembayaran…
                 </p>
                 <p
                   v-else-if="!rows.length"
-                  class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+                  class="rounded-md border p-4 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
                 >
                   Tidak ada pembayaran.
                 </p>
                 <template v-else>
                   <DataTable
-                    class="hidden md:flex"
+                    mobile="cards"
                     :columns="columns"
                     :data="rows"
                     :page="page"
@@ -376,116 +383,6 @@ onMounted(async () => {
                     :pinned-columns="{ right: ['status', 'actions'] }"
                     @update:page="goToPage"
                     @update:page-size="changePageSize"
-                  />
-                  <ul class="space-y-2 md:hidden">
-                    <li
-                      v-for="row in rows"
-                      :key="row.paymentId"
-                      data-test="payment-row"
-                      class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-                    >
-                      <div
-                        class="flex flex-wrap items-start justify-between gap-2"
-                      >
-                        <div class="min-w-0">
-                          <p class="break-words font-medium">
-                            {{ row.applicantName }}
-                          </p>
-                          <p class="text-muted-foreground">
-                            {{ row.registrationNumber }} · {{ row.waveName }}
-                          </p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                          <Badge
-                            v-if="row.proofUploadedByStaff"
-                            variant="outline"
-                            >Diunggah staf</Badge
-                          >
-                          <Badge
-                            :variant="PAYMENT_STATUS_BADGE_VARIANTS[row.status]"
-                          >
-                            {{ PAYMENT_STATUS_LABELS[row.status] }}
-                          </Badge>
-                        </div>
-                      </div>
-                      <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2">
-                        <div>
-                          <dt class="text-muted-foreground">Jumlah</dt>
-                          <dd>{{ formatIDR(row.amount) }}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">
-                            Tanggal transfer
-                          </dt>
-                          <dd>{{ formatDate(row.transferDate) }}</dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Pengirim</dt>
-                          <dd>
-                            {{ row.senderAccountName ?? '-' }}
-                            <span v-if="row.bankName"
-                              >({{ row.bankName }})</span
-                            >
-                          </dd>
-                        </div>
-                        <div>
-                          <dt class="text-muted-foreground">Rekening tujuan</dt>
-                          <dd>
-                            <template v-if="row.bankAccount">
-                              {{ row.bankAccount.bankName }}
-                              {{ row.bankAccount.accountNumber }}
-                            </template>
-                            <template v-else>-</template>
-                          </dd>
-                        </div>
-                      </dl>
-                      <p
-                        v-if="row.note"
-                        class="text-muted-foreground"
-                      >
-                        Catatan: {{ row.note }}
-                      </p>
-                      <div class="flex flex-wrap items-center gap-2">
-                        <Button
-                          v-if="row.proofFile"
-                          variant="outline"
-                          data-test="open-file"
-                          @click="preview.show(row.proofFile)"
-                        >
-                          <Eye class="mr-1.5 size-4" />
-                          Lihat bukti
-                        </Button>
-                        <template v-if="canVerify && row.status === 'PENDING'">
-                          <Button
-                            variant="destructive"
-                            :disabled="acting"
-                            @click="openReason('reject', row)"
-                            >Tolak</Button
-                          >
-                          <Button
-                            :disabled="acting"
-                            @click="verify(row)"
-                            >Verifikasi</Button
-                          >
-                        </template>
-                        <Button
-                          v-if="canVerify && row.status === 'VERIFIED'"
-                          variant="outline"
-                          :disabled="acting"
-                          @click="openReason('cancel', row)"
-                          >Batalkan verifikasi</Button
-                        >
-                      </div>
-                    </li>
-                  </ul>
-                  <ServerPager
-                    class="md:hidden"
-                    :page="page"
-                    :page-size="pageSize"
-                    :total="total"
-                    item-label="pembayaran"
-                    :disabled="loading"
-                    @update:page="goToPage"
                   />
                 </template>
               </template>

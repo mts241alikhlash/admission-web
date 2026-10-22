@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import { toast } from 'vue-sonner'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import { FileText, UploadCloud, XCircle } from '@lucide/vue'
+import { FileText, Plus, XCircle } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
@@ -23,6 +23,7 @@ import {
 import {
   ActionCell,
   DataTable,
+  FileDropzone,
   FormattedNumberInput,
 } from '@mts241alikhlash/ui'
 import { Input } from '@mts241alikhlash/ui/input'
@@ -195,12 +196,6 @@ function attach(event: Event) {
   input.value = ''
 }
 
-function dropFile(event: DragEvent) {
-  if (uploading.value) return
-  const file = event.dataTransfer?.files[0]
-  if (file) selectFile(file)
-}
-
 function selectFile(file: File) {
   if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
     toast.error('Format berkas harus JPG, PNG, atau PDF.')
@@ -354,7 +349,8 @@ defineExpose({ validate: validateStep })
           :disabled="achievements.length >= 20"
           @click="addAchievement"
         >
-          + Tambah Prestasi
+          <Plus class="mr-1.5" />
+          Tambah
         </Button>
       </CardHeader>
       <CardContent class="space-y-4 px-4 pt-4 pb-4">
@@ -479,34 +475,20 @@ defineExpose({ validate: validateStep })
                     </FormControl>
                   </FloatingField>
                 </div>
-                <div class="space-y-2 text-sm">
+                <div
+                  class="space-y-2 text-[length:var(--text-control,0.75rem)]"
+                >
                   <p class="font-medium">Lampiran</p>
-                  <label
-                    v-if="editable && !pendingFile && !row.fileName"
-                    class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/25 p-6 text-center transition-colors hover:bg-muted/50 focus-within:ring-2 focus-within:ring-ring"
-                    @dragover.prevent
-                    @drop.prevent="dropFile($event)"
-                  >
-                    <span class="rounded-full bg-primary/10 p-3 text-primary">
-                      <UploadCloud class="size-6" />
-                    </span>
-                    <span>
-                      <span class="block font-medium"
-                        >Klik atau tarik file ke sini</span
-                      >
-                      <span class="mt-1 block text-xs text-muted-foreground"
-                        >JPG, PNG, atau PDF, maks. 5 MB</span
-                      >
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      class="sr-only"
-                      :disabled="!!uploading"
-                      aria-label="Pilih lampiran"
-                      @change="attach($event)"
-                    />
-                  </label>
+                  <FileDropzone
+                    v-if="editable"
+                    :file-name="pendingFile?.name || row.fileName"
+                    clearable
+                    :disabled="!!uploading"
+                    aria-label="Pilih lampiran"
+                    hint="JPG, PNG, atau PDF, maks. 5 MB"
+                    @change="attach($event)"
+                    @clear="clearAttachment('achievements', index)"
+                  />
                   <div
                     v-else-if="pendingFile || row.fileName"
                     class="flex min-w-0 items-center gap-3 rounded-xl border bg-muted/30 p-4"
@@ -575,7 +557,8 @@ defineExpose({ validate: validateStep })
           :disabled="scholarships.length >= 20"
           @click="addScholarship"
         >
-          + Tambah Beasiswa
+          <Plus class="mr-1.5" />
+          Tambah
         </Button>
       </CardHeader>
       <CardContent class="space-y-4 px-4 pt-4 pb-4">
@@ -735,34 +718,20 @@ defineExpose({ validate: validateStep })
                     </FormControl>
                   </FloatingField>
                 </div>
-                <div class="space-y-2 text-sm">
+                <div
+                  class="space-y-2 text-[length:var(--text-control,0.75rem)]"
+                >
                   <p class="font-medium">Lampiran</p>
-                  <label
-                    v-if="editable && !pendingFile && !row.fileName"
-                    class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-muted-foreground/25 p-6 text-center transition-colors hover:bg-muted/50 focus-within:ring-2 focus-within:ring-ring"
-                    @dragover.prevent
-                    @drop.prevent="dropFile($event)"
-                  >
-                    <span class="rounded-full bg-primary/10 p-3 text-primary">
-                      <UploadCloud class="size-6" />
-                    </span>
-                    <span>
-                      <span class="block font-medium"
-                        >Klik atau tarik file ke sini</span
-                      >
-                      <span class="mt-1 block text-xs text-muted-foreground"
-                        >JPG, PNG, atau PDF, maks. 5 MB</span
-                      >
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      class="sr-only"
-                      :disabled="!!uploading"
-                      aria-label="Pilih lampiran"
-                      @change="attach($event)"
-                    />
-                  </label>
+                  <FileDropzone
+                    v-if="editable"
+                    :file-name="pendingFile?.name || row.fileName"
+                    clearable
+                    :disabled="!!uploading"
+                    aria-label="Pilih lampiran"
+                    hint="JPG, PNG, atau PDF, maks. 5 MB"
+                    @change="attach($event)"
+                    @clear="clearAttachment('scholarships', index)"
+                  />
                   <div
                     v-else-if="pendingFile || row.fileName"
                     class="flex min-w-0 items-center gap-3 rounded-xl border bg-muted/30 p-4"

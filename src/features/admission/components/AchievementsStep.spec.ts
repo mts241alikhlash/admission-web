@@ -76,7 +76,7 @@ it('validates after a new row is checked and then cancelled', async () => {
     )!
   await wrapper
     .findAll('button')
-    .find((item) => item.text() === '+ Tambah Beasiswa')!
+    .filter((item) => item.text() === 'Tambah')[1]
     .trigger('click')
   await flushPromises()
   await vi.waitFor(() => expect(button('Simpan')).toBeDefined())

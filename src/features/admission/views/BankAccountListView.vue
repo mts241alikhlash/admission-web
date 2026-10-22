@@ -80,7 +80,11 @@ const columns = computed<ColumnDef<AdmissionBankAccount>[]>(() => [
   {
     id: 'isActive',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionBankAccount) =>
+        row.isActive ? 'Aktif' : 'Nonaktif',
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -149,18 +153,8 @@ onMounted(load)
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <div class="mb-3 flex justify-end md:hidden">
-        <Button
-          class="w-full sm:w-auto"
-          @click="openForm(null)"
-        >
-          <Plus class="mr-1.5 size-4" />
-          Tambah
-        </Button>
-      </div>
-
       <div class="space-y-4 p-0 sm:px-0">
         <div
           class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
@@ -196,7 +190,9 @@ onMounted(load)
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="load()"
@@ -206,7 +202,7 @@ onMounted(load)
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:flex"
+            mobile="cards"
             :columns="columns"
             :data="filteredAccounts"
             :total-items="filteredAccounts.length"
@@ -232,43 +228,6 @@ onMounted(load)
               />
             </template>
           </DataTable>
-          <p
-            v-if="!loading && !filteredAccounts.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
-          >
-            Tidak ada data.
-          </p>
-          <ul
-            data-test="mobile-bank-accounts"
-            class="space-y-2 md:hidden"
-          >
-            <li
-              v-for="account in filteredAccounts"
-              :key="account.id"
-              class="min-w-0 space-y-2 rounded-lg border p-4"
-            >
-              <p class="break-words font-medium">{{ account.bankName }}</p>
-              <p class="text-sm">{{ account.accountNumber }}</p>
-              <p class="text-sm">a.n. {{ account.accountHolder }}</p>
-              <Badge :variant="account.isActive ? 'default' : 'secondary'">{{
-                account.isActive ? 'Aktif' : 'Nonaktif'
-              }}</Badge>
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  aria-label="Ubah rekening"
-                  @click="openForm(account)"
-                  >Ubah</Button
-                >
-                <Button
-                  variant="outline"
-                  aria-label="Hapus rekening"
-                  @click="pendingDelete = account"
-                  >Hapus</Button
-                >
-              </div>
-            </li>
-          </ul>
         </template>
       </div>
     </Card>

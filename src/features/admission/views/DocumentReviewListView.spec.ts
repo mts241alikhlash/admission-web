@@ -4,6 +4,12 @@ import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { TooltipProvider } from '@mts241alikhlash/ui/tooltip'
+import {
+  cardRow,
+  cardRows,
+  chooseRowAction,
+  nextCardPage,
+} from '@/test/dataTableCards'
 import DocumentReviewListView from './DocumentReviewListView.vue'
 
 const service = vi.hoisted(() => ({ fetchQueue: vi.fn() }))
@@ -64,7 +70,7 @@ it('shows Menunggu first with the counts of every tab and the summary of each ap
   expect(tab(wrapper, 'Menunggu').text()).toContain('1')
   expect(tab(wrapper, 'Perlu perbaikan').text()).toContain('2')
   expect(tab(wrapper, 'Selesai').text()).toContain('3')
-  const item = wrapper.get('[data-test="review-row"]')
+  const item = cardRow(wrapper)
   expect(item.text()).toContain('Ahmad Fauzi')
   expect(item.text()).toContain('PSB-001')
   expect(item.text()).toContain('Gelombang 1')
@@ -86,7 +92,7 @@ it('opens the review page of an applicant', async () => {
   const wrapper = mountView()
   await flushPromises()
 
-  await wrapper.get('[data-test="open-review"]').trigger('click')
+  await chooseRowAction(cardRow(wrapper), 'Periksa')
 
   expect(router.push).toHaveBeenCalledWith('/admin/document-reviews/app1')
 })
@@ -146,7 +152,7 @@ it('loads the next page from the server and replaces the rows', async () => {
   )
   const wrapper = mountView()
   await flushPromises()
-  expect(wrapper.findAll('[data-test="review-row"]')).toHaveLength(10)
+  expect(cardRows(wrapper)).toHaveLength(10)
   service.fetchQueue.mockResolvedValue(
     page(
       [{ ...row, applicationId: 'app10' }],
@@ -155,13 +161,13 @@ it('loads the next page from the server and replaces the rows', async () => {
     ),
   )
 
-  await wrapper.get('[data-test="pager-next"]').trigger('click')
+  await nextCardPage(wrapper).trigger('click')
   await flushPromises()
 
   expect(service.fetchQueue).toHaveBeenLastCalledWith(
     expect.objectContaining({ tab: 'waiting', page: 2, limit: 10 }),
   )
-  expect(wrapper.findAll('[data-test="review-row"]')).toHaveLength(1)
+  expect(cardRows(wrapper)).toHaveLength(1)
 })
 
 it('shows the load error with a retry', async () => {

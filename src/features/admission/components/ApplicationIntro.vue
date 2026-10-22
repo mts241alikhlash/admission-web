@@ -24,11 +24,8 @@ const requiredDocuments = computed(() =>
 </script>
 
 <template>
-  <div class="space-y-5 text-sm">
-    <Card
-      gap="none"
-      class="shadow-none"
-    >
+  <div class="space-y-5 text-[length:var(--text-control,0.75rem)]">
+    <Card gap="none">
       <CardContent class="space-y-5 px-4 py-4 sm:px-5">
         <section class="space-y-1 border-b pb-4">
           <p class="text-xs font-medium text-muted-foreground">

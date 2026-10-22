@@ -61,12 +61,16 @@ const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
   {
     accessorKey: 'code',
     header: 'Kode',
+    meta: { mobile: 'hide' },
     cell: ({ row }) =>
       h('span', { class: 'text-muted-foreground' }, row.original.code),
   },
   {
     id: 'requirement',
     header: 'Kewajiban',
+    meta: {
+      mobileValue: (row: AdmissionDocumentTypeAdmin) => requirementLabel(row),
+    },
     cell: ({ row }) =>
       h(Badge, { variant: requirementVariant(row.original.requirement) }, () =>
         requirementLabel(row.original),
@@ -75,7 +79,11 @@ const columns = computed<ColumnDef<AdmissionDocumentTypeAdmin>[]>(() => [
   {
     id: 'isActive',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionDocumentTypeAdmin) =>
+        row.isActive ? 'Aktif' : 'Nonaktif',
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -147,7 +155,7 @@ onMounted(load)
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
@@ -169,7 +177,9 @@ onMounted(load)
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="load()"
@@ -180,13 +190,13 @@ onMounted(load)
         <template v-else>
           <p
             v-if="loading && !types.length"
-            class="text-center text-sm text-muted-foreground"
+            class="text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
           >
             Memuat jenis berkas…
           </p>
           <p
             v-else-if="!types.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground"
+            class="rounded-md border p-4 text-center text-[length:var(--text-control,0.75rem)] text-muted-foreground"
           >
             Belum ada jenis berkas.
           </p>
@@ -198,61 +208,8 @@ onMounted(load)
               hide-per-page
               hide-pagination
               :page-size="Math.max(1, types.length)"
-              class="hidden md:block"
+              mobile="cards"
             />
-            <ul
-              data-test="mobile-document-types"
-              class="space-y-2 md:hidden"
-            >
-              <li
-                v-for="type in types"
-                :key="type.id"
-                class="min-w-0 space-y-3 rounded-lg border p-4 text-sm"
-              >
-                <div class="flex items-start justify-between gap-2">
-                  <div>
-                    <p class="break-words font-medium">{{ type.name }}</p>
-                    <p class="text-xs text-muted-foreground">{{ type.code }}</p>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <Badge :variant="requirementVariant(type.requirement)">
-                      {{ requirementLabel(type) }}
-                    </Badge>
-                    <Badge :variant="type.isActive ? 'default' : 'secondary'">
-                      {{ type.isActive ? 'Aktif' : 'Nonaktif' }}
-                    </Badge>
-                  </div>
-                </div>
-                <div
-                  class="flex items-center justify-between text-xs text-muted-foreground"
-                >
-                  <span>Dipakai {{ type.documentCount }}</span>
-                  <div
-                    v-if="canUpdate || (canDelete && type.documentCount === 0)"
-                    class="flex gap-2"
-                  >
-                    <Button
-                      v-if="canUpdate"
-                      variant="outline"
-                      size="sm"
-                      :aria-label="`Ubah ${type.name}`"
-                      @click="openForm(type)"
-                    >
-                      Ubah
-                    </Button>
-                    <Button
-                      v-if="canDelete && type.documentCount === 0"
-                      variant="outline"
-                      size="sm"
-                      :aria-label="`Hapus ${type.name}`"
-                      @click="pendingDelete = type"
-                    >
-                      Hapus
-                    </Button>
-                  </div>
-                </div>
-              </li>
-            </ul>
           </template>
         </template>
       </div>

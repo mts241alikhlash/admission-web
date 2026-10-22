@@ -7,6 +7,7 @@ import { Badge } from '@mts241alikhlash/ui/badge'
 import { Filter, Plus } from '@lucide/vue'
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -32,7 +33,6 @@ import {
   AlertDialogAction,
 } from '@mts241alikhlash/ui/alert-dialog'
 import type { ColumnDef } from '@tanstack/vue-table'
-import ServerPager from '../components/ServerPager.vue'
 import { useWaveList } from '../composables/useWaveList'
 import WaveFormDialog from '../components/WaveFormDialog.vue'
 import type { AdmissionWaveSummary, WaveSavePayload } from '../types'
@@ -85,6 +85,14 @@ function resetFilters() {
   statusFilter.value = 'ALL'
   yearFilter.value = 'ALL'
 }
+const activeFiltersCount = computed(
+  () =>
+    Number(statusFilter.value !== 'ALL') + Number(yearFilter.value !== 'ALL'),
+)
+function resetAllFilters() {
+  resetFilters()
+  search.value = ''
+}
 
 const isFormOpen = ref(false)
 const selectedWave = ref<AdmissionWaveSummary | null>(null)
@@ -103,7 +111,7 @@ const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
   {
     accessorKey: 'code',
     header: 'Kode',
-    meta: { align: 'center' },
+    meta: { align: 'center', mobile: 'hide' },
   },
   {
     accessorKey: 'name',
@@ -138,7 +146,11 @@ const columns = computed<ColumnDef<AdmissionWaveSummary>[]>(() => [
   {
     id: 'isActive',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionWaveSummary) =>
+        row.isActive ? 'Aktif' : 'Nonaktif',
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -202,55 +214,17 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
-      <div class="mb-3 flex justify-end md:hidden">
-        <Button
-          class="w-full sm:w-auto"
-          @click="openCreateForm"
-        >
-          <Plus class="mr-1.5 size-4" />
-          Tambah
-        </Button>
-      </div>
-
       <div class="space-y-4 p-0 sm:px-0">
-        <div class="flex items-center gap-2 md:hidden">
-          <SearchInput
-            v-model="search"
-            label="Cari gelombang"
-            class="min-w-0 flex-1"
-          />
-          <Button
-            variant="outline"
-            class="shrink-0"
-            @click="filterOpen = true"
-            ><Filter class="mr-1.5 size-4" />Filter</Button
-          >
-        </div>
-        <div
-          v-if="statusFilter !== 'ALL' || yearFilter !== 'ALL'"
-          class="flex flex-wrap gap-2 md:hidden"
-        >
-          <Button
-            v-if="statusFilter !== 'ALL'"
-            variant="outline"
-            @click="statusFilter = 'ALL'"
-            >Hapus filter status</Button
-          >
-          <Button
-            v-if="yearFilter !== 'ALL'"
-            variant="outline"
-            @click="yearFilter = 'ALL'"
-            >Hapus filter tahun ajaran</Button
-          >
-        </div>
         <div
           v-if="listError"
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="refresh()"
@@ -260,13 +234,13 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:flex"
+            mobile="cards"
             :columns="columns"
-            :data="waves"
+            :data="filtersPending ? [] : waves"
             :page="page"
             :page-size="pageSize"
             :total-items="totalItems"
-            :is-loading="loading"
+            :is-loading="loading || filtersPending"
             item-label="gelombang"
             @update:page="goToPage"
             @update:page-size="changePageSize"
@@ -340,69 +314,73 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
                 />
               </div>
             </template>
-          </DataTable>
-          <p
-            v-if="!loading && !filtersPending && !waves.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
-          >
-            Tidak ada data.
-          </p>
-          <p
-            v-if="loading || filtersPending"
-            class="text-center text-sm text-muted-foreground md:hidden"
-          >
-            Memuat gelombang…
-          </p>
-          <ul
-            v-if="!loading && !filtersPending"
-            data-test="mobile-waves"
-            class="space-y-2 md:hidden"
-          >
-            <li
-              v-for="wave in waves"
-              :key="wave.id"
-              class="min-w-0 space-y-2 rounded-lg border p-4"
-            >
-              <p class="break-words font-medium">{{ wave.name }}</p>
-              <p class="text-sm text-muted-foreground">
-                Tahun Ajaran {{ wave.academicYear?.name ?? '-' }}
-              </p>
-              <p class="text-sm">
-                {{ formatDate(wave.startDate) }} –
-                {{ formatDate(wave.endDate) }}
-              </p>
-              <p class="text-sm">Kuota {{ quotaLabel(wave) }}</p>
-              <p class="text-sm">
-                Biaya {{ formatIDR(Number(wave.registrationFee)) }}
-              </p>
-              <Badge :variant="wave.isActive ? 'default' : 'secondary'">{{
-                wave.isActive ? 'Aktif' : 'Nonaktif'
-              }}</Badge>
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  aria-label="Ubah gelombang"
-                  @click="openEditForm(wave)"
-                  >Ubah</Button
+            <template #mobile-toolbar>
+              <SearchInput
+                v-model="search"
+                label="Cari gelombang"
+                class="w-full"
+              />
+            </template>
+            <template #mobile-filter>
+              <Button
+                variant="outline"
+                class="relative shrink-0"
+                @click="filterOpen = true"
+              >
+                <Filter class="mr-1.5 size-4" />
+                Filter
+                <span
+                  v-if="activeFiltersCount"
+                  class="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground"
                 >
+                  {{ activeFiltersCount }}
+                </span>
+              </Button>
+            </template>
+            <template #mobile-chips>
+              <div
+                v-if="activeFiltersCount"
+                class="flex flex-wrap gap-2 text-[length:var(--text-control,0.75rem)]"
+              >
                 <Button
+                  v-if="statusFilter !== 'ALL'"
                   variant="outline"
-                  aria-label="Hapus gelombang"
-                  @click="pendingDeleteId = wave.id"
-                  >Hapus</Button
+                  @click="statusFilter = 'ALL'"
+                >
+                  Hapus filter status:
+                  {{ statusFilter === 'true' ? 'Aktif' : 'Nonaktif' }}
+                </Button>
+                <Button
+                  v-if="yearFilter !== 'ALL'"
+                  variant="outline"
+                  @click="yearFilter = 'ALL'"
+                >
+                  Hapus filter tahun ajaran:
+                  {{
+                    yearOptions.find((year) => year.id === yearFilter)?.name ??
+                    yearFilter
+                  }}
+                </Button>
+              </div>
+            </template>
+            <template #empty>
+              <div class="space-y-3">
+                <p>
+                  {{
+                    activeFiltersCount || search
+                      ? 'Tidak ada gelombang yang cocok dengan filter.'
+                      : 'Tidak ada data.'
+                  }}
+                </p>
+                <Button
+                  v-if="activeFiltersCount || search"
+                  variant="outline"
+                  @click="resetAllFilters"
+                  >Atur Ulang</Button
                 >
               </div>
-            </li>
-          </ul>
-          <ServerPager
-            v-if="!loading && !filtersPending && totalItems > 0"
-            class="md:hidden"
-            :page="page"
-            :page-size="pageSize"
-            :total="totalItems"
-            item-label="gelombang"
-            @update:page="goToPage"
-          />
+            </template>
+          </DataTable>
         </template>
       </div>
     </Card>
@@ -415,7 +393,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
             >Pilih status dan tahun ajaran.</DialogDescription
           ></DialogHeader
         >
-        <div class="min-h-0 flex-1 space-y-4 overflow-y-auto dialog-body">
+        <DialogBody class="space-y-4">
           <FloatingLabelField
             label="Status"
             :for="mobileStatusFilterId"
@@ -454,7 +432,7 @@ function quotaLabel(wave: { filledCount: number; quota: number }) {
               ></Select
             >
           </FloatingLabelField>
-        </div>
+        </DialogBody>
         <DialogFooter
           standard
           class="justify-between"

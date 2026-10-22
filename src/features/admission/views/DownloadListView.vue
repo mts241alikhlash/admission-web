@@ -102,12 +102,11 @@ const columns = computed<ColumnDef<AdmissionDownloadAdmin>[]>(() => [
                   {
                     variant: 'outline',
                     size: 'icon',
-                    class: 'size-9',
                     disabled: button.disabled,
                     'aria-label': button.label,
                     onClick: () => move(row.index, button.step),
                   },
-                  () => h(button.icon, { class: 'size-4' }),
+                  () => h(button.icon),
                 ),
               ),
             ),
@@ -143,7 +142,11 @@ const columns = computed<ColumnDef<AdmissionDownloadAdmin>[]>(() => [
   {
     id: 'isActive',
     header: 'Status',
-    meta: { align: 'center' },
+    meta: {
+      align: 'center',
+      mobileValue: (row: AdmissionDownloadAdmin) =>
+        row.isActive ? 'Aktif' : 'Nonaktif',
+    },
     cell: ({ row }) =>
       h(
         Badge,
@@ -259,7 +262,7 @@ onMounted(load)
   <div class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
@@ -276,7 +279,9 @@ onMounted(load)
       </CardHeader>
 
       <div class="space-y-4 p-0 sm:px-0">
-        <p class="text-sm text-muted-foreground">
+        <p
+          class="text-[length:var(--text-control,0.75rem)] text-muted-foreground"
+        >
           Berkas PDF yang bisa diunduh calon pendaftar dari halaman depan,
           misalnya brosur dan formulir kosong. Hanya berkas yang aktif yang
           tampil.
@@ -286,7 +291,9 @@ onMounted(load)
           class="space-y-3 rounded-md border p-4"
           role="alert"
         >
-          <p class="text-sm">{{ listError }}</p>
+          <p class="text-[length:var(--text-control,0.75rem)]">
+            {{ listError }}
+          </p>
           <Button
             variant="outline"
             @click="load()"
@@ -296,7 +303,7 @@ onMounted(load)
         </div>
         <template v-else>
           <DataTable
-            class="hidden md:flex"
+            mobile="cards"
             :columns="columns"
             :data="downloads"
             :total-items="downloads.length"
@@ -305,71 +312,6 @@ onMounted(load)
             hide-per-page
             hide-pagination
           />
-          <p
-            v-if="!loading && !downloads.length"
-            class="rounded-md border p-4 text-center text-sm text-muted-foreground md:hidden"
-          >
-            Belum ada berkas.
-          </p>
-          <ul
-            data-test="mobile-downloads"
-            class="space-y-2 md:hidden"
-          >
-            <li
-              v-for="(download, index) in downloads"
-              :key="download.id"
-              class="min-w-0 space-y-2 rounded-lg border p-4"
-            >
-              <p class="break-words font-medium">{{ download.title }}</p>
-              <p
-                v-if="download.description"
-                class="break-words text-sm text-muted-foreground"
-              >
-                {{ download.description }}
-              </p>
-              <div class="flex flex-wrap items-center gap-2">
-                <Badge :variant="download.isActive ? 'default' : 'secondary'">{{
-                  download.isActive ? 'Aktif' : 'Nonaktif'
-                }}</Badge>
-                <span class="break-all text-sm text-muted-foreground"
-                  >{{ download.fileName }} ·
-                  {{ formatFileSize(download.sizeBytes) }}</span
-                >
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <template v-if="canUpdate">
-                  <Button
-                    v-for="button in moveButtons(download, index)"
-                    :key="button.label"
-                    variant="outline"
-                    size="icon"
-                    :disabled="button.disabled"
-                    :aria-label="button.label"
-                    @click="move(index, button.step)"
-                  >
-                    <component
-                      :is="button.icon"
-                      class="size-4"
-                    />
-                  </Button>
-                </template>
-                <Button
-                  v-if="canUpdate"
-                  variant="outline"
-                  :aria-label="`Ubah ${download.title}`"
-                  @click="openForm(download)"
-                  >Ubah</Button
-                >
-                <Button
-                  v-if="canDelete"
-                  variant="outline"
-                  :aria-label="`Hapus ${download.title}`"
-                  @click="pendingDelete = download"
-                  >Hapus</Button
-                >
-              </div>
-            </li>
-          </ul>
         </template>
       </div>
     </Card>
@@ -418,7 +360,7 @@ onMounted(load)
             <div class="space-y-1.5">
               <label
                 :for="fileInputId"
-                class="text-sm font-medium"
+                class="text-[length:var(--text-control,0.75rem)] font-medium"
                 >Berkas PDF<span
                   v-if="!editing"
                   class="text-destructive"
@@ -432,7 +374,7 @@ onMounted(load)
                 type="file"
                 accept="application/pdf,.pdf"
                 :aria-describedby="fileHintId"
-                class="block min-h-11 w-full cursor-pointer rounded-md border bg-background px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm file:font-medium"
+                class="block min-h-11 w-full cursor-pointer rounded-md border bg-background px-3 py-2 text-[length:var(--text-control,0.75rem)] file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1 file:text-[length:var(--text-control,0.75rem)] file:font-medium"
                 @change="onFileChange"
               />
               <p

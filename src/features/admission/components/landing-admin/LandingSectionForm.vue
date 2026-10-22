@@ -37,7 +37,9 @@ defineExpose({ reset: form.reset, dirty: form.dirty })
 
 <template>
   <div class="space-y-6">
-    <p class="text-sm text-muted-foreground">{{ config.hint }}</p>
+    <p class="text-[length:var(--text-control,0.75rem)] text-muted-foreground">
+      {{ config.hint }}
+    </p>
     <LandingFieldTree
       :fields="config.fields"
       :model="form.values.value as Record<string, unknown>"

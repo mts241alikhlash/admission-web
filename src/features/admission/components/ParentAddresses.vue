@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useId, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { Field, useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import {
@@ -65,15 +65,25 @@ function regionOf(index: number): RegionCodesForm {
   }
 }
 
-function setRegion(index: number, region: RegionCodesForm) {
-  setValues({
-    parents: (values.parents ?? []).map((parent, at) =>
-      at === index ? { ...parent, ...region } : parent,
-    ),
-  })
+const attempted = ref(false)
+
+function validateAll() {
+  attempted.value = true
+  return validate()
 }
 
-defineExpose({ validate })
+function setRegion(index: number, region: RegionCodesForm) {
+  setValues(
+    {
+      parents: (values.parents ?? []).map((parent, at) =>
+        at === index ? { ...parent, ...region } : parent,
+      ),
+    },
+    attempted.value,
+  )
+}
+
+defineExpose({ validate: validateAll })
 </script>
 
 <template>
@@ -97,14 +107,14 @@ defineExpose({ validate })
             </CardTitle>
           </div>
         </CardHeader>
-        <CardContent class="grid gap-4 px-4 pb-4 pt-4 sm:grid-cols-2">
+        <CardContent class="grid gap-x-4 gap-y-1 px-4 pb-4 pt-4 sm:grid-cols-2">
           <Field
             v-slot="{ value, handleChange }"
             :name="`parents[${index}].sameAddressAsStudent`"
           >
             <label
               :for="`${checkboxId}-${index}`"
-              class="flex min-h-11 items-center gap-3 rounded-md border border-input bg-transparent px-3 py-2 text-sm sm:col-span-2"
+              class="flex min-h-11 items-center gap-3 rounded-md border border-input bg-transparent px-3 py-2 text-[length:var(--text-control,0.75rem)] sm:col-span-2"
               :class="
                 editable ? 'cursor-pointer hover:border-primary' : 'opacity-60'
               "
@@ -136,7 +146,7 @@ defineExpose({ validate })
               </FormControl>
             </FloatingField>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1">
               <FloatingField
                 v-slot="{ componentField }"
                 :name="`parents[${index}].rt`"
@@ -192,14 +202,11 @@ defineExpose({ validate })
               <RegionSelect
                 :model-value="regionOf(index)"
                 :disabled="!editable"
+                :invalid="
+                  attempted && !!errors[`parents[${index}].villageCode`]
+                "
                 @update:model-value="setRegion(index, $event)"
               />
-              <p
-                v-if="errors[`parents[${index}].villageCode`]"
-                class="mt-1 text-sm text-destructive"
-              >
-                {{ errors[`parents[${index}].villageCode`] }}
-              </p>
             </div>
           </template>
         </CardContent>

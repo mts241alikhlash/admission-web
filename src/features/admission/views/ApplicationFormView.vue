@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { useBreadcrumbs } from '@mts241alikhlash/web-shared/composables/useBreadcrumbs'
-import { BackButton } from '@mts241alikhlash/ui'
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { FileText } from '@lucide/vue'
+import { FileText, TriangleAlert } from '@lucide/vue'
+import { BackButton } from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
-  CardTitle,
 } from '@mts241alikhlash/ui/card'
 import {
   Dialog,
@@ -32,7 +32,9 @@ import AddressStep from '../components/AddressStep.vue'
 import SchoolStep from '../components/SchoolStep.vue'
 import AchievementsStep from '../components/AchievementsStep.vue'
 import DocumentsStep from '../components/DocumentsStep.vue'
+import FilePreviewDialog from '../components/FilePreviewDialog.vue'
 import PaymentStep from '../components/PaymentStep.vue'
+import { useFilePreview } from '../composables/useFilePreview'
 import ReviewStep from '../components/ReviewStep.vue'
 import SubmitConfirmButton from '../components/SubmitConfirmButton.vue'
 import { applicationCompleteness } from '../composables/applicationCompleteness'
@@ -82,6 +84,8 @@ const saveFailed = ref(false)
 const isSubmitting = ref(false)
 const currentStep = ref(0)
 const stepContent = ref<HTMLElement | null>(null)
+const formRoot = ref<HTMLElement | null>(null)
+const preview = useFilePreview()
 const savedPayloads = reactive(new Map<number, string>())
 
 interface StepValidator {
@@ -128,6 +132,10 @@ const editable = computed(() => {
   return status === 'DRAFT' || status === 'REVISION_NEEDED'
 })
 
+const stepStartsFlush = computed(
+  () => currentStep.value === 0 || currentStep.value === 3,
+)
+
 const paymentEditable = computed(
   () => editable.value || application.value?.status === 'SUBMITTED',
 )
@@ -162,10 +170,15 @@ const saveMessage = computed(() => {
   if (!editable.value || !buildStepPayload(currentStep.value)) return null
   if (savePending.value) return 'Menyimpan…'
   if (saveFailed.value) return 'Gagal menyimpan. Coba lagi.'
-  return savedPayloads.get(currentStep.value) ===
-    JSON.stringify(buildStepPayload(currentStep.value))
-    ? 'Data tersimpan'
-    : 'Perubahan belum disimpan'
+  return null
+})
+
+const flaggedSteps = computed(() => {
+  const flagged: number[] = []
+  if (application.value?.documents?.some((d) => d.status === 'REJECTED'))
+    flagged.push(5)
+  if (application.value?.payment?.status === 'REJECTED') flagged.push(6)
+  return flagged
 })
 
 const { load: loadFormOptions, listOf } = useFormOptions()
@@ -264,6 +277,8 @@ async function saveStep(): Promise<boolean> {
 
   const payload = buildStepPayload(currentStep.value)
   if (!payload) return true
+  if (savedPayloads.get(currentStep.value) === JSON.stringify(payload))
+    return true
 
   savePending.value = true
   saveFailed.value = false
@@ -313,7 +328,6 @@ async function goToStep(index: number) {
             '[aria-invalid="true"], .ff-error input, .ff-error button, .ff-error textarea',
           )
           target?.focus({ preventScroll: true })
-          target?.scrollIntoView({ block: 'center', behavior: 'auto' })
           return
         }
       }
@@ -322,7 +336,8 @@ async function goToStep(index: number) {
       saveFailed.value = false
       currentStep.value = index
       await nextTick()
-      stepContent.value?.scrollIntoView({ block: 'start', behavior: 'auto' })
+      if (formRoot.value && formRoot.value.getBoundingClientRect().top < 0)
+        formRoot.value.scrollIntoView({ block: 'start', behavior: 'auto' })
     }
   } finally {
     isSaving.value = false
@@ -367,7 +382,7 @@ useBreadcrumbs(() => {
 <template>
   <div
     v-if="loading"
-    class="p-6 text-sm text-muted-foreground"
+    class="p-6 text-[length:var(--text-control,0.75rem)] text-muted-foreground"
   >
     Memuat formulir…
   </div>
@@ -386,166 +401,174 @@ useBreadcrumbs(() => {
 
   <div
     v-else-if="application"
+    ref="formRoot"
     class="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 sm:pt-2"
   >
-    <Card
-      gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
-    >
-      <CardHeader
-        standard
-        class="flex-wrap min-h-0 border-b-0 bg-transparent px-0 pt-0 pb-3 sm:px-0"
+    <div class="flex items-center justify-between gap-3 pb-2">
+      <BackButton
+        :label="
+          isAdminForm ? 'Kembali ke detail pendaftar' : 'Kembali ke dasbor'
+        "
+        @click="
+          router.push(
+            isAdminForm
+              ? `/admin/applicants/${adminApplicationId}`
+              : '/registration',
+          )
+        "
+      />
+      <Button
+        v-if="!isAdminForm"
+        variant="link"
+        size="sm"
+        class="h-auto p-0"
+        @click="showIntro = true"
       >
-        <div class="flex min-w-0 items-center gap-3">
-          <BackButton
-            :label="
-              isAdminForm ? 'Kembali ke detail pendaftar' : 'Kembali ke dasbor'
-            "
-            @click="
-              router.push(
-                isAdminForm
-                  ? `/admin/applicants/${adminApplicationId}`
-                  : '/registration',
-              )
-            "
-          />
-          <CardTitle size="lg">{{
-            isAdminForm ? 'Formulir Pendaftar' : 'Formulir Pendaftaran'
-          }}</CardTitle>
-        </div>
-        <Button
-          v-if="!isAdminForm"
-          variant="link"
-          size="sm"
-          class="h-auto p-0"
-          @click="showIntro = true"
-        >
-          Lihat ketentuan
-        </Button>
-      </CardHeader>
-      <CardContent class="space-y-4 px-4 py-6 sm:px-6">
+        Lihat ketentuan
+      </Button>
+    </div>
+    <Card gap="none">
+      <CardHeader standard>
         <AdmissionStepNav
           :steps="steps"
           :current-step="currentStep"
           :disabled="isSaving || isSubmitting"
+          :flagged="flaggedSteps"
           @select="goToStep"
         />
+      </CardHeader>
+      <CardContent variant="standard">
+        <Card gap="none">
+          <CardHeader standard>
+            <CardTitle size="md">{{ steps[currentStep] }}</CardTitle>
+            <span class="text-xs text-muted-foreground">
+              Langkah {{ currentStep + 1 }} dari {{ steps.length }}
+            </span>
+          </CardHeader>
+          <CardContent variant="standard">
+            <div
+              v-if="
+                application.status === 'REVISION_NEEDED' && currentStep === 5
+              "
+              class="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-[length:var(--text-control,0.75rem)] text-destructive"
+              :class="stepStartsFlush ? 'mb-1' : 'mb-4'"
+            >
+              <TriangleAlert class="mt-0.5 size-3.5 shrink-0" />
+              <p class="min-w-0">
+                {{ application.revisionNote }}
+              </p>
+            </div>
+            <div
+              v-else-if="!editable"
+              class="rounded-md border p-3 text-[length:var(--text-control,0.75rem)] text-muted-foreground"
+              :class="stepStartsFlush ? 'mb-1' : 'mb-4'"
+            >
+              {{
+                isAdminForm
+                  ? 'Formulir terkunci karena sudah dikirim. Isiannya hanya dapat dilihat.'
+                  : 'Formulir terkunci karena sudah dikirim. Anda tetap dapat melihat isiannya.'
+              }}
+            </div>
 
-        <div
-          v-if="application.status === 'REVISION_NEEDED'"
-          class="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm"
-        >
-          <span class="font-medium text-destructive"
-            >Catatan revisi admin:</span
-          >
-          {{ application.revisionNote }}
-        </div>
-        <div
-          v-else-if="!editable"
-          class="rounded-md border p-3 text-sm text-muted-foreground"
-        >
-          {{
-            isAdminForm
-              ? 'Formulir terkunci karena sudah dikirim. Isiannya hanya dapat dilihat.'
-              : 'Formulir terkunci karena sudah dikirim. Anda tetap dapat melihat isiannya.'
-          }}
-        </div>
+            <div
+              ref="stepContent"
+              class="scroll-mt-4"
+            >
+              <PersonalDataStep
+                v-if="currentStep === 0"
+                ref="personalStepRef"
+                v-model="personal"
+                :editable="editable && !isSaving && !isSubmitting"
+              />
 
-        <div
-          ref="stepContent"
-          class="scroll-mt-4"
-        >
-          <PersonalDataStep
-            v-if="currentStep === 0"
-            ref="personalStepRef"
-            v-model="personal"
-            :editable="editable && !isSaving && !isSubmitting"
-          />
+              <ParentsStep
+                v-else-if="currentStep === 1"
+                ref="parentsStepRef"
+                v-model="parents"
+                :editable="editable && !isSaving && !isSubmitting"
+                :guardian-relation="guardianRelation"
+                :on-choose-guardian="setGuardian"
+              />
 
-          <ParentsStep
-            v-else-if="currentStep === 1"
-            ref="parentsStepRef"
-            v-model="parents"
-            :editable="editable && !isSaving && !isSubmitting"
-            :guardian-relation="guardianRelation"
-            :on-choose-guardian="setGuardian"
-          />
+              <AddressStep
+                v-else-if="currentStep === 2"
+                ref="addressStepRef"
+                v-model="address"
+                v-model:parents="parents"
+                :editable="editable && !isSaving && !isSubmitting"
+              />
 
-          <AddressStep
-            v-else-if="currentStep === 2"
-            ref="addressStepRef"
-            v-model="address"
-            v-model:parents="parents"
-            :editable="editable && !isSaving && !isSubmitting"
-          />
+              <SchoolStep
+                v-else-if="currentStep === 3"
+                ref="schoolStepRef"
+                v-model="school"
+                :editable="editable && !isSaving && !isSubmitting"
+              />
 
-          <SchoolStep
-            v-else-if="currentStep === 3"
-            ref="schoolStepRef"
-            v-model="school"
-            :editable="editable && !isSaving && !isSubmitting"
-          />
+              <AchievementsStep
+                v-else-if="currentStep === 4"
+                ref="achievementsStepRef"
+                v-model:achievements="achievements"
+                v-model:scholarships="scholarships"
+                :editable="editable && !isSaving && !isSubmitting"
+                :upload-attachment="uploadAttachment"
+              />
 
-          <AchievementsStep
-            v-else-if="currentStep === 4"
-            ref="achievementsStepRef"
-            v-model:achievements="achievements"
-            v-model:scholarships="scholarships"
-            :editable="editable && !isSaving && !isSubmitting"
-            :upload-attachment="uploadAttachment"
-          />
+              <DocumentsStep
+                v-else-if="currentStep === 5"
+                :document-types="application.documentTypes ?? []"
+                :documents="application.documents ?? []"
+                :document-files="documentFiles"
+                :uploading-doc="uploadingDoc"
+                :editable="editable"
+                :on-file-change="onDocumentFileChange"
+                :on-clear-file="clearDocumentFile"
+                :on-upload="uploadDocument"
+              />
 
-          <DocumentsStep
-            v-else-if="currentStep === 5"
-            :document-types="application.documentTypes ?? []"
-            :documents="application.documents ?? []"
-            :document-files="documentFiles"
-            :uploading-doc="uploadingDoc"
-            :editable="editable"
-            :on-file-change="onDocumentFileChange"
-            :on-clear-file="clearDocumentFile"
-            :on-upload="uploadDocument"
-          />
+              <PaymentStep
+                v-else-if="currentStep === 6"
+                v-model="payment"
+                :application-payment="application.payment ?? null"
+                :editable="paymentEditable"
+                :wave-full="application.waveIsFull"
+                :payment-file="paymentFile"
+                :uploading-payment="uploadingPayment"
+                :on-file-change="onPaymentFileChange"
+                :on-upload="uploadPayment"
+                :on-preview="isAdminForm ? preview.show : undefined"
+              />
 
-          <PaymentStep
-            v-else-if="currentStep === 6"
-            v-model="payment"
-            :application-payment="application.payment ?? null"
-            :editable="paymentEditable"
-            :wave-full="application.waveIsFull"
-            :payment-file="paymentFile"
-            :uploading-payment="uploadingPayment"
-            :on-file-change="onPaymentFileChange"
-            :on-upload="uploadPayment"
-          />
-
-          <ReviewStep
-            v-else
-            :personal="personal"
-            :parents="parents"
-            :address="address"
-            :school="school"
-            :application="application"
-            :editable="editable"
-            :completeness="completeness"
-            :on-go-to-step="goToStep"
-          />
-        </div>
-        <p
-          v-if="saveMessage"
-          :role="saveFailed ? 'alert' : 'status'"
-          class="text-sm text-muted-foreground"
-        >
-          {{ saveMessage }}
-        </p>
+              <ReviewStep
+                v-else
+                :personal="personal"
+                :parents="parents"
+                :address="address"
+                :school="school"
+                :application="application"
+                :editable="editable"
+                :completeness="completeness"
+                :on-go-to-step="goToStep"
+              />
+            </div>
+            <p
+              v-if="saveMessage"
+              :role="saveFailed ? 'alert' : 'status'"
+              class="mt-4 text-[length:var(--text-control,0.75rem)] text-muted-foreground"
+            >
+              {{ saveMessage }}
+            </p>
+          </CardContent>
+        </Card>
       </CardContent>
-      <div
-        class="flex items-center border-t bg-background px-4 py-4 sm:px-6"
+      <CardFooter
+        standard
         :class="currentStep === 0 ? 'justify-end' : 'justify-between'"
       >
         <Button
           v-if="currentStep > 0"
           variant="outline"
+          size="sm"
           :disabled="isSaving || isSubmitting"
           @click="previousStep"
         >
@@ -553,6 +576,7 @@ useBreadcrumbs(() => {
         </Button>
         <Button
           v-if="currentStep < steps.length - 1"
+          size="sm"
           :disabled="isSaving || isSubmitting"
           @click="nextStep"
         >
@@ -560,18 +584,23 @@ useBreadcrumbs(() => {
         </Button>
         <span
           v-else-if="editable && waveClosed"
-          class="text-sm text-destructive"
+          class="text-[length:var(--text-control,0.75rem)] text-destructive"
         >
           Gelombang ini sudah ditutup; formulir tidak dapat dikirim.
         </span>
         <SubmitConfirmButton
           v-else-if="editable"
+          size="sm"
           :disabled="!canSubmit"
           :submitting="isSubmitting"
           @confirm="submitApplication"
         />
-      </div>
+      </CardFooter>
     </Card>
+    <FilePreviewDialog
+      v-model:open="preview.open.value"
+      :file="preview.file.value"
+    />
     <Dialog
       :open="showIntro"
       @update:open="!$event && closeIntro()"
@@ -603,13 +632,15 @@ useBreadcrumbs(() => {
     class="flex min-h-[60vh] items-center justify-center p-6"
   >
     <div
-      class="w-full max-w-md rounded-xl border bg-card p-8 text-center shadow-sm"
+      class="w-full max-w-md rounded-lg bg-card p-6 text-center ring-1 ring-foreground/10"
     >
       <FileText class="mx-auto h-8 w-8 text-muted-foreground" />
       <h2 class="mt-4 text-lg font-medium tracking-tight">
         Formulir belum tersedia
       </h2>
-      <p class="mt-2 text-sm text-muted-foreground text-balance">
+      <p
+        class="mt-2 text-[length:var(--text-control,0.75rem)] text-muted-foreground text-balance"
+      >
         {{
           isAdminForm
             ? 'Data pendaftar tidak ditemukan.'

@@ -72,7 +72,7 @@ function itemTitle(
       >
         <label
           :for="`f-${at(field.name)}`"
-          class="text-sm font-medium"
+          class="text-[length:var(--text-control,0.75rem)] font-medium"
           >{{ field.label }}</label
         >
         <Textarea
@@ -116,7 +116,9 @@ function itemTitle(
         v-else-if="field.kind === 'lines' || field.kind === 'tags'"
         class="space-y-1.5"
       >
-        <p class="text-sm font-medium">{{ field.label }}</p>
+        <p class="text-[length:var(--text-control,0.75rem)] font-medium">
+          {{ field.label }}
+        </p>
         <div
           v-for="(line, index) in strings(field.name)"
           :key="index"
@@ -189,7 +191,11 @@ function itemTitle(
         v-else-if="field.kind === 'group'"
         class="space-y-4 rounded-lg border p-4"
       >
-        <legend class="px-1 text-sm font-medium">{{ field.label }}</legend>
+        <legend
+          class="px-1 text-[length:var(--text-control,0.75rem)] font-medium"
+        >
+          {{ field.label }}
+        </legend>
         <LandingFieldTree
           :fields="field.fields"
           :model="record(field.name)"
@@ -208,7 +214,7 @@ function itemTitle(
         class="space-y-3"
       >
         <div class="flex items-center justify-between gap-3">
-          <p class="text-sm font-medium">
+          <p class="text-[length:var(--text-control,0.75rem)] font-medium">
             {{ field.label }}
             <span class="font-normal text-muted-foreground"
               >({{ list(field.name).length }} dari maks. {{ field.max }})</span
@@ -229,7 +235,9 @@ function itemTitle(
           class="space-y-4 rounded-lg border p-4"
         >
           <div class="flex items-center justify-between gap-2">
-            <p class="min-w-0 break-words text-sm font-medium">
+            <p
+              class="min-w-0 break-words text-[length:var(--text-control,0.75rem)] font-medium"
+            >
               {{ field.itemLabel }} {{ index + 1 }}:
               {{ itemTitle(field, item) }}
             </p>

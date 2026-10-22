@@ -188,7 +188,7 @@ function circleClass(state: TimelineEvent['state']) {
     case 'complete':
       return 'border-primary bg-primary text-primary-foreground'
     case 'current':
-      return 'border-2 border-primary bg-background text-primary ring-4 ring-primary/15 font-semibold shadow-xs'
+      return 'border-2 border-primary bg-background text-primary ring-2 ring-primary/15 font-semibold shadow-xs'
     case 'rejected':
       return 'border-destructive bg-destructive text-destructive-foreground'
     case 'upcoming':
@@ -202,14 +202,11 @@ function circleClass(state: TimelineEvent['state']) {
   <Card
     gap="none"
     data-test="timeline-card"
-    class="mt-6 overflow-hidden rounded-2xl shadow-sm shadow-black/5 ring-1 ring-black/4"
   >
     <CardHeader standard>
-      <div class="flex items-center gap-3">
-        <CardTitle size="md"> Riwayat & Linimasa Pendaftaran </CardTitle>
-      </div>
+      <CardTitle size="md"> Riwayat & Linimasa Pendaftaran </CardTitle>
     </CardHeader>
-    <CardContent class="px-4 py-5 sm:px-6">
+    <CardContent variant="standard">
       <div class="overflow-x-auto pb-4 pt-2 [scrollbar-width:thin]">
         <div class="flex min-w-[720px] items-start md:min-w-0 md:w-full">
           <template
@@ -221,23 +218,23 @@ function circleClass(state: TimelineEvent['state']) {
               class="flex flex-col items-center text-center"
             >
               <div
-                class="flex size-10 shrink-0 items-center justify-center rounded-full text-xs transition-all"
+                class="flex size-8 shrink-0 items-center justify-center rounded-full text-xs transition-all"
                 :class="circleClass(event.state)"
               >
                 <Check
                   v-if="event.state === 'complete'"
-                  class="size-4 stroke-[2.5]"
+                  class="size-3.5 stroke-[2.5]"
                 />
                 <X
                   v-else-if="event.state === 'rejected'"
-                  class="size-4 stroke-[2.5]"
+                  class="size-3.5 stroke-[2.5]"
                 />
                 <span v-else>{{ index + 1 }}</span>
               </div>
 
               <div class="mt-3 w-32 sm:w-36 px-1">
                 <h4
-                  class="text-xs font-medium sm:text-sm leading-snug"
+                  class="text-xs font-medium sm:text-[length:var(--text-control,0.75rem)] leading-snug"
                   :class="
                     event.state === 'rejected'
                       ? 'text-destructive'
@@ -262,7 +259,7 @@ function circleClass(state: TimelineEvent['state']) {
 
             <div
               v-if="index < events.length - 1"
-              class="mt-5 h-0.5 flex-1 min-w-[24px] sm:min-w-[36px]"
+              class="mt-4 h-0.5 flex-1 min-w-[24px] sm:min-w-[36px]"
               :class="event.state === 'complete' ? 'bg-primary' : 'bg-muted'"
             />
           </template>
@@ -272,7 +269,7 @@ function circleClass(state: TimelineEvent['state']) {
       <div
         v-for="event in eventsWithNote"
         :key="`note-${event.key}`"
-        class="mt-6 rounded-xl border p-4 text-xs sm:text-sm shadow-xs"
+        class="mt-4 rounded-md border p-3 text-[length:var(--text-control,0.75rem)]"
         :class="
           event.state === 'rejected'
             ? 'border-destructive/30 bg-destructive/10 text-destructive'

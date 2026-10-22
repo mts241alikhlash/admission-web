@@ -2,8 +2,12 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { refDebounced } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
-import { UploadCloud } from '@lucide/vue'
-import { AppCombobox, BackButton, DatePicker } from '@mts241alikhlash/ui'
+import {
+  AppCombobox,
+  BackButton,
+  DatePicker,
+  FileDropzone,
+} from '@mts241alikhlash/ui'
 import { Button } from '@mts241alikhlash/ui/button'
 import {
   Card,
@@ -149,7 +153,7 @@ watch(debouncedSearch, loadApplicants)
   <div class="space-y-6 p-4 sm:p-6">
     <Card
       gap="none"
-      class="rounded-none border-0 bg-transparent shadow-none ring-0"
+      class="overflow-visible rounded-none border-0 bg-transparent shadow-none ring-0"
     >
       <CardHeader
         standard
@@ -259,29 +263,20 @@ watch(debouncedSearch, loadApplicants)
           floating
           class="min-w-0"
         >
-          <label
-            class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/25 p-6 text-center transition-colors hover:bg-muted/30 focus-within:ring-2 focus-within:ring-ring"
-          >
-            <UploadCloud class="size-6 text-primary" />
-            <span class="break-words text-sm">{{
-              file?.name || 'Klik untuk memilih berkas'
-            }}</span>
-            <span class="text-xs text-muted-foreground"
-              >JPG, PNG, atau PDF · Maksimal 5 MB</span
-            >
-            <input
-              type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
-              class="sr-only"
-              aria-label="Pilih bukti transfer"
-              @change="pickFile"
-            />
-          </label>
+          <FileDropzone
+            :file-name="file?.name"
+            :invalid="!!errors.file"
+            aria-label="Pilih bukti transfer"
+            hint="JPG, PNG, atau PDF, maks. 5 MB"
+            @change="pickFile"
+          />
         </FloatingLabelField>
       </CardContent>
 
       <CardContent class="border-t bg-muted/10 p-4 sm:p-6">
-        <div class="grid gap-3 sm:grid-cols-2 text-sm">
+        <div
+          class="grid gap-3 sm:grid-cols-2 text-[length:var(--text-control,0.75rem)]"
+        >
           <div>
             <p class="text-xs text-muted-foreground">Nomor Pendaftaran</p>
             <p class="mt-1 font-medium">

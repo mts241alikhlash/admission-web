@@ -11,7 +11,6 @@ defineProps<{
   modelValue: string | null | undefined
   label: string
   options: { id: string; name: string }[]
-  placeholder?: string
   disabled?: boolean
   invalid?: boolean
 }>()
@@ -30,7 +29,7 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
       :aria-label="label"
       :aria-invalid="invalid || undefined"
     >
-      <SelectValue :placeholder="placeholder ?? 'Pilih'" />
+      <SelectValue />
     </SelectTrigger>
     <SelectContent>
       <SelectItem
