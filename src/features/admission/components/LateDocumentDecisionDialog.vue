@@ -59,7 +59,7 @@ function reject() {
           {{ row?.applicantName }} · {{ row?.registrationNumber }}
         </DialogDescription>
       </DialogHeader>
-      <div class="space-y-4 dialog-body">
+      <div class="min-h-0 flex-1 overflow-y-auto space-y-4 dialog-body">
         <Button
           type="button"
           variant="outline"
@@ -85,7 +85,7 @@ function reject() {
       </div>
       <DialogFooter
         standard
-        class="sm:justify-between"
+        class="justify-between"
       >
         <Button
           type="button"

@@ -541,7 +541,7 @@ defineExpose({ validate: validateStep })
             </div>
             <DialogFooter
               standard
-              class="mt-auto gap-2 sm:justify-end"
+              class="justify-between"
             >
               <Button
                 variant="outline"
@@ -797,7 +797,7 @@ defineExpose({ validate: validateStep })
             </div>
             <DialogFooter
               standard
-              class="mt-auto gap-2 sm:justify-end"
+              class="justify-between"
             >
               <Button
                 variant="outline"

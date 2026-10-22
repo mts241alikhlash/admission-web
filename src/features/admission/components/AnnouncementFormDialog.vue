@@ -6,7 +6,6 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { Button } from '@mts241alikhlash/ui/button'
 import { Input } from '@mts241alikhlash/ui/input'
 import { Textarea } from '@mts241alikhlash/ui/textarea'
-import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import {
   Dialog,
   DialogContent,
@@ -102,7 +101,7 @@ const onSubmit = handleSubmit((values) => {
         <DialogDescription class="sr-only"> </DialogDescription>
       </DialogHeader>
 
-      <ScrollArea class="flex-1 min-h-0">
+      <div class="min-h-0 flex-1 overflow-y-auto">
         <form
           id="announcement-form"
           class="space-y-2 dialog-body"
@@ -165,11 +164,11 @@ const onSubmit = handleSubmit((values) => {
             </Select>
           </FloatingField>
         </form>
-      </ScrollArea>
+      </div>
 
       <DialogFooter
         standard
-        class="sm:justify-between"
+        class="justify-between"
       >
         <Button
           type="button"

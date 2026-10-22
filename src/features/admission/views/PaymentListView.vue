@@ -521,7 +521,7 @@ onMounted(async () => {
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitReason"
         >
-          <div class="space-y-4 dialog-body">
+          <div class="min-h-0 flex-1 overflow-y-auto space-y-4 dialog-body">
             <FloatingLabelField
               :label="
                 reasonKind === 'cancel'
@@ -550,7 +550,7 @@ onMounted(async () => {
           </div>
           <DialogFooter
             standard
-            class="sm:justify-between"
+            class="justify-between"
           >
             <Button
               type="button"

@@ -752,7 +752,7 @@ onMounted(() => fetchReview(true))
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitReject"
         >
-          <div class="space-y-4 dialog-body">
+          <div class="min-h-0 flex-1 overflow-y-auto space-y-4 dialog-body">
             <FloatingLabelField
               label="Alasan Penolakan"
               :for="`${dialogId}-reject`"
@@ -777,7 +777,7 @@ onMounted(() => fetchReview(true))
           </div>
           <DialogFooter
             standard
-            class="sm:justify-between"
+            class="justify-between"
           >
             <Button
               type="button"
@@ -826,7 +826,7 @@ onMounted(() => fetchReview(true))
         </div>
         <DialogFooter
           standard
-          class="sm:justify-between"
+          class="justify-between"
         >
           <Button
             type="button"
@@ -865,7 +865,7 @@ onMounted(() => fetchReview(true))
           class="flex flex-1 flex-col justify-between"
           @submit.prevent="submitNote"
         >
-          <div class="space-y-4 dialog-body">
+          <div class="min-h-0 flex-1 overflow-y-auto space-y-4 dialog-body">
             <FloatingLabelField
               label="Catatan Perbaikan"
               :for="`${dialogId}-data-note`"
@@ -890,7 +890,7 @@ onMounted(() => fetchReview(true))
           </div>
           <DialogFooter
             standard
-            class="sm:justify-between"
+            class="justify-between"
           >
             <Button
               type="button"

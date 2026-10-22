@@ -5,7 +5,6 @@ import { UploadCloud } from '@lucide/vue'
 import { Button } from '@mts241alikhlash/ui/button'
 import { DatePicker } from '@mts241alikhlash/ui'
 import { Input } from '@mts241alikhlash/ui/input'
-import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import {
   Dialog,
   DialogContent,
@@ -157,7 +156,7 @@ watch(debouncedSearch, loadApplicants)
           langsung terverifikasi setelah disimpan.
         </DialogDescription>
       </DialogHeader>
-      <ScrollArea class="min-h-0 flex-1">
+      <div class="min-h-0 flex-1 overflow-y-auto">
         <form
           id="add-payment-form"
           class="space-y-4 dialog-body"
@@ -326,10 +325,10 @@ watch(debouncedSearch, loadApplicants)
             </p>
           </div>
         </form>
-      </ScrollArea>
+      </div>
       <DialogFooter
         standard
-        class="sm:justify-between"
+        class="justify-between"
       >
         <Button
           type="button"

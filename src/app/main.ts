@@ -9,6 +9,8 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 import { queryClient } from '@/features/platform/reference-data'
 import { publicAdmissionService } from '@/features/admission'
 import { i18n, initialLocale, setLocale } from '@/i18n'
+import { z } from 'zod'
+import { indonesianErrorMap } from '@/i18n/zodErrorMap'
 
 configureAuth({
   appKey: 'ADMISSION',
@@ -29,6 +31,7 @@ void Promise.all([
   authService.restoreSession(),
   setLocale(initialLocale(), false),
 ]).finally(() => {
+  z.setErrorMap(indonesianErrorMap)
   const app = createApp(App as Component)
     .use(store)
     .use(VueQueryPlugin, { queryClient })

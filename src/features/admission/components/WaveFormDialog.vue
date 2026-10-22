@@ -184,7 +184,7 @@ const onSubmit = handleSubmit((formValues) => {
         <DialogDescription class="sr-only"> </DialogDescription>
       </DialogHeader>
 
-      <div class="min-h-0 overflow-y-auto">
+      <div class="min-h-0 flex-1 overflow-y-auto">
         <form
           id="wave-form"
           class="space-y-2 dialog-body"
@@ -344,7 +344,7 @@ const onSubmit = handleSubmit((formValues) => {
 
       <DialogFooter
         standard
-        class="sm:justify-between"
+        class="justify-between"
       >
         <Button
           type="button"

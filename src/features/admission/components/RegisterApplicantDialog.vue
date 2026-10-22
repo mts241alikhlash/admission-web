@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from '@mts241alikhlash/ui/select'
 import { FormControl } from '@mts241alikhlash/ui/form'
-import { ScrollArea } from '@mts241alikhlash/ui/scroll-area'
 import FloatingField from './AdmissionField.vue'
 import { Loader2 } from '@lucide/vue'
 import AdmissionPlacementFields from './AdmissionPlacementFields.vue'
@@ -142,7 +141,7 @@ function handleOpenChange(open: boolean) {
         </DialogDescription>
       </DialogHeader>
 
-      <ScrollArea class="flex-1 min-h-0">
+      <div class="min-h-0 flex-1 overflow-y-auto">
         <form
           id="register-applicant-form"
           class="grid grid-cols-1 items-start gap-x-4 gap-y-2 dialog-body sm:grid-cols-2"
@@ -279,11 +278,11 @@ function handleOpenChange(open: boolean) {
             {{ errorMessage }}
           </p>
         </form>
-      </ScrollArea>
+      </div>
 
       <DialogFooter
         standard
-        class="sm:justify-between"
+        class="justify-between"
       >
         <Button
           type="button"
